@@ -62,7 +62,7 @@ namespace Hspi.Devices
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="macAddress"/> is null.</exception>
         /// <returns>An asynchronous <see cref="Task"/> which sends a Wake On LAN signal (magic packet) to a client.</returns>
-        public static async Task SendAsync(IPEndPoint target, PhysicalAddress macAddress, CancellationToken token)
+        public static async Task SendWolAsync(IPEndPoint target, PhysicalAddress macAddress, CancellationToken token)
         {
             if (target == null)
                 throw new ArgumentNullException(nameof(target));

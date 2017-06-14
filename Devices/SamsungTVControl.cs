@@ -75,7 +75,7 @@ namespace Hspi.Devices
             switch (command.Id)
             {
                 case CommandName.PowerOn:
-                    await NetworkHelper.SendAsync(new IPEndPoint(IPAddress.Broadcast, 9), MacAddress, token).ConfigureAwait(false);
+                    await NetworkHelper.SendWolAsync(new IPEndPoint(IPAddress.Broadcast, 9), MacAddress, token).ConfigureAwait(false);
                     break;
 
                 case CommandName.PowerOff:
@@ -242,7 +242,7 @@ namespace Hspi.Devices
 
         private void WebSocket_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
         {
-            Trace.WriteLine(Invariant($"Connection to Samsung TV5 {Name} on {DeviceIP} Errored with {e.Exception.Message}"));
+            Trace.WriteLine(Invariant($"Connection to Samsung TV {Name} on {DeviceIP} Errored with {e.Exception.Message}"));
             UpdateConnectedState(false);
             Task.Run(() => UpdatePowerFeedbackState());
         }

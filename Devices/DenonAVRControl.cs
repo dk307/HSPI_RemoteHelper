@@ -87,6 +87,9 @@ namespace Hspi.Devices
                                                CommandName.DialogEnhancerModeQuery,
                                                CommandName.SubWooferLevelAdjustQuery,
                                                CommandName.AudysseyQuery,
+                                               CommandName.PowerQuery,
+                                               CommandName.MuteQuery,
+                                               CommandName.VolumeQuery,
                     };
 
                     foreach (string macroCommand in commandsQuery)
@@ -131,7 +134,7 @@ namespace Hspi.Devices
         public async Task<bool> IsNetworkOn(CancellationToken token)
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingHost(DeviceIP, 80, networkPingTimeout, token);
+            return await NetworkHelper.PingHost(DeviceIP, 80, networkPingTimeout, token).ConfigureAwait(false);
         }
 
         protected override void Dispose(bool disposing)
@@ -317,7 +320,7 @@ namespace Hspi.Devices
                 {
                     while (!combinedToken.IsCancellationRequested)
                     {
-                        string feedback = await ReadLineAsync(reader);
+                        string feedback = await ReadLineAsync(reader).ConfigureAwait(false);
                         ProcessFeedback(feedback);
                     }
                 }
@@ -352,7 +355,7 @@ namespace Hspi.Devices
         private async Task SendCommandForId(string commandId, CancellationToken token)
         {
             var command = GetCommand(commandId);
-            await SendCommandCore(command.Data, token);
+            await SendCommandCore(command.Data, token).ConfigureAwait(false);
         }
 
         private void UpdateFeedbackForVolumeString(string feedbackName, string volString)

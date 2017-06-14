@@ -31,24 +31,6 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.SamsungTV, new string[] { DeviceControlConfig.PhysicalAddressId });
             LoadDeviceConfig(DeviceType.DenonAVR, new string[] { });
             LoadDeviceConfig(DeviceType.ADBRemoteControl, new string[] { DeviceControlConfig.ADBPathId });
-
-            //{
-            //    var d = new Dictionary<string, string>();
-            //    d.Add(DeviceControlConfig.PhysicalAddressId, "40-16-3B-6C-2B-4E");
-            //    var r = new DeviceControlConfig(DeviceType.SamsungTV, "LTV", "Living Room TV", IPAddress.Parse("192.168.2.126"), d);
-            //    devices.Add(r.Id, r);
-            //}
-            //{
-            //    var d = new Dictionary<string, string>();
-            //    d.Add(DeviceControlConfig.ADBPathId, "C:\\adb\\platform-tools\\adb.exe");
-            //    var r = new DeviceControlConfig(DeviceType.ADBRemoteControl, "NVD", "NVidia Shield", IPAddress.Parse("192.168.2.124"), d);
-            //    devices.Add(r.Id, r);
-            //}
-            //{
-            //    var d = new Dictionary<string, string>();
-            //    var r = new DeviceControlConfig(DeviceType.DenonAVR, "NVFs", "Denon AVR", IPAddress.Parse("192.168.2.127"), d);
-            //    devices.Add(r.Id, r);
-            //}
         }
 
         public event EventHandler<EventArgs> ConfigChanged;
