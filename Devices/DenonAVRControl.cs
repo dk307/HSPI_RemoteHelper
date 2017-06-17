@@ -6,17 +6,18 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Hspi.Devices
 {
-    using System.Globalization;
     using static System.FormattableString;
 
     internal sealed class DenonAVRControl : DeviceControl
     {
         public DenonAVRControl(string name, IPAddress deviceIP) :
-            base(name, deviceIP)
+            base(name)
         {
+            DeviceIP = deviceIP;
             AddCommand(new DeviceCommand(CommandName.InputStatusQuery, "SI?"));
             AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOff, "PSDIL OFF"));
             AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOn, "PSDIL ON"));
@@ -50,6 +51,8 @@ namespace Hspi.Devices
             AddFeedback(new SettableRangedDeviceFeedback(FeedbackName.SubwooferAdjustLevel, 38.5, 62, 1));
             AddFeedback(new DeviceFeedback(FeedbackName.Audyssey, TypeCode.String));
         }
+
+        public IPAddress DeviceIP { get; }
 
         public static TimeSpan DefaultCommandDelay => TimeSpan.FromMilliseconds(100);
 

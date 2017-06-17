@@ -10,6 +10,7 @@ using System.Threading;
 
 namespace Hspi
 {
+    using System.Collections.ObjectModel;
     using static System.FormattableString;
 
     /// <summary>
@@ -173,13 +174,16 @@ namespace Hspi
         {
             lock (connectorManagerLock)
             {
+                bool changed = false;
                 // Update changed or new
                 foreach (var device in pluginConfig.Devices)
                 {
-                    if (connectorManager.TryGetValue(device.Key, out var oldConnector))
+                    if (connectorManager.TryGetValue(device.Key, out var oldConnectorBase))
                     {
+                        var oldConnector = oldConnectorBase as DeviceControlManager;
                         if (!device.Value.Equals(oldConnector.DeviceConfig))
                         {
+                            changed = true;
                             oldConnector.Cancel();
                             oldConnector.Dispose();
                             if (device.Value.Enabled)
@@ -193,18 +197,31 @@ namespace Hspi
                     {
                         if (device.Value.Enabled)
                         {
+                            changed = true;
                             connectorManager[device.Key] =
                                     new DeviceControlManager(HS, device.Value, this as ILogger, ShutdownCancellationToken);
                         }
                     }
                 }
+
+                if (changed)
+                {
+                    connectorManager.Remove(DeviceType.GlobalMacros);
+
+                    connectorManager[DeviceType.GlobalMacros] =
+                           new GlobalMacrosDeviceControlManager(HS,
+                                                                this as ILogger,
+                                                                new Dictionary<DeviceType, DeviceControlManagerBase>(connectorManager),
+                                                                ShutdownCancellationToken);
+                }
             }
         }
 
         private CancellationTokenSource cancellationTokenSourceForUpdateDevice = new CancellationTokenSource();
-
         private readonly object connectorManagerLock = new object();
-        private readonly IDictionary<DeviceType, DeviceControlManager> connectorManager = new Dictionary<DeviceType, DeviceControlManager>();
+
+        private readonly Dictionary<DeviceType, DeviceControlManagerBase> connectorManager
+                                = new Dictionary<DeviceType, DeviceControlManagerBase>();
 
         private ConfigPage configPage;
         private PluginConfig pluginConfig;

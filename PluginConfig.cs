@@ -1,7 +1,6 @@
 ﻿using HomeSeerAPI;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -31,6 +30,7 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.SamsungTV, new string[] { DeviceControlConfig.PhysicalAddressId });
             LoadDeviceConfig(DeviceType.DenonAVR, new string[] { });
             LoadDeviceConfig(DeviceType.ADBRemoteControl, new string[] { DeviceControlConfig.ADBPathId });
+            LoadDeviceConfig(DeviceType.GlobalMacros, new string[] { }, true);
         }
 
         public event EventHandler<EventArgs> ConfigChanged;
@@ -78,7 +78,7 @@ namespace Hspi
                 configLock.EnterReadLock();
                 try
                 {
-                    return new ReadOnlyDictionary<DeviceType, DeviceControlConfig>(devices);
+                    return new Dictionary<DeviceType, DeviceControlConfig>(devices);
                 }
                 finally
                 {
@@ -155,13 +155,13 @@ namespace Hspi
             return defaultValue;
         }
 
-        private void LoadDeviceConfig(DeviceType deviceType, IEnumerable<string> additionalValuesKeys)
+        private void LoadDeviceConfig(DeviceType deviceType, IEnumerable<string> additionalValuesKeys, bool forceEnabled = false)
         {
             string deviceId = deviceType.ToString();
 
             string name = GetValue(DeviceNameId, string.Empty, deviceId);
             string ipAddressString = GetValue(DeviceIPId, string.Empty, deviceId);
-            bool enabled = GetValue(EnabledId, false, deviceId);
+            bool enabled = forceEnabled || GetValue(EnabledId, false, deviceId);
             IPAddress.TryParse(ipAddressString, out var deviceIP);
 
             var additionalValues = new Dictionary<string, string>();
@@ -207,7 +207,6 @@ namespace Hspi
         private readonly static string FileName = Invariant($"{Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location)}.ini");
         private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
         private readonly IDictionary<DeviceType, DeviceControlConfig> devices = new Dictionary<DeviceType, DeviceControlConfig>();
-
         private readonly IHSApplication HS;
         private bool debugLogging;
         private bool disposedValue = false;

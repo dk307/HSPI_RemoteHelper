@@ -136,6 +136,7 @@
     <Compile Include="ConfigPage.cs" />
     <Compile Include="DeviceControlConfig.cs" />
     <Compile Include="DeviceControlManager.cs" />
+    <Compile Include="DeviceControlManagerBase.cs" />
     <Compile Include="DeviceData\BoolFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\DeviceDataBase.cs" />
     <Compile Include="DeviceData\DeviceIdentifier.cs" />
@@ -157,10 +158,12 @@
     <Compile Include="Devices\DevicePoweredOffException.cs" />
     <Compile Include="Devices\FeedbackName.cs" />
     <Compile Include="Devices\FeedbackValue.cs" />
+    <Compile Include="Devices\GlobalMacros.cs" />
     <Compile Include="Devices\SamsungTVControl.cs" />
     <Compile Include="Devices\SettableRangedDeviceFeedback.cs" />
     <Compile Include="EnumHelper.cs" />
     <Compile Include="ExceptionHelper.cs" />
+    <Compile Include="GlobalMacrosDeviceControlManager.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
     <Compile Include="ILogger.cs" />

@@ -11,14 +11,13 @@ namespace Hspi
     {
         SamsungTV,
         ADBRemoteControl,
-        DenonAVR
+        DenonAVR,
+        GlobalMacros,
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class DeviceControlConfig : IEquatable<DeviceControlConfig>
     {
-        public bool Enabled { get; }
-
         public DeviceControlConfig(DeviceType deviceType, string name, IPAddress deviceIP,
                                     IReadOnlyDictionary<string, string> additionalValues, bool enabled)
         {
@@ -31,6 +30,7 @@ namespace Hspi
 
         public IPAddress DeviceIP { get; }
         public DeviceType DeviceType { get; }
+        public bool Enabled { get; }
         public string Name { get; }
 
         public DeviceControl Create()

@@ -11,11 +11,9 @@ namespace Hspi.Devices
 
     internal abstract class DeviceControl : IDisposable
     {
-        protected DeviceControl(string name, IPAddress deviceIP)
+        protected DeviceControl(string name)
         {
             Name = name;
-            DeviceIP = deviceIP;
-
             AddFeedback(new DeviceFeedback(FeedbackName.Connection, TypeCode.Boolean));
         }
 
@@ -29,8 +27,6 @@ namespace Hspi.Devices
         public IEnumerable<DeviceCommand> Commands => commands;
 
         public bool Connected => connected;
-
-        public IPAddress DeviceIP { get; }
 
         public IEnumerable<DeviceFeedback> Feedbacks => feedbacks;
 

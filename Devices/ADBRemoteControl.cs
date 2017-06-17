@@ -42,13 +42,14 @@ namespace Hspi.Devices
 
     internal sealed class ADBRemoteControl : DeviceControl
     {
-        public ADBRemoteControl(string name, IPAddress DeviceIP, string adbPath) :
-            base(name, DeviceIP)
+        public ADBRemoteControl(string name, IPAddress deviceIP, string adbPath) :
+            base(name)
         {
             if (!File.Exists(adbPath))
             {
                 throw new FileNotFoundException(Invariant($"ADB Exe {adbPath} not found"), adbPath);
             }
+            DeviceIP = deviceIP;
 
             this.adbPath = adbPath;
             //AddCommand(new ADBShellDeviceCommand(CommandName.Menu, AdbShellKeys.KEYCODE_MENU));
@@ -125,6 +126,8 @@ namespace Hspi.Devices
                 DisposeConnection();
             }
         }
+
+        public IPAddress DeviceIP { get; }
 
         protected override void Dispose(bool disposing)
         {

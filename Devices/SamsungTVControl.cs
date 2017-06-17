@@ -16,9 +16,10 @@ namespace Hspi.Devices
 
     internal sealed class SamsungTVControl : DeviceControl
     {
-        public SamsungTVControl(string name, IPAddress DeviceIP, PhysicalAddress macAddress) :
-            base(name, DeviceIP)
+        public SamsungTVControl(string name, IPAddress deviceIP, PhysicalAddress macAddress) :
+            base(name)
         {
+            DeviceIP = deviceIP;
             //"KEY_0", "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6", "KEY_7", "KEY_8", "KEY_9",
             //"KEY_BLUE", "KEY_CH_LIST", "KEY_CHDOWN", "KEY_CHUP", "KEY_CONTENTS",
             //"KEY_DASH", "KEY_DOWN", "KEY_ENTER", "KEY_EXIT", "KEY_FF", "KEY_GREEN", "KEY_INFO", "KEY_LEFT",
@@ -52,6 +53,7 @@ namespace Hspi.Devices
         }
 
         public static TimeSpan DefaultCommandDelay => TimeSpan.FromMilliseconds(500);
+        public IPAddress DeviceIP { get; }
 
         public override bool InvalidState
         {
@@ -211,12 +213,6 @@ namespace Hspi.Devices
             return await NetworkHelper.PingHost(DeviceIP, TVPort, networkPingTimeout, token);
         }
 
-        private async Task SendCommandForId(string commandId, CancellationToken token)
-        {
-            var command = GetCommand(commandId);
-            await SendCommandCore(command.Data, token);
-        }
-
         private async Task SendCommandCore(string commandData, CancellationToken token)
         {
             if (!Connected)
@@ -226,6 +222,12 @@ namespace Hspi.Devices
 
             string commandJson = Invariant($"{{\"method\":\"ms.remote.control\",\"params\":{{\"Cmd\":\"Click\",\"DataOfCmd\":\"{commandData}\",\"Option\":\"false\",\"TypeOfRemote\":\"SendRemoteKey\"}}}}");
             webSocket.Send(commandJson);
+        }
+
+        private async Task SendCommandForId(string commandId, CancellationToken token)
+        {
+            var command = GetCommand(commandId);
+            await SendCommandCore(command.Data, token);
         }
 
         private async Task UpdatePowerFeedbackState(CancellationToken token = default(CancellationToken))
