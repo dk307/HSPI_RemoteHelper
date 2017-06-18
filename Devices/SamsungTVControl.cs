@@ -14,12 +14,11 @@ namespace Hspi.Devices
 {
     using static System.FormattableString;
 
-    internal sealed class SamsungTVControl : DeviceControl
+    internal sealed class SamsungTVControl : IPAddressableDeviceControl
     {
         public SamsungTVControl(string name, IPAddress deviceIP, PhysicalAddress macAddress) :
-            base(name)
+            base(name, deviceIP)
         {
-            DeviceIP = deviceIP;
             //"KEY_0", "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6", "KEY_7", "KEY_8", "KEY_9",
             //"KEY_BLUE", "KEY_CH_LIST", "KEY_CHDOWN", "KEY_CHUP", "KEY_CONTENTS",
             //"KEY_DASH", "KEY_DOWN", "KEY_ENTER", "KEY_EXIT", "KEY_FF", "KEY_GREEN", "KEY_INFO", "KEY_LEFT",
@@ -46,14 +45,8 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.Enter, "KEY_ENTER"));
             AddCommand(new DeviceCommand(CommandName.Exit, "KEY_EXIT"));
 
-            AddCommand(new DeviceCommand(CommandName.MacroGameModeOn));
-            AddCommand(new DeviceCommand(CommandName.MacroGameModeOff));
-
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
         }
-
-        public static TimeSpan DefaultCommandDelay => TimeSpan.FromMilliseconds(500);
-        public IPAddress DeviceIP { get; }
 
         public override bool InvalidState
         {
@@ -87,60 +80,6 @@ namespace Hspi.Devices
 
                 case CommandName.PowerQuery:
                     await UpdatePowerFeedbackState(token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.MacroGameModeOn:
-                    await SendCommandForId(CommandName.Exit, token);
-                    await Task.Delay(DefaultCommandDelay, token);
-                    await SendCommandForId(CommandName.Exit, token);
-                    await Task.Delay(DefaultCommandDelay, token);
-
-                    await SendCommandForId(CommandName.Menu, token).ConfigureAwait(false);
-                    await Task.Delay(750, token).ConfigureAwait(false);
-
-                    string[] commandsOn = { CommandName.CursorRight,
-                                            CommandName.CursorDown,
-                                            CommandName.Enter,
-                                            CommandName.CursorDown,
-                                            CommandName.Enter,
-                                            CommandName.CursorDown,
-                                            CommandName.Enter,
-                                            CommandName.Exit,
-                                           };
-
-                    foreach (string macroCommand in commandsOn)
-                    {
-                        await SendCommandForId(macroCommand, token).ConfigureAwait(false);
-                        await Task.Delay(DefaultCommandDelay, token).ConfigureAwait(false);
-                    }
-
-                    break;
-
-                case CommandName.MacroGameModeOff:
-                    await SendCommandForId(CommandName.Exit, token);
-                    await Task.Delay(DefaultCommandDelay, token);
-                    await SendCommandForId(CommandName.Exit, token);
-                    await Task.Delay(DefaultCommandDelay, token);
-
-                    await SendCommandForId(CommandName.Menu, token).ConfigureAwait(false);
-                    await Task.Delay(750, token).ConfigureAwait(false);
-
-                    string[] commandsOff = { CommandName.CursorRight,
-                                            CommandName.CursorDown,
-                                            CommandName.Enter,
-                                            CommandName.CursorDown,
-                                            CommandName.Enter,
-                                            CommandName.CursorUp,
-                                            CommandName.Enter,
-                                            CommandName.Exit,
-                                           };
-
-                    foreach (string macroCommand in commandsOff)
-                    {
-                        await SendCommandForId(macroCommand, token).ConfigureAwait(false);
-                        await Task.Delay(DefaultCommandDelay, token).ConfigureAwait(false);
-                    }
-
                     break;
 
                 default:
@@ -209,8 +148,8 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             // TV keeps reponding to Pings for 7s after it has been turned off
-            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingHost(DeviceIP, TVPort, networkPingTimeout, token);
+            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
         }
 
         private async Task SendCommandCore(string commandData, CancellationToken token)

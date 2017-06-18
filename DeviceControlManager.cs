@@ -1,16 +1,11 @@
 ﻿using HomeSeerAPI;
-using Hspi.DeviceData;
+using Hspi.Devices;
 using NullGuard;
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Hspi.Connector
 {
-    using Hspi.Devices;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class DeviceControlManager : DeviceControlManagerBase
     {
@@ -19,6 +14,9 @@ namespace Hspi.Connector
         {
             DeviceConfig = deviceConfig;
         }
+
+        public TimeSpan PowerOnDelay => DeviceConfig.PowerOnDelay;
+        public TimeSpan DefaultCommandDelay => DeviceConfig.DefaultCommandDelay;
 
         public DeviceControlConfig DeviceConfig { get; }
 

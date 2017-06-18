@@ -57,5 +57,10 @@
         public const string VolumeUp = "Volume Up";
         public const string MacroTurnOnNvidiaShield = "Macro - Turn On Nvidia Shield";
         public const string MacroTurnOffEverything = "Macro - Turn Off Everything";
+        public const string ChangeInputMPLAY = "Change Input - MPLAY";
+        public const string MacroStartVolumeUpLoop = "Macro - Volume Up Loop Start";
+        public const string MacroStartVolumeDownLoop = "Macro - Volume Down Loop Start";
+        public const string MacroStopVolumeLoop = "Macro - Volume Loop Stop";
+        public const string MacroToggleMute = "Macro - Toogle Mute";
     }
 }

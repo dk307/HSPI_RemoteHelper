@@ -17,5 +17,6 @@
         public const string SubwooferAdjustLevel = "Subwoofer Adjust Level";
         public const string SubwooferAdjustMode = "Subwoofer Adjust Mode";
         public const string Volume = "Volume Status";
+        public const string TVGameMode = "TV Game Mode";
     }
 }

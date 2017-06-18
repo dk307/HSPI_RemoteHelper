@@ -40,16 +40,15 @@ namespace Hspi.Devices
         KEYCODE_WAKEUP = 224,
     };
 
-    internal sealed class ADBRemoteControl : DeviceControl
+    internal sealed class ADBRemoteControl : IPAddressableDeviceControl
     {
         public ADBRemoteControl(string name, IPAddress deviceIP, string adbPath) :
-            base(name)
+            base(name, deviceIP)
         {
             if (!File.Exists(adbPath))
             {
                 throw new FileNotFoundException(Invariant($"ADB Exe {adbPath} not found"), adbPath);
             }
-            DeviceIP = deviceIP;
 
             this.adbPath = adbPath;
             //AddCommand(new ADBShellDeviceCommand(CommandName.Menu, AdbShellKeys.KEYCODE_MENU));
@@ -74,6 +73,7 @@ namespace Hspi.Devices
             AddCommand(new ADBShellDeviceCommand(CommandName.MediaStop, AdbShellKeys.KEYCODE_MEDIA_STOP));
             AddCommand(new ADBShellDeviceCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP));
             AddCommand(new ADBShellDeviceCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
+            AddCommand(new ADBShellDeviceCommand(CommandName.PowerQuery, string.Empty));
             AddCommand(new ADBShellDeviceCommand(CommandName.Return, AdbShellKeys.KEYCODE_ESCAPE));
             AddCommand(new ADBShellDeviceCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS));
 
@@ -88,6 +88,7 @@ namespace Hspi.Devices
                                                  @"com.amazon.amazonvideo.livingroom.nvidia", @"com.amazon.ignition.IgnitionActivity"));
             AddCommand(new ADBShellDeviceCommand(CommandName.LaunchPBSKids, @"org.pbskids.video"));
 
+            AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.ScreenSaverRunning, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.CurrentApplication, TypeCode.String));
@@ -127,8 +128,6 @@ namespace Hspi.Devices
             }
         }
 
-        public IPAddress DeviceIP { get; }
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -136,6 +135,12 @@ namespace Hspi.Devices
                 DisposeConnection();
             }
             base.Dispose(disposing);
+        }
+
+        private async Task<bool> CheckScreenOn(CancellationToken token)
+        {
+            string output = await SendCommandCore("dumpsys power | grep \"Display Power\"", token).ConfigureAwait(false);
+            return output.Contains("state=ON");
         }
 
         private async Task<SharpAdbClient.DeviceData> Connect(CancellationToken token)
@@ -196,7 +201,7 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingHost(DeviceIP, AdbClient.DefaultPort, networkPingTimeout, token);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
         }
 
         private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
@@ -213,9 +218,17 @@ namespace Hspi.Devices
             string output;
             switch (command.Id)
             {
+                case CommandName.PowerQuery:
+                    if (!await IsPoweredOn(token))
+                    {
+                        UpdateFeedback(FeedbackName.Power, false);
+                        break;
+                    }
+                    UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token));
+                    break;
+
                 case CommandName.ScreenQuery:
-                    output = await SendCommandCore("dumpsys power | grep \"Display Power\"", token).ConfigureAwait(false);
-                    UpdateFeedback(FeedbackName.Screen, output.Contains("state=ON"));
+                    UpdateFeedback(FeedbackName.Screen, await CheckScreenOn(token));
                     break;
 
                 case CommandName.ScreenSaveRunningQuery:
@@ -294,12 +307,12 @@ namespace Hspi.Devices
             }
         }
 
+        private static readonly Regex windowRegEx = new Regex(@"mCurrentFocus=Window{(?<id>.+?) (?<user>.+) (?<package>.+?)(?:\/(?<activity>.+?))?}",
+                                                              RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
         private readonly string adbPath;
         private AdbClient adbClient;
         private DeviceMonitor monitor;
-
-        private static readonly Regex windowRegEx = new Regex(@"mCurrentFocus=Window{(?<id>.+?) (?<user>.+) (?<package>.+?)(?:\/(?<activity>.+?))?}",
-                                                              RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
     }
 
     internal class ADBShellDeviceCommand : DeviceCommand

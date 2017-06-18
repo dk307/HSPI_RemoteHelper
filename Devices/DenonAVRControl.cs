@@ -12,12 +12,11 @@ namespace Hspi.Devices
 {
     using static System.FormattableString;
 
-    internal sealed class DenonAVRControl : DeviceControl
+    internal sealed class DenonAVRControl : IPAddressableDeviceControl
     {
         public DenonAVRControl(string name, IPAddress deviceIP) :
-            base(name)
+            base(name, deviceIP)
         {
-            DeviceIP = deviceIP;
             AddCommand(new DeviceCommand(CommandName.InputStatusQuery, "SI?"));
             AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOff, "PSDIL OFF"));
             AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOn, "PSDIL ON"));
@@ -36,6 +35,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MuteOff, "MUOFF"));
             AddCommand(new DeviceCommand(CommandName.MuteQuery, "MU?"));
             AddCommand(new DeviceCommand(CommandName.AudysseyQuery, "PSMULTEQ: ?"));
+            AddCommand(new DeviceCommand(CommandName.ChangeInputMPLAY, "SIMPLAY"));
             //AddCommand(new DeviceCommand(CommandName.TesT, "PSCES OFF"));
 
             AddCommand(new DeviceCommand(CommandName.AllStatusQuery, string.Empty));
@@ -52,20 +52,17 @@ namespace Hspi.Devices
             AddFeedback(new DeviceFeedback(FeedbackName.Audyssey, TypeCode.String));
         }
 
-        public IPAddress DeviceIP { get; }
-
         public static TimeSpan DefaultCommandDelay => TimeSpan.FromMilliseconds(100);
 
         public override bool InvalidState
         {
             get
             {
-                if (!connectionAttempted)
+                if (client != null)
                 {
-                    return false;
+                    return !client.Connected;
                 }
-
-                return !client.Connected;
+                return false;
             }
         }
 
@@ -380,7 +377,6 @@ namespace Hspi.Devices
         private readonly Encoding encoding = Encoding.ASCII;
         private TcpClient client;
         private CancellationTokenSource combinedStopTokenSource;
-        private bool connectionAttempted = false;
         private CancellationTokenSource stopTokenSource;
         private NetworkStream stream;
     }

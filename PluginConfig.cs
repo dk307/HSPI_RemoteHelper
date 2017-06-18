@@ -26,11 +26,9 @@ namespace Hspi
 
             debugLogging = GetValue(DebugLoggingKey, false);
 
-            //TODO:: Move this to Config class
-            LoadDeviceConfig(DeviceType.SamsungTV, new string[] { DeviceControlConfig.PhysicalAddressId });
-            LoadDeviceConfig(DeviceType.DenonAVR, new string[] { });
-            LoadDeviceConfig(DeviceType.ADBRemoteControl, new string[] { DeviceControlConfig.ADBPathId });
-            LoadDeviceConfig(DeviceType.GlobalMacros, new string[] { }, true);
+            LoadDeviceConfig(DeviceType.SamsungTV);
+            LoadDeviceConfig(DeviceType.DenonAVR);
+            LoadDeviceConfig(DeviceType.ADBRemoteControl);
         }
 
         public event EventHandler<EventArgs> ConfigChanged;
@@ -155,17 +153,17 @@ namespace Hspi
             return defaultValue;
         }
 
-        private void LoadDeviceConfig(DeviceType deviceType, IEnumerable<string> additionalValuesKeys, bool forceEnabled = false)
+        private void LoadDeviceConfig(DeviceType deviceType)
         {
             string deviceId = deviceType.ToString();
 
             string name = GetValue(DeviceNameId, string.Empty, deviceId);
             string ipAddressString = GetValue(DeviceIPId, string.Empty, deviceId);
-            bool enabled = forceEnabled || GetValue(EnabledId, false, deviceId);
+            bool enabled = GetValue(EnabledId, false, deviceId);
             IPAddress.TryParse(ipAddressString, out var deviceIP);
 
             var additionalValues = new Dictionary<string, string>();
-            foreach (var key in additionalValuesKeys)
+            foreach (var key in DeviceControlConfig.GetRequiredAdditionalValues(deviceType))
             {
                 string value = GetValue(key, string.Empty, deviceId);
                 additionalValues.Add(key, value);

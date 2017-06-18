@@ -10,18 +10,17 @@ namespace Hspi.Connector
     internal class GlobalMacrosDeviceControlManager : DeviceControlManagerBase
     {
         public GlobalMacrosDeviceControlManager(IHSApplication HS, ILogger logger,
-                    IReadOnlyDictionary<DeviceType, DeviceControlManagerBase> connection, CancellationToken shutdownToken) :
-            base(HS, logger, Name, DeviceType.GlobalMacros, shutdownToken)
+                    IReadOnlyDictionary<DeviceType, DeviceControlManager> connection, CancellationToken shutdownToken) :
+            base(HS, logger, "Global Macros", DeviceType.GlobalMacros, shutdownToken)
         {
-            this.connection = connection;
+            this.connections = connection;
         }
 
         public override DeviceControl Create()
         {
-            return new GlobalMacros(Name, connection);
+            return new GlobalMacros(Name, connections);
         }
 
-        private const string Name = "Global Macros";
-        private readonly IReadOnlyDictionary<DeviceType, DeviceControlManagerBase> connection;
+        private readonly IReadOnlyDictionary<DeviceType, DeviceControlManager> connections;
     }
 }

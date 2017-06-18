@@ -7,6 +7,7 @@ using Scheduler.Classes;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Linq;
 
 namespace Hspi
 {
@@ -181,6 +182,10 @@ namespace Hspi
                     if (connectorManager.TryGetValue(device.Key, out var oldConnectorBase))
                     {
                         var oldConnector = oldConnectorBase as DeviceControlManager;
+                        if (oldConnector == null)
+                        {
+                            continue;
+                        }
                         if (!device.Value.Equals(oldConnector.DeviceConfig))
                         {
                             changed = true;
@@ -211,7 +216,7 @@ namespace Hspi
                     connectorManager[DeviceType.GlobalMacros] =
                            new GlobalMacrosDeviceControlManager(HS,
                                                                 this as ILogger,
-                                                                new Dictionary<DeviceType, DeviceControlManagerBase>(connectorManager),
+                                                                connectorManager.Select((x) => (DeviceControlManager)x.Value).ToDictionary(x => x.DeviceType),
                                                                 ShutdownCancellationToken);
                 }
             }

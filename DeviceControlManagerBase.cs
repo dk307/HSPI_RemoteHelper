@@ -14,19 +14,22 @@ namespace Hspi.Connector
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControlManagerBase : IDisposable
     {
+        public string Name { get; }
+
         public DeviceControlManagerBase(IHSApplication HS, ILogger logger, string name,
                                         DeviceType deviceType, CancellationToken shutdownToken)
         {
+            Name = name;
             DeviceType = deviceType;
             this.HS = HS;
             this.logger = logger;
             rootDeviceData = new DeviceRootDeviceManager(name, deviceType, this.HS, logger);
             combinedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken, instanceCancellationSource.Token);
-            Task.Factory.StartNew(UpdateDevices, Token, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+            Task.Factory.StartNew(UpdateDevices, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
         }
 
-        private CancellationToken Token => combinedCancellationSource.Token;
-        private DeviceType DeviceType { get; }
+        private CancellationToken ShutdownToken => combinedCancellationSource.Token;
+        public DeviceType DeviceType { get; }
 
         public void Cancel()
         {
@@ -40,26 +43,60 @@ namespace Hspi.Connector
             Dispose(true);
         }
 
+        public object GetFeedbackValue(string feedbackName)
+        {
+            if (feedbackValues.TryGetValue(feedbackName, out var value))
+            {
+                return value;
+            }
+
+            return null;
+        }
+
         public async Task HandleCommand([AllowNull]DeviceIdentifier deviceIdentifier, double value)
         {
-            await deviceActionLock.WaitAsync(Token);
+            await deviceActionLock.WaitAsync(ShutdownToken);
             try
             {
-                if (connector != null)
-                {
-                    if (connector.InvalidState)
-                    {
-                        DestroyConnection();
-                    }
-                }
+                CheckConnection();
 
-                if (connector == null)
-                {
-                    connector = Create();
-                    connector.FeedbackChanged += Connector_FeedbackChanged;
-                }
+                await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, ShutdownToken);
+            }
+            finally
+            {
+                deviceActionLock.Release();
+            }
+        }
 
-                await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, Token);
+        public async Task HandleCommand(string commandId, CancellationToken token)
+        {
+            var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
+
+            await deviceActionLock.WaitAsync(finalToken);
+            try
+            {
+                CheckConnection();
+
+                var command = connector.GetCommand(commandId);
+                await connector.ExecuteCommand(command, finalToken);
+            }
+            finally
+            {
+                deviceActionLock.Release();
+            }
+        }
+
+        public async Task HandleCommand(string feedbackName, object value, CancellationToken token)
+        {
+            var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
+
+            await deviceActionLock.WaitAsync(finalToken);
+            try
+            {
+                CheckConnection();
+
+                var feedback = connector.GetFeedback(feedbackName);
+                await connector.ExecuteCommand(new FeedbackValue(feedback, value), finalToken);
             }
             finally
             {
@@ -86,9 +123,27 @@ namespace Hspi.Connector
             }
         }
 
+        private void CheckConnection()
+        {
+            if (connector != null)
+            {
+                if (connector.InvalidState)
+                {
+                    DestroyConnection();
+                }
+            }
+
+            if (connector == null)
+            {
+                connector = Create();
+                connector.FeedbackChanged += Connector_FeedbackChanged;
+            }
+        }
+
         private void Connector_FeedbackChanged(object sender, FeedbackValue changedFeedback)
         {
             changedFeedbacks.Add(changedFeedback);
+            feedbackValues[changedFeedback.Feedback.Id] = changedFeedback.Value;
         }
 
         private void DestroyConnection()
@@ -113,7 +168,7 @@ namespace Hspi.Connector
 
         private async Task UpdateDevices()
         {
-            await deviceActionLock.WaitAsync(Token).ConfigureAwait(false);
+            await deviceActionLock.WaitAsync(ShutdownToken).ConfigureAwait(false);
             try
             {
                 using (var deviceControl = Create())
@@ -129,11 +184,10 @@ namespace Hspi.Connector
                 deviceActionLock.Release();
             }
 
-            while (!Token.IsCancellationRequested)
+            while (!ShutdownToken.IsCancellationRequested)
             {
-                if (changedFeedbacks.TryTake(out var feedbackData, -1, Token))
+                if (changedFeedbacks.TryTake(out var feedbackData, -1, ShutdownToken))
                 {
-                    await deviceActionLock.WaitAsync(Token).ConfigureAwait(false);
                     try
                     {
                         rootDeviceData.ProcessFeedback(feedbackData);
@@ -142,10 +196,6 @@ namespace Hspi.Connector
                     {
                         logger.LogWarning(Invariant($"Failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
                     }
-                    finally
-                    {
-                        deviceActionLock.Release();
-                    }
                 }
             }
         }
@@ -153,11 +203,13 @@ namespace Hspi.Connector
         private readonly BlockingCollection<FeedbackValue> changedFeedbacks = new BlockingCollection<FeedbackValue>();
         private readonly CancellationTokenSource combinedCancellationSource;
         private readonly SemaphoreSlim deviceActionLock = new SemaphoreSlim(1);
+        private readonly ConcurrentDictionary<string, object> feedbackValues = new ConcurrentDictionary<string, object>();
         private readonly IHSApplication HS;
         private readonly CancellationTokenSource instanceCancellationSource = new CancellationTokenSource();
         private readonly ILogger logger;
         private readonly DeviceRootDeviceManager rootDeviceData;
         private DeviceControl connector;
+
         private bool disposedValue = false; // To detect redundant calls
     }
 }

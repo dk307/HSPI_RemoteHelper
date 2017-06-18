@@ -157,8 +157,10 @@
     <Compile Include="Devices\DeviceFeedback.cs" />
     <Compile Include="Devices\DevicePoweredOffException.cs" />
     <Compile Include="Devices\FeedbackName.cs" />
+    <Compile Include="Devices\FeedbackNotFoundException.cs" />
     <Compile Include="Devices\FeedbackValue.cs" />
     <Compile Include="Devices\GlobalMacros.cs" />
+    <Compile Include="Devices\IPAddressableDeviceControl.cs" />
     <Compile Include="Devices\SamsungTVControl.cs" />
     <Compile Include="Devices\SettableRangedDeviceFeedback.cs" />
     <Compile Include="EnumHelper.cs" />

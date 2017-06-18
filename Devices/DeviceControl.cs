@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Hspi.Devices
 {
@@ -33,26 +34,43 @@ namespace Hspi.Devices
         public abstract bool InvalidState { get; }
         public string Name { get; }
 
-        // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-
         public virtual async Task ExecuteCommand(DeviceCommand command, CancellationToken token = default(CancellationToken))
         {
+            await Task.Delay(0);
             throw new NotImplementedException();
         }
 
         public virtual async Task ExecuteCommand(FeedbackValue value, CancellationToken token)
         {
+            await Task.Delay(0);
             throw new NotImplementedException();
         }
 
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+        public DeviceCommand GetCommand(string id)
+        {
+            if (commands.TryGetValue(id, out var command))
+            {
+                return command;
+            }
+
+            throw new CommandNotFoundException(Invariant($"{id} command Not found in {Name}"));
+        }
+
+        internal DeviceFeedback GetFeedback(string feedbackName)
+        {
+            if (feedbacks.TryGetValue(feedbackName, out var feedback))
+            {
+                return feedback;
+            }
+
+            throw new FeedbackNotFoundException(Invariant($"{feedback} command Not found in {Name}"));
+        }
 
         protected void AddCommand(DeviceCommand command) => commands.Add(command);
 
@@ -70,36 +88,30 @@ namespace Hspi.Devices
             }
         }
 
-        protected DeviceCommand GetCommand(string id)
-        {
-            if (commands.TryGetValue(id, out var command))
-            {
-                return command;
-            }
-
-            throw new CommandNotFoundException(Invariant($"{id} command Not found in {Name}"));
-        }
-
         protected void UpdateConnectedState(bool value)
         {
+            Trace.WriteLine(Invariant($"Updating Connected State for {Name} to {value}"));
+
             connected = value;
             UpdateFeedback(FeedbackName.Connection, value);
         }
 
         protected void UpdateFeedback(string feedbackName, object value)
         {
+            Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to {value}"));
             if (feedbacks.TryGetValue(feedbackName, out var feedback))
             {
                 FeedbackChanged?.Invoke(this, new FeedbackValue(feedback, value));
             }
+            else
+            {
+                Trace.WriteLine(Invariant($"Unknown Feedback {feedbackName} for {Name}"));
+            }
         }
 
         private readonly DeviceCommandCollection commands = new DeviceCommandCollection();
-
         private readonly DeviceFeedbackCollection feedbacks = new DeviceFeedbackCollection();
-
         private bool connected = false;
-
         private bool disposedValue = false;
 
         internal class DeviceCommandCollection : KeyedCollection<string, DeviceCommand>
