@@ -198,7 +198,6 @@ namespace Hspi.Connector
                 deviceActionLock.Release();
             }
 
-            Task.
             Task.Factory.StartNew(ProcessFeedbacks, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
             Task.Factory.StartNew(ProcessCommands, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
         }
