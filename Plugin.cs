@@ -195,6 +195,7 @@ namespace Hspi
                             {
                                 connectorManager[device.Key] =
                                         new DeviceControlManager(HS, device.Value, this as ILogger, ShutdownCancellationToken);
+                                connectorManager[device.Key].Start();
                             }
                         }
                     }
@@ -205,6 +206,7 @@ namespace Hspi
                             changed = true;
                             connectorManager[device.Key] =
                                     new DeviceControlManager(HS, device.Value, this as ILogger, ShutdownCancellationToken);
+                            connectorManager[device.Key].Start();
                         }
                     }
                 }
@@ -218,6 +220,7 @@ namespace Hspi
                                                                 this as ILogger,
                                                                 connectorManager.Select((x) => (DeviceControlManager)x.Value).ToDictionary(x => x.DeviceType),
                                                                 ShutdownCancellationToken);
+                    connectorManager[DeviceType.GlobalMacros].Start();
                 }
             }
         }

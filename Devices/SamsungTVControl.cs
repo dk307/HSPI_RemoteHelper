@@ -9,15 +9,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocket4Net;
+using NullGuard;
 
 namespace Hspi.Devices
 {
+    using Nito.AsyncEx;
     using static System.FormattableString;
 
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class SamsungTVControl : IPAddressableDeviceControl
     {
-        public SamsungTVControl(string name, IPAddress deviceIP, PhysicalAddress macAddress) :
-            base(name, deviceIP)
+        public SamsungTVControl(string name, IPAddress deviceIP, PhysicalAddress macAddress, TimeSpan defaultCommandDelay) :
+            base(name, deviceIP, defaultCommandDelay)
         {
             //"KEY_0", "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6", "KEY_7", "KEY_8", "KEY_9",
             //"KEY_BLUE", "KEY_CH_LIST", "KEY_CHDOWN", "KEY_CHUP", "KEY_CONTENTS",
@@ -154,13 +157,16 @@ namespace Hspi.Devices
 
         private async Task SendCommandCore(string commandData, CancellationToken token)
         {
-            if (!Connected)
+            using (await connectionLock.LockAsync(token).ConfigureAwait(false))
             {
-                await Connect(token).ConfigureAwait(false);
-            }
+                if (!Connected)
+                {
+                    await Connect(token).ConfigureAwait(false);
+                }
 
-            string commandJson = Invariant($"{{\"method\":\"ms.remote.control\",\"params\":{{\"Cmd\":\"Click\",\"DataOfCmd\":\"{commandData}\",\"Option\":\"false\",\"TypeOfRemote\":\"SendRemoteKey\"}}}}");
-            webSocket.Send(commandJson);
+                string commandJson = Invariant($"{{\"method\":\"ms.remote.control\",\"params\":{{\"Cmd\":\"Click\",\"DataOfCmd\":\"{commandData}\",\"Option\":\"false\",\"TypeOfRemote\":\"SendRemoteKey\"}}}}");
+                webSocket.Send(commandJson);
+            }
         }
 
         private async Task SendCommandForId(string commandId, CancellationToken token)
@@ -223,6 +229,7 @@ namespace Hspi.Devices
         private readonly TaskCompletionSource<bool> connectedSource = new TaskCompletionSource<bool>();
         private string AppName = "HomeSeer";
         private WebSocket webSocket;
+        private readonly AsyncLock connectionLock = new AsyncLock();
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
         [DataContract]

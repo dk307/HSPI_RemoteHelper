@@ -18,15 +18,13 @@ namespace Hspi.Devices
             base(name)
         {
             this.connections = connections;
-            AddCommand(new DeviceCommand(CommandName.MacroTurnOnNvidiaShield));
-            AddCommand(new DeviceCommand(CommandName.MacroTurnOffEverything));
-            AddCommand(new DeviceCommand(CommandName.MacroGameModeOn));
-            AddCommand(new DeviceCommand(CommandName.MacroGameModeOff));
-            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeUpLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeDownLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroToggleMute));
+            AddCommand(new DeviceCommand(CommandName.MacroTurnOnNvidiaShield, type: DeviceCommandType.Both));
+            AddCommand(new DeviceCommand(CommandName.MacroTurnOffEverything, type: DeviceCommandType.Both));
+            AddCommand(new DeviceCommand(CommandName.MacroGameModeOn, type: DeviceCommandType.Both));
+            AddCommand(new DeviceCommand(CommandName.MacroGameModeOff, type: DeviceCommandType.Both));
+            AddCommand(new DeviceCommand(CommandName.MacroToggleMute, type: DeviceCommandType.Both));
 
+            AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.TVGameMode, TypeCode.Boolean));
         }
@@ -37,11 +35,14 @@ namespace Hspi.Devices
         {
             Trace.WriteLine(Invariant($"Executing {command.Id} "));
 
-            UpdateConnectedState(true);
-            ClearStatus();
+            UpdateFeedback(FeedbackName.RunningMacro, command.Id);
+            UpdateCommand(command);
+            UpdateStatus($"{command.Id}");
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
+
+            await Task.Delay(1000);
             try
             {
                 CancellationTokenSource timeoutTokenSource = new CancellationTokenSource();
@@ -65,18 +66,6 @@ namespace Hspi.Devices
                         await MacroTurnGameMode(false, timeoutToken).ConfigureAwait(false);
                         break;
 
-                    case CommandName.MacroStartVolumeUpLoop:
-                        MacroStartAVRCommandLoop(CommandName.VolumeUp);
-                        break;
-
-                    case CommandName.MacroStartVolumeDownLoop:
-                        MacroStartAVRCommandLoop(CommandName.VolumeDown);
-                        break;
-
-                    case CommandName.MacroStopVolumeLoop:
-                        MacroStopAVRCommandLoop();
-                        break;
-
                     case CommandName.MacroToggleMute:
                         await MacroToggleMute(token).ConfigureAwait(false);
                         break;
@@ -86,6 +75,8 @@ namespace Hspi.Devices
             finally
             {
                 ClearStatus();
+                UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
+                UpdateCommand(ConnectCommand);
             }
         }
 
@@ -182,36 +173,6 @@ namespace Hspi.Devices
                 await Task.Run(action).ConfigureAwait(false);
             }
             catch { }
-        }
-
-        private void MacroStartAVRCommandLoop(string commandId)
-        {
-            if (avrCommandLoopCancel != null)
-            {
-                avrCommandLoopCancel.Cancel();
-            }
-            avrCommandLoopCancel = new CancellationTokenSource();
-            var avr = GetConnection(DeviceType.DenonAVR);
-
-            var token = avrCommandLoopCancel.Token;
-
-            Task.Run(async () =>
-            {
-                while (!avrCommandLoopCancel.IsCancellationRequested)
-                {
-                    await avr.HandleCommand(commandId, token).ConfigureAwait(false);
-                    await Task.Delay(avr.DefaultCommandDelay.Add(TimeSpan.FromMilliseconds(100)), token).ConfigureAwait(false);
-                }
-            });
-        }
-
-        private void MacroStopAVRCommandLoop()
-        {
-            if (avrCommandLoopCancel != null)
-            {
-                avrCommandLoopCancel.Cancel();
-                avrCommandLoopCancel = null;
-            }
         }
 
         private async Task MacroTurnGameMode(bool on, CancellationToken timeoutToken)
@@ -353,6 +314,5 @@ namespace Hspi.Devices
         }
 
         private readonly IReadOnlyDictionary<DeviceType, DeviceControlManager> connections;
-        private CancellationTokenSource avrCommandLoopCancel;
     }
 }

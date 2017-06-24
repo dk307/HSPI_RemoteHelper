@@ -1,6 +1,9 @@
-﻿using SharpAdbClient;
+﻿using Nito.AsyncEx;
+using NullGuard;
+using SharpAdbClient;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -9,7 +12,6 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
-    using System.IO;
     using static System.FormattableString;
 
     internal enum AdbShellKeys
@@ -40,10 +42,11 @@ namespace Hspi.Devices
         KEYCODE_WAKEUP = 224,
     };
 
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class ADBRemoteControl : IPAddressableDeviceControl
     {
-        public ADBRemoteControl(string name, IPAddress deviceIP, string adbPath) :
-            base(name, deviceIP)
+        public ADBRemoteControl(string name, IPAddress deviceIP, string adbPath, TimeSpan defaultCommandDelay) :
+            base(name, deviceIP, defaultCommandDelay)
         {
             if (!File.Exists(adbPath))
             {
@@ -88,6 +91,18 @@ namespace Hspi.Devices
                                                  @"com.amazon.amazonvideo.livingroom.nvidia", @"com.amazon.ignition.IgnitionActivity"));
             AddCommand(new ADBShellDeviceCommand(CommandName.LaunchPBSKids, @"org.pbskids.video"));
 
+            AddCommand(new DeviceCommand(CommandName.MacroStartCursorDownLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartCursorLeftLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartCursorRightLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartCursorUpLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStopCursorLoop));
+
+            AddCommand(new DeviceCommand(CommandName.MacroStartRewindLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartFastForwardLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartSkipBackwardLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartSkipForwardLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStopMediaControlLoop));
+
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.ScreenSaverRunning, TypeCode.Boolean));
@@ -115,6 +130,8 @@ namespace Hspi.Devices
             }
         }
 
+        private static TimeSpan LoopCommandDelay => TimeSpan.FromMilliseconds(100);
+
         public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
             try
@@ -122,9 +139,10 @@ namespace Hspi.Devices
                 Trace.WriteLine(Invariant($"Sending {command.Id} to Andriod Device {Name} on {DeviceIP}"));
                 await SendCommand(command, token).ConfigureAwait(false);
             }
-            finally
+            catch
             {
                 DisposeConnection();
+                throw;
             }
         }
 
@@ -175,6 +193,8 @@ namespace Hspi.Devices
 
         private void DisposeConnection()
         {
+            cursorLoopCancelSource?.Cancel();
+            mediaControlLoopCancelSource?.Cancel();
             if (adbClient != null)
             {
                 monitor?.Dispose();
@@ -184,7 +204,7 @@ namespace Hspi.Devices
 
         private SharpAdbClient.DeviceData GetOnlineDevice()
         {
-            var device = adbClient.GetDevices().Where((x) =>
+            var device = adbClient?.GetDevices()?.Where((x) =>
                             x.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal)).SingleOrDefault();
 
             if (device != null)
@@ -204,6 +224,16 @@ namespace Hspi.Devices
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
         }
 
+        private void MacroCursorLoop(string commandId)
+        {
+            MacroStartCommandLoop(commandId, LoopCommandDelay, ref cursorLoopCancelSource);
+        }
+
+        private void MacroMediaControlLoop(string commandId)
+        {
+            MacroStartCommandLoop(commandId, LoopCommandDelay, ref mediaControlLoopCancelSource);
+        }
+
         private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
             if (e.Device.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal))
@@ -218,6 +248,46 @@ namespace Hspi.Devices
             string output;
             switch (command.Id)
             {
+                case CommandName.MacroStartCursorDownLoop:
+                    MacroCursorLoop(CommandName.CursorDown);
+                    break;
+
+                case CommandName.MacroStartCursorUpLoop:
+                    MacroCursorLoop(CommandName.CursorUp);
+                    break;
+
+                case CommandName.MacroStartCursorRightLoop:
+                    MacroCursorLoop(CommandName.CursorRight);
+                    break;
+
+                case CommandName.MacroStartCursorLeftLoop:
+                    MacroCursorLoop(CommandName.CursorLeft);
+                    break;
+
+                case CommandName.MacroStopCursorLoop:
+                    MacroStopCommandLoop(ref cursorLoopCancelSource);
+                    break;
+
+                case CommandName.MacroStartRewindLoop:
+                    MacroMediaControlLoop(CommandName.MediaRewind);
+                    break;
+
+                case CommandName.MacroStartFastForwardLoop:
+                    MacroMediaControlLoop(CommandName.MediaFastForward);
+                    break;
+
+                case CommandName.MacroStartSkipBackwardLoop:
+                    MacroMediaControlLoop(CommandName.MediaSkipBackward);
+                    break;
+
+                case CommandName.MacroStartSkipForwardLoop:
+                    MacroMediaControlLoop(CommandName.MediaSkipForward);
+                    break;
+
+                case CommandName.MacroStopMediaControlLoop:
+                    MacroStopCommandLoop(ref mediaControlLoopCancelSource);
+                    break;
+
                 case CommandName.PowerQuery:
                     if (!await IsPoweredOn(token))
                     {
@@ -265,35 +335,38 @@ namespace Hspi.Devices
 
         private async Task<string> SendCommandCore(string commandData, CancellationToken token)
         {
-            if (!Connected)
+            using (await connectionLock.LockAsync(token).ConfigureAwait(false))
             {
-                await Connect(token).ConfigureAwait(false);
+                if (!Connected)
+                {
+                    await Connect(token).ConfigureAwait(false);
+                }
+
+                var receiver = new ConsoleOutputReceiver()
+                {
+                    TrimLines = true
+                };
+
+                var device = GetOnlineDevice();
+
+                if (device == null)
+                {
+                    UpdateConnectedState(false);
+                    throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
+                }
+
+                await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, token, 1000);
+
+                string output = receiver.ToString();
+
+                if (string.IsNullOrEmpty(output))
+                {
+                    Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:{output}"));
+                }
+
+                receiver.ThrowOnError(output);
+                return output;
             }
-
-            var receiver = new ConsoleOutputReceiver()
-            {
-                TrimLines = true
-            };
-
-            var device = GetOnlineDevice();
-
-            if (device == null)
-            {
-                UpdateConnectedState(false);
-                throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
-            }
-
-            await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, token, 1000);
-
-            string output = receiver.ToString();
-
-            if (string.IsNullOrEmpty(output))
-            {
-                Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:{output}"));
-            }
-
-            receiver.ThrowOnError(output);
-            return output;
         }
 
         private void StartServer()
@@ -311,7 +384,10 @@ namespace Hspi.Devices
                                                               RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
         private readonly string adbPath;
+        private readonly AsyncLock connectionLock = new AsyncLock();
         private AdbClient adbClient;
+        private CancellationTokenSource cursorLoopCancelSource;
+        private CancellationTokenSource mediaControlLoopCancelSource;
         private DeviceMonitor monitor;
     }
 

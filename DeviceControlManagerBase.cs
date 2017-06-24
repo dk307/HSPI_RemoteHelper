@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Nito.AsyncEx;
 
 namespace Hspi.Connector
 {
@@ -25,6 +26,10 @@ namespace Hspi.Connector
             this.logger = logger;
             rootDeviceData = new DeviceRootDeviceManager(name, deviceType, this.HS, logger);
             combinedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken, instanceCancellationSource.Token);
+        }
+
+        public void Start()
+        {
             Task.Factory.StartNew(UpdateDevices, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
         }
 
@@ -114,6 +119,7 @@ namespace Hspi.Connector
                     instanceCancellationSource.Dispose();
                     combinedCancellationSource.Dispose();
                     changedFeedbacks.Dispose();
+                    changedCommands.Dispose();
 
                     DisposeConnector();
                     deviceActionLock.Dispose();
@@ -137,7 +143,13 @@ namespace Hspi.Connector
             {
                 connector = Create();
                 connector.FeedbackChanged += Connector_FeedbackChanged;
+                connector.CommandChanged += Connector_CommandChanged;
             }
+        }
+
+        private void Connector_CommandChanged(object sender, DeviceCommand command)
+        {
+            changedCommands.Add(command);
         }
 
         private void Connector_FeedbackChanged(object sender, FeedbackValue changedFeedback)
@@ -159,10 +171,12 @@ namespace Hspi.Connector
         {
             if (connector != null)
             {
+                connector.CommandChanged -= Connector_CommandChanged;
                 connector.FeedbackChanged -= Connector_FeedbackChanged;
                 connector.Dispose();
                 connector = null;
-                rootDeviceData.UpdateConnectionStatus(false);
+
+                changedCommands.Add(DeviceControl.NotConnectedCommand);
             }
         }
 
@@ -177,13 +191,20 @@ namespace Hspi.Connector
                                                          deviceControl.Feedbacks);
                 }
 
-                rootDeviceData.UpdateConnectionStatus(false);
+                changedCommands.Add(DeviceControl.NotConnectedCommand);
             }
             finally
             {
                 deviceActionLock.Release();
             }
 
+            Task.
+            Task.Factory.StartNew(ProcessFeedbacks, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+            Task.Factory.StartNew(ProcessCommands, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+        }
+
+        private void ProcessFeedbacks()
+        {
             while (!ShutdownToken.IsCancellationRequested)
             {
                 if (changedFeedbacks.TryTake(out var feedbackData, -1, ShutdownToken))
@@ -200,6 +221,25 @@ namespace Hspi.Connector
             }
         }
 
+        private void ProcessCommands()
+        {
+            while (!ShutdownToken.IsCancellationRequested)
+            {
+                if (changedCommands.TryTake(out var command, -1, ShutdownToken))
+                {
+                    try
+                    {
+                        rootDeviceData.ProcessCommand(command);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(Invariant($"Failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                    }
+                }
+            }
+        }
+
+        private readonly BlockingCollection<DeviceCommand> changedCommands = new BlockingCollection<DeviceCommand>();
         private readonly BlockingCollection<FeedbackValue> changedFeedbacks = new BlockingCollection<FeedbackValue>();
         private readonly CancellationTokenSource combinedCancellationSource;
         private readonly SemaphoreSlim deviceActionLock = new SemaphoreSlim(1);

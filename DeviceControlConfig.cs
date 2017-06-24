@@ -66,14 +66,16 @@ namespace Hspi
             {
                 case DeviceType.SamsungTV:
                     return new SamsungTVControl(Name, DeviceIP,
-                                                PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]));
+                                                PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
+                                                DefaultCommandDelay);
 
                 case DeviceType.ADBRemoteControl:
                     return new ADBRemoteControl(Name, DeviceIP,
-                                                AdditionalValues[ADBPathId]);
+                                                AdditionalValues[ADBPathId],
+                                                DefaultCommandDelay);
 
                 case DeviceType.DenonAVR:
-                    return new DenonAVRControl(Name, DeviceIP);
+                    return new DenonAVRControl(Name, DeviceIP, DefaultCommandDelay);
             }
 
             throw new KeyNotFoundException();

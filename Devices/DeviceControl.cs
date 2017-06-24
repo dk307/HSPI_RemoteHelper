@@ -15,7 +15,8 @@ namespace Hspi.Devices
         protected DeviceControl(string name)
         {
             Name = name;
-            AddFeedback(new DeviceFeedback(FeedbackName.Connection, TypeCode.Boolean));
+            AddCommand(ConnectCommand);
+            AddCommand(NotConnectedCommand);
         }
 
         ~DeviceControl()
@@ -23,14 +24,13 @@ namespace Hspi.Devices
             Dispose(false);
         }
 
+        public event EventHandler<DeviceCommand> CommandChanged;
+
         public event EventHandler<FeedbackValue> FeedbackChanged;
 
         public IEnumerable<DeviceCommand> Commands => commands;
-
         public bool Connected => connected;
-
         public IEnumerable<DeviceFeedback> Feedbacks => feedbacks;
-
         public abstract bool InvalidState { get; }
         public string Name { get; }
 
@@ -40,7 +40,7 @@ namespace Hspi.Devices
             GC.SuppressFinalize(this);
         }
 
-        public virtual async Task ExecuteCommand(DeviceCommand command, CancellationToken token = default(CancellationToken))
+        public virtual async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
             await Task.Delay(0);
             throw new NotImplementedException();
@@ -88,17 +88,24 @@ namespace Hspi.Devices
             }
         }
 
+        protected void UpdateCommand(DeviceCommand command)
+        {
+            Trace.WriteLine(Invariant($"Updating Command {command.Id} for {Name}"));
+            CommandChanged?.Invoke(this, command);
+        }
+
         protected void UpdateConnectedState(bool value)
         {
             Trace.WriteLine(Invariant($"Updating Connected State for {Name} to {value}"));
 
             connected = value;
-            UpdateFeedback(FeedbackName.Connection, value);
+
+            UpdateCommand(value ? ConnectCommand : NotConnectedCommand);
         }
 
         protected void UpdateFeedback(string feedbackName, object value)
         {
-            Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to {value}"));
+            Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to [{value}]"));
             if (feedbacks.TryGetValue(feedbackName, out var feedback))
             {
                 FeedbackChanged?.Invoke(this, new FeedbackValue(feedback, value));
@@ -109,6 +116,8 @@ namespace Hspi.Devices
             }
         }
 
+        public static readonly DeviceCommand ConnectCommand = new DeviceCommand(CommandName.ConnectedState, fixedValue: 0, type: DeviceCommandType.Status);
+        public static readonly DeviceCommand NotConnectedCommand = new DeviceCommand(CommandName.NotConnectedState, fixedValue: 255, type: DeviceCommandType.Status);
         private readonly DeviceCommandCollection commands = new DeviceCommandCollection();
         private readonly DeviceFeedbackCollection feedbacks = new DeviceFeedbackCollection();
         private bool connected = false;

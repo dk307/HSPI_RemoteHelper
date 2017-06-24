@@ -49,10 +49,6 @@ namespace Hspi.DeviceData
 
             foreach (var feedback in feedbacks)
             {
-                if (feedback.Id == FeedbackName.Connection)
-                {
-                    continue;
-                }
                 var deviceIdentifier = new DeviceIdentifier(deviceType, feedback.Id);
                 string address = deviceIdentifier.Address;
                 if (!currentChildDevices.ContainsKey(address))
@@ -80,26 +76,11 @@ namespace Hspi.DeviceData
 
         public void ProcessFeedback(FeedbackValue feedbackData)
         {
-            if (feedbackData.Feedback.Id == FeedbackName.Connection)
+            var deviceIdentifier = new DeviceIdentifier(deviceType, feedbackData.Feedback.Id);
+            string address = deviceIdentifier.Address;
+            if (currentChildDevices.TryGetValue(address, out var feedbackDevice))
             {
-                UpdateConnectionStatus(Convert.ToBoolean(feedbackData.Value, CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                var deviceIdentifier = new DeviceIdentifier(deviceType, feedbackData.Feedback.Id);
-                string address = deviceIdentifier.Address;
-                if (currentChildDevices.TryGetValue(address, out var feedbackDevice))
-                {
-                    feedbackDevice.UpdateValue(HS, feedbackData.Value);
-                }
-            }
-        }
-
-        public void UpdateConnectionStatus(bool data)
-        {
-            if (parentDeviceData != null)
-            {
-                parentDeviceData.UpdateConnectedState(HS, data);
+                feedbackDevice.UpdateValue(HS, feedbackData.Value);
             }
         }
 
@@ -219,6 +200,14 @@ namespace Hspi.DeviceData
             }
 
             return device;
+        }
+
+        internal void ProcessCommand(DeviceCommand command)
+        {
+            if (parentDeviceData != null)
+            {
+                parentDeviceData.UpdateRootValue(HS, command);
+            }
         }
 
         private void CreateFeedbackDevice(DeviceFeedback feedback, DeviceIdentifier deviceIdentifier)

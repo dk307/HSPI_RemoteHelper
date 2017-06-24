@@ -10,12 +10,13 @@ using System.Globalization;
 
 namespace Hspi.Devices
 {
+    using Nito.AsyncEx;
     using static System.FormattableString;
 
     internal sealed class DenonAVRControl : IPAddressableDeviceControl
     {
-        public DenonAVRControl(string name, IPAddress deviceIP) :
-            base(name, deviceIP)
+        public DenonAVRControl(string name, IPAddress deviceIP, TimeSpan defaultCommandDelay) :
+            base(name, deviceIP, defaultCommandDelay)
         {
             AddCommand(new DeviceCommand(CommandName.InputStatusQuery, "SI?"));
             AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOff, "PSDIL OFF"));
@@ -36,6 +37,10 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MuteQuery, "MU?"));
             AddCommand(new DeviceCommand(CommandName.AudysseyQuery, "PSMULTEQ: ?"));
             AddCommand(new DeviceCommand(CommandName.ChangeInputMPLAY, "SIMPLAY"));
+            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeUpLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeDownLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeLoop));
+
             //AddCommand(new DeviceCommand(CommandName.TesT, "PSCES OFF"));
 
             AddCommand(new DeviceCommand(CommandName.AllStatusQuery, string.Empty));
@@ -51,8 +56,6 @@ namespace Hspi.Devices
             AddFeedback(new SettableRangedDeviceFeedback(FeedbackName.SubwooferAdjustLevel, 38.5, 62, 1));
             AddFeedback(new DeviceFeedback(FeedbackName.Audyssey, TypeCode.String));
         }
-
-        public static TimeSpan DefaultCommandDelay => TimeSpan.FromMilliseconds(100);
 
         public override bool InvalidState
         {
@@ -99,6 +102,19 @@ namespace Hspi.Devices
                     }
                     break;
 
+                case CommandName.MacroStartVolumeUpLoop:
+                    MacroStartCommandLoop(CommandName.VolumeUp, TimeSpan.FromMilliseconds(100), ref volumeCancelSource);
+
+                    break;
+
+                case CommandName.MacroStartVolumeDownLoop:
+                    MacroStartCommandLoop(CommandName.VolumeDown, TimeSpan.FromMilliseconds(100), ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStopVolumeLoop:
+                    MacroStopCommandLoop(ref volumeCancelSource);
+                    break;
+
                 default:
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
@@ -139,11 +155,12 @@ namespace Hspi.Devices
 
         protected override void Dispose(bool disposing)
         {
+            volumeCancelSource?.Cancel();
             stopTokenSource?.Cancel();
             if (disposing)
             {
+                volumeCancelSource?.Dispose();
                 DisposeConnection();
-                clientWriteLock.Dispose();
             }
 
             base.Dispose(disposing);
@@ -219,7 +236,6 @@ namespace Hspi.Devices
             if (client != null)
             {
                 client.Dispose();
-                client = null;
             }
         }
 
@@ -335,20 +351,15 @@ namespace Hspi.Devices
 
         private async Task SendCommandCore(string commandData, CancellationToken token)
         {
-            if (!Connected)
+            using (await connectionLock.LockAsync(token).ConfigureAwait(false))
             {
-                await Connect(token).ConfigureAwait(false);
-            }
+                if (!Connected)
+                {
+                    await Connect(token).ConfigureAwait(false);
+                }
 
-            byte[] bytesCommand = encoding.GetBytes(Invariant($"{commandData}{Seperator}"));
-            await clientWriteLock.WaitAsync(token).ConfigureAwait(false);
-            try
-            {
+                byte[] bytesCommand = encoding.GetBytes(Invariant($"{commandData}{Seperator}"));
                 await stream.WriteAsync(bytesCommand, 0, bytesCommand.Length, token).ConfigureAwait(false);
-            }
-            finally
-            {
-                clientWriteLock.Release();
             }
         }
 
@@ -373,11 +384,12 @@ namespace Hspi.Devices
 
         private const int AVRPort = 23;
         private const char Seperator = '\r';
-        private readonly SemaphoreSlim clientWriteLock = new SemaphoreSlim(1);
         private readonly Encoding encoding = Encoding.ASCII;
         private TcpClient client;
         private CancellationTokenSource combinedStopTokenSource;
         private CancellationTokenSource stopTokenSource;
         private NetworkStream stream;
+        private CancellationTokenSource volumeCancelSource;
+        private readonly AsyncLock connectionLock = new AsyncLock();
     }
 }

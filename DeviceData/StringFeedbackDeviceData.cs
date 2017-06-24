@@ -13,7 +13,7 @@ namespace Hspi.DeviceData
         public override void UpdateValue(IHSApplication HS, object value)
         {
             HS.set_DeviceInvalidValue(RefId, false);
-            HS.SetDeviceString(RefId, (value ?? string.Empty).ToString(), false);
+            HS.SetDeviceString(RefId, (value ?? string.Empty).ToString(), true);
         }
 
         public override bool StatusDevice => true;

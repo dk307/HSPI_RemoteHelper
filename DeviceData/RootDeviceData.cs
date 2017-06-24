@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Hspi.DeviceData
 {
+    using System;
     using static System.FormattableString;
 
     /// <summary>
@@ -25,49 +26,83 @@ namespace Hspi.DeviceData
             RefId = refID;
         }
 
+        public override IList<VSVGPairs.VGPair> GraphicsPairs => new List<VSVGPairs.VGPair>();
+
+        public override int HSDeviceType => (int)DeviceTypeInfo_m.DeviceTypeInfo.eDeviceType_Plugin.Root;
+
+        public override string HSDeviceTypeString => Invariant($"{PluginData.PluginName} Root Device");
+
+        public override bool StatusDevice => false;
+
+        public override IList<VSVGPairs.VSPair> StatusPairs => new List<VSVGPairs.VSPair>();
+
         public override void DeviceCreated(IHSApplication HS, int refID)
         {
             base.DeviceCreated(HS, refID);
             HS.set_DeviceInvalidValue(refID, false);
-            HS.SetDeviceValueByRef(refID, NotConnectedValue, false);
         }
 
         public IList<VSVGPairs.VSPair> GetStatusPairs(IEnumerable<DeviceCommand> commands)
         {
             var pairs = new List<VSVGPairs.VSPair>();
             int value = -100;
+            int row = 1;
             foreach (var command in commands)
             {
-                commandValues.Add(value, command);
-                pairs.Add(new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Control)
+                int statusValue = command.FixedValue ?? value++;
+                commandValuesReverse.Add(command.Id, statusValue);
+                commandValues.Add(statusValue, command);
+
+                switch (command.Type)
                 {
-                    PairType = VSVGPairs.VSVGPairType.SingleValue,
-                    Value = value++,
-                    ControlUse = ePairControlUse.Not_Specified,
-                    Status = command.Id,
-                    Render = Enums.CAPIControlType.Single_Text_from_List,
-                });
+                    case DeviceCommandType.Control:
+                        pairs.Add(new VSVGPairs.VSPair(ePairStatusControl.Control)
+                        {
+                            PairType = VSVGPairs.VSVGPairType.SingleValue,
+                            Value = statusValue,
+                            ControlUse = ePairControlUse.Not_Specified,
+                            Status = command.Id,
+                            Render = Enums.CAPIControlType.Button,
+                            Render_Location = new Enums.CAPIControlLocation()
+                            {
+                                Row = row++,
+                                Column = 1,
+                            }
+                        });
+                        break;
+
+                    case DeviceCommandType.Status:
+                        pairs.Add(new VSVGPairs.VSPair(ePairStatusControl.Status)
+                        {
+                            PairType = VSVGPairs.VSVGPairType.SingleValue,
+                            Value = statusValue,
+                            Status = command.Id,
+                        });
+                        break;
+
+                    case DeviceCommandType.Both:
+                        pairs.Add(new VSVGPairs.VSPair(ePairStatusControl.Both)
+                        {
+                            PairType = VSVGPairs.VSVGPairType.SingleValue,
+                            Value = statusValue,
+                            ControlUse = ePairControlUse.Not_Specified,
+                            Status = command.Id,
+                            Render = Enums.CAPIControlType.Button,
+                            Render_Location = new Enums.CAPIControlLocation()
+                            {
+                                Row = row++,
+                                Column = 1,
+                            }
+                        });
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(commands));
+                }
             }
-
-            pairs.Add(new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Status)
-            {
-                PairType = VSVGPairs.VSVGPairType.SingleValue,
-                Value = NotConnectedValue,
-                Status = "Not-Connected"
-            });
-
-            pairs.Add(new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Status)
-            {
-                PairType = VSVGPairs.VSVGPairType.SingleValue,
-                Value = ConnectedValue,
-                Status = "Connected"
-            });
 
             return pairs;
         }
-
-        private const int NotConnectedValue = 0;
-        private const int ConnectedValue = 255;
 
         public override async Task HandleCommand(DeviceControl connector, double value, CancellationToken token)
         {
@@ -77,19 +112,15 @@ namespace Hspi.DeviceData
             }
         }
 
-        public override bool StatusDevice => false;
-        public override IList<VSVGPairs.VGPair> GraphicsPairs => new List<VSVGPairs.VGPair>();
-        public override string HSDeviceTypeString => Invariant($"{PluginData.PluginName} Root Device");
-
-        internal void UpdateConnectedState(IHSApplication HS, bool connected)
+        public void UpdateRootValue(IHSApplication HS, DeviceCommand command)
         {
-            HS.SetDeviceValueByRef(RefId, connected ? ConnectedValue : NotConnectedValue, true);
+            if (commandValuesReverse.TryGetValue(command.Id, out var value))
+            {
+                HS.SetDeviceValueByRef(RefId, value, true);
+            }
         }
 
-        public override int HSDeviceType => (int)DeviceTypeInfo_m.DeviceTypeInfo.eDeviceType_Plugin.Root;
-
-        public override IList<VSVGPairs.VSPair> StatusPairs => new List<VSVGPairs.VSPair>();
-
+        private readonly IDictionary<string, double> commandValuesReverse = new Dictionary<string, double>();
         private readonly IDictionary<double, DeviceCommand> commandValues = new Dictionary<double, DeviceCommand>();
     }
 }
