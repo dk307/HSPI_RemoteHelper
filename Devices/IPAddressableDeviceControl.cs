@@ -1,10 +1,12 @@
-﻿using System;
+﻿using NullGuard;
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class IPAddressableDeviceControl : DeviceControl
     {
         protected IPAddressableDeviceControl(string name, IPAddress deviceIP, TimeSpan defaultCommandDelay) :

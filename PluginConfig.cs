@@ -160,7 +160,10 @@ namespace Hspi
             string name = GetValue(DeviceNameId, string.Empty, deviceId);
             string ipAddressString = GetValue(DeviceIPId, string.Empty, deviceId);
             bool enabled = GetValue(EnabledId, false, deviceId);
-            IPAddress.TryParse(ipAddressString, out var deviceIP);
+            if (!IPAddress.TryParse(ipAddressString, out var deviceIP))
+            {
+                deviceIP = IPAddress.Any;
+            }
 
             var additionalValues = new Dictionary<string, string>();
             foreach (var key in DeviceControlConfig.GetRequiredAdditionalValues(deviceType))
@@ -168,7 +171,7 @@ namespace Hspi
                 string value = GetValue(key, string.Empty, deviceId);
                 additionalValues.Add(key, value);
             }
-            var config = new DeviceControlConfig(deviceType, name, deviceIP ?? IPAddress.Any, additionalValues, enabled);
+            var config = new DeviceControlConfig(deviceType, name, deviceIP, additionalValues, enabled);
             devices.Add(deviceType, config);
         }
 

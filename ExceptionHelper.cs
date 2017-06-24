@@ -1,8 +1,10 @@
-﻿using System;
+﻿using NullGuard;
+using System;
 using System.Text;
 
 namespace Hspi
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal static class ExceptionHelper
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals")]

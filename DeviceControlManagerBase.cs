@@ -1,22 +1,20 @@
 ﻿using HomeSeerAPI;
 using Hspi.DeviceData;
+using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
 
 namespace Hspi.Connector
 {
-    using Hspi.Devices;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControlManagerBase : IDisposable
     {
-        public string Name { get; }
-
         public DeviceControlManagerBase(IHSApplication HS, ILogger logger, string name,
                                         DeviceType deviceType, CancellationToken shutdownToken)
         {
@@ -28,13 +26,9 @@ namespace Hspi.Connector
             combinedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken, instanceCancellationSource.Token);
         }
 
-        public void Start()
-        {
-            Task.Factory.StartNew(UpdateDevices, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
-        }
-
-        private CancellationToken ShutdownToken => combinedCancellationSource.Token;
         public DeviceType DeviceType { get; }
+        public string Name { get; }
+        private CancellationToken ShutdownToken => combinedCancellationSource.Token;
 
         public void Cancel()
         {
@@ -109,6 +103,11 @@ namespace Hspi.Connector
             }
         }
 
+        public void Start()
+        {
+            Task.Factory.StartNew(UpdateDevices, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -118,8 +117,6 @@ namespace Hspi.Connector
                     instanceCancellationSource.Cancel();
                     instanceCancellationSource.Dispose();
                     combinedCancellationSource.Dispose();
-                    changedFeedbacks.Dispose();
-                    changedCommands.Dispose();
 
                     DisposeConnector();
                     deviceActionLock.Dispose();
@@ -149,12 +146,12 @@ namespace Hspi.Connector
 
         private void Connector_CommandChanged(object sender, DeviceCommand command)
         {
-            changedCommands.Add(command);
+            changedCommands.Enqueue(command);
         }
 
         private void Connector_FeedbackChanged(object sender, FeedbackValue changedFeedback)
         {
-            changedFeedbacks.Add(changedFeedback);
+            changedFeedbacks.Enqueue(changedFeedback);
             feedbackValues[changedFeedback.Feedback.Id] = changedFeedback.Value;
         }
 
@@ -176,7 +173,40 @@ namespace Hspi.Connector
                 connector.Dispose();
                 connector = null;
 
-                changedCommands.Add(DeviceControl.NotConnectedCommand);
+                changedCommands.Enqueue(DeviceControl.NotConnectedCommand);
+            }
+        }
+
+        private async Task ProcessCommands()
+        {
+            while (!ShutdownToken.IsCancellationRequested)
+            {
+                var command = await changedCommands.DequeueAsync(ShutdownToken).ConfigureAwait(false);
+                try
+                {
+                    rootDeviceData.ProcessCommand(command);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(Invariant($"Failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                }
+            }
+        }
+
+        private async Task ProcessFeedbacks()
+        {
+            while (!ShutdownToken.IsCancellationRequested)
+            {
+                var feedbackData = await changedFeedbacks.DequeueAsync(ShutdownToken).ConfigureAwait(false);
+
+                try
+                {
+                    rootDeviceData.ProcessFeedback(feedbackData);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(Invariant($"Failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                }
             }
         }
 
@@ -191,55 +221,21 @@ namespace Hspi.Connector
                                                          deviceControl.Feedbacks);
                 }
 
-                changedCommands.Add(DeviceControl.NotConnectedCommand);
+                await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
             }
             finally
             {
                 deviceActionLock.Release();
             }
 
-            Task.Factory.StartNew(ProcessFeedbacks, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
-            Task.Factory.StartNew(ProcessCommands, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+            var task1 = Task.Factory.StartNew(ProcessFeedbacks, ShutdownToken,
+                                  TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+            var task2 = Task.Factory.StartNew(ProcessCommands, ShutdownToken,
+                                  TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
         }
 
-        private void ProcessFeedbacks()
-        {
-            while (!ShutdownToken.IsCancellationRequested)
-            {
-                if (changedFeedbacks.TryTake(out var feedbackData, -1, ShutdownToken))
-                {
-                    try
-                    {
-                        rootDeviceData.ProcessFeedback(feedbackData);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(Invariant($"Failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
-                    }
-                }
-            }
-        }
-
-        private void ProcessCommands()
-        {
-            while (!ShutdownToken.IsCancellationRequested)
-            {
-                if (changedCommands.TryTake(out var command, -1, ShutdownToken))
-                {
-                    try
-                    {
-                        rootDeviceData.ProcessCommand(command);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(Invariant($"Failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
-                    }
-                }
-            }
-        }
-
-        private readonly BlockingCollection<DeviceCommand> changedCommands = new BlockingCollection<DeviceCommand>();
-        private readonly BlockingCollection<FeedbackValue> changedFeedbacks = new BlockingCollection<FeedbackValue>();
+        private readonly AsyncProducerConsumerQueue<DeviceCommand> changedCommands = new AsyncProducerConsumerQueue<DeviceCommand>();
+        private readonly AsyncProducerConsumerQueue<FeedbackValue> changedFeedbacks = new AsyncProducerConsumerQueue<FeedbackValue>();
         private readonly CancellationTokenSource combinedCancellationSource;
         private readonly SemaphoreSlim deviceActionLock = new SemaphoreSlim(1);
         private readonly ConcurrentDictionary<string, object> feedbackValues = new ConcurrentDictionary<string, object>();

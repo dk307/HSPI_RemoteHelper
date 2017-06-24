@@ -233,11 +233,11 @@
     <Compile Include="Devices\DenonAVRControl.cs" />
     <Compile Include="Devices\DeviceCommand.cs" />
     <Compile Include="Devices\DeviceControl.cs" />
-    <Compile Include="Devices\DeviceException.cs" />
+    <Compile Include="Exceptions\DeviceException.cs" />
     <Compile Include="Devices\DeviceFeedback.cs" />
-    <Compile Include="Devices\DevicePoweredOffException.cs" />
+    <Compile Include="Exceptions\DevicePoweredOffException.cs" />
     <Compile Include="Devices\FeedbackName.cs" />
-    <Compile Include="Devices\FeedbackNotFoundException.cs" />
+    <Compile Include="Exceptions\FeedbackNotFoundException.cs" />
     <Compile Include="Devices\FeedbackValue.cs" />
     <Compile Include="Devices\GlobalMacros.cs" />
     <Compile Include="Devices\IPAddressableDeviceControl.cs" />

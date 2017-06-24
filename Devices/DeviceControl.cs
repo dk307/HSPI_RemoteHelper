@@ -1,15 +1,16 @@
-﻿using System;
+﻿using NullGuard;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace Hspi.Devices
 {
     using static System.FormattableString;
 
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControl : IDisposable
     {
         protected DeviceControl(string name)
@@ -116,13 +117,18 @@ namespace Hspi.Devices
             }
         }
 
-        public static readonly DeviceCommand ConnectCommand = new DeviceCommand(CommandName.ConnectedState, fixedValue: 0, type: DeviceCommandType.Status);
-        public static readonly DeviceCommand NotConnectedCommand = new DeviceCommand(CommandName.NotConnectedState, fixedValue: 255, type: DeviceCommandType.Status);
+        public static readonly DeviceCommand ConnectCommand
+            = new DeviceCommand(CommandName.ConnectedState, fixedValue: 0, type: DeviceCommandType.Status);
+
+        public static readonly DeviceCommand NotConnectedCommand
+            = new DeviceCommand(CommandName.NotConnectedState, fixedValue: 255, type: DeviceCommandType.Status);
+
         private readonly DeviceCommandCollection commands = new DeviceCommandCollection();
         private readonly DeviceFeedbackCollection feedbacks = new DeviceFeedbackCollection();
         private bool connected = false;
         private bool disposedValue = false;
 
+        [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
         internal class DeviceCommandCollection : KeyedCollection<string, DeviceCommand>
         {
             public bool TryGetValue(string key, out DeviceCommand value)
@@ -140,6 +146,7 @@ namespace Hspi.Devices
             }
         }
 
+        [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
         internal class DeviceFeedbackCollection : KeyedCollection<string, DeviceFeedback>
         {
             public bool TryGetValue(string key, out DeviceFeedback value)

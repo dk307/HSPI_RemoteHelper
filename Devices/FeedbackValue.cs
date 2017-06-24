@@ -1,5 +1,8 @@
-﻿namespace Hspi.Devices
+﻿using NullGuard;
+
+namespace Hspi.Devices
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal struct FeedbackValue
     {
         public FeedbackValue(DeviceFeedback feedback, object value)
