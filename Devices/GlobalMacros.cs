@@ -42,7 +42,6 @@ namespace Hspi.Devices
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            await Task.Delay(1000);
             try
             {
                 CancellationTokenSource timeoutTokenSource = new CancellationTokenSource();

@@ -130,7 +130,7 @@ namespace Hspi.Devices
             }
         }
 
-        private static TimeSpan LoopCommandDelay => TimeSpan.FromMilliseconds(100);
+        private static TimeSpan LoopCommandDelay => TimeSpan.FromMilliseconds(0);
 
         public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
@@ -355,14 +355,12 @@ namespace Hspi.Devices
                     throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
                 }
 
-                await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, token, 1000);
-
+                Trace.WriteLine(Invariant($"ADB Device {Name}"));
+                await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, token, 1000).ConfigureAwait(false);
+                //adbClient.ExecuteRemoteCommand(commandData, device, receiver);
+                Trace.WriteLine(Invariant($"ADB Device {Name}"));
                 string output = receiver.ToString();
-
-                if (string.IsNullOrEmpty(output))
-                {
-                    Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:{output}"));
-                }
+                Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
 
                 receiver.ThrowOnError(output);
                 return output;

@@ -20,7 +20,7 @@ namespace Hspi.Devices
 
         public IPAddress DeviceIP { get; }
 
-        protected static void MacroStopCommandLoop(ref CancellationTokenSource cancelSource)
+        protected static void MacroStopCommandLoop([AllowNull]ref CancellationTokenSource cancelSource)
         {
             if (cancelSource != null)
             {
@@ -30,13 +30,13 @@ namespace Hspi.Devices
         }
 
         protected void MacroStartCommandLoop(string commandId, TimeSpan commandDelay,
-                                             ref CancellationTokenSource cancelSource)
+                                             [AllowNull]ref CancellationTokenSource cancelSource)
         {
             MacroStartCommandLoop(GetCommand(commandId), commandDelay, ref cancelSource);
         }
 
         protected void MacroStartCommandLoop(DeviceCommand command, TimeSpan commandDelay,
-                                             ref CancellationTokenSource cancelSource)
+                                             [AllowNull]ref CancellationTokenSource cancelSource)
         {
             if (cancelSource != null)
             {
@@ -44,15 +44,21 @@ namespace Hspi.Devices
             }
             cancelSource = new CancellationTokenSource();
 
-            var token = cancelSource.Token;
+            var cancelToken = cancelSource.Token;
 
             Task.Run(async () =>
             {
-                while (!token.IsCancellationRequested)
+                var token = default(CancellationToken);
+                TimeSpan delay = DefaultCommandDelay.Add(commandDelay);
+                do
                 {
                     await ExecuteCommand(command, token).ConfigureAwait(false);
-                    await Task.Delay(DefaultCommandDelay.Add(commandDelay), token).ConfigureAwait(false);
-                }
+                    token = cancelToken;
+                    if (delay != TimeSpan.Zero)
+                    {
+                        await Task.Delay(delay, token).ConfigureAwait(false);
+                    }
+                } while ((!token.IsCancellationRequested));
             });
         }
     }
