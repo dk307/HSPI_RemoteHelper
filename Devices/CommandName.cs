@@ -64,15 +64,13 @@
         public const string MacroToggleMute = "Macro - Toogle Mute";
         public const string ConnectedState = "Connected";
         public const string NotConnectedState = "Not-Connected";
-        public const string MacroStartCursorDownLoop = "Macro - Cursor Down Loop Start";
-        public const string MacroStartCursorLeftLoop = "Macro - Cursor Left Loop Start";
-        public const string MacroStartCursorRightLoop = "Macro - Cursor Right Loop Start";
-        public const string MacroStartCursorUpLoop = "Macro - Cursor Up Loop Start";
-        public const string MacroStopCursorLoop = "Macro - Cursor Loop Stop";
-        public const string MacroStartRewindLoop = "Macro - Rewind Loop Start";
-        public const string MacroStartFastForwardLoop = "Macro - Fast Forward Loop Start";
-        public const string MacroStartSkipBackwardLoop = "Macro - Skip Backward Loop Start";
-        public const string MacroStartSkipForwardLoop = "Macro - Skip Forward Loop Start";
-        public const string MacroStopMediaControlLoop = "Macro - Media Control Loop Stop";
+        public const string CursorUpEventDown = "Cursor Up - Event Down";
+        public const string CursorUpEventUp = "Cursor Up - Event Up";
+        public const string CursorDownEventDown = "Cursor Down - Event Down";
+        public const string CursorDownEventUp = "Cursor Down - Event Up";
+        public const string CursorRightEventDown = "Cursor Right - Event Down";
+        public const string CursorRightEventUp = "Cursor Right - Event Up";
+        public const string CursorLeftEventDown = "Cursor Left- Event Down";
+        public const string CursorLeftEventUp = "Cursor Left - Event Up";
     }
 }

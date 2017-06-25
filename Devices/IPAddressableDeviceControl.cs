@@ -46,6 +46,11 @@ namespace Hspi.Devices
 
             var cancelToken = cancelSource.Token;
 
+            StartCommandLoop(command, commandDelay, cancelToken);
+        }
+
+        protected void StartCommandLoop(DeviceCommand command, TimeSpan commandDelay, CancellationToken cancelToken)
+        {
             Task.Run(async () =>
             {
                 var token = default(CancellationToken);

@@ -42,6 +42,7 @@ namespace Hspi.Devices
         KEYCODE_WAKEUP = 224,
     };
 
+    // nvidia shield 2015
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class ADBRemoteControl : IPAddressableDeviceControl
     {
@@ -58,50 +59,47 @@ namespace Hspi.Devices
             //AddCommand(new ADBShellDeviceCommand(CommandName.MediaStepBackward, AdbShellKeys.KEYCODE_MEDIA_STEP_BACKWARD));
             //AddCommand(new ADBShellDeviceCommand(CommandName.MediaStepForward, AdbShellKeys.KEYCODE_MEDIA_STEP_FORWARD));
 
-            AddCommand(new ADBShellDeviceCommand(CommandName.AudioTrack, AdbShellKeys.KEYCODE_MEDIA_AUDIO_TRACK));
-            AddCommand(new ADBShellDeviceCommand(CommandName.CursorDown, AdbShellKeys.KEYCODE_DPAD_DOWN));
-            AddCommand(new ADBShellDeviceCommand(CommandName.CursorLeft, AdbShellKeys.KEYCODE_DPAD_LEFT));
-            AddCommand(new ADBShellDeviceCommand(CommandName.CursorRight, AdbShellKeys.KEYCODE_DPAD_RIGHT));
-            AddCommand(new ADBShellDeviceCommand(CommandName.CursorUp, AdbShellKeys.KEYCODE_DPAD_UP));
-            AddCommand(new ADBShellDeviceCommand(CommandName.Enter, AdbShellKeys.KEYCODE_ENTER));
-            AddCommand(new ADBShellDeviceCommand(CommandName.Home, AdbShellKeys.KEYCODE_HOME));
-            AddCommand(new ADBShellDeviceCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaFastForward, AdbShellKeys.KEYCODE_MEDIA_FAST_FORWARD));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaPlayPause, AdbShellKeys.KEYCODE_MEDIA_PLAY_PAUSE));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaPrevious, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaRewind, AdbShellKeys.KEYCODE_MEDIA_REWIND));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaSkipBackward, AdbShellKeys.KEYCODE_MEDIA_SKIP_BACKWARD));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaSkipForward, AdbShellKeys.KEYCODE_MEDIA_SKIP_FORWARD));
-            AddCommand(new ADBShellDeviceCommand(CommandName.MediaStop, AdbShellKeys.KEYCODE_MEDIA_STOP));
-            AddCommand(new ADBShellDeviceCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP));
-            AddCommand(new ADBShellDeviceCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
-            AddCommand(new ADBShellDeviceCommand(CommandName.PowerQuery, string.Empty));
-            AddCommand(new ADBShellDeviceCommand(CommandName.Return, AdbShellKeys.KEYCODE_ESCAPE));
-            AddCommand(new ADBShellDeviceCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.AudioTrack, AdbShellKeys.KEYCODE_MEDIA_AUDIO_TRACK));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorDown, AdbShellKeys.KEYCODE_DPAD_DOWN));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorLeft, AdbShellKeys.KEYCODE_DPAD_LEFT));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorRight, AdbShellKeys.KEYCODE_DPAD_RIGHT));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorUp, AdbShellKeys.KEYCODE_DPAD_UP));
+            AddCommand(new ADBShellSendEventCommand(CommandName.Enter, 0x161));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Home, AdbShellKeys.KEYCODE_HOME));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO));
+            AddCommand(new ADBShellSendEventCommand(CommandName.MediaFastForward, 208));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT));
+            AddCommand(new ADBShellSendEventCommand(CommandName.MediaPlayPause, 164));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaPrevious, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
+            AddCommand(new ADBShellSendEventCommand(CommandName.MediaRewind, 168));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipBackward, AdbShellKeys.KEYCODE_MEDIA_SKIP_BACKWARD));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipForward, AdbShellKeys.KEYCODE_MEDIA_SKIP_FORWARD));
+            AddCommand(new ADBShellSendEventCommand(CommandName.MediaStop, 128));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
+            AddCommand(new DeviceCommand(CommandName.PowerQuery));
+            AddCommand(new ADBShellSendEventCommand(CommandName.Return, 158));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS));
 
-            AddCommand(new ADBShellDeviceCommand(CommandName.ScreenQuery, string.Empty));
-            AddCommand(new ADBShellDeviceCommand(CommandName.ScreenSaveRunningQuery, string.Empty));
-            AddCommand(new ADBShellDeviceCommand(CommandName.CurrentApplicationQuery, string.Empty));
+            AddCommand(new DeviceCommand(CommandName.ScreenQuery));
+            AddCommand(new DeviceCommand(CommandName.ScreenSaveRunningQuery));
+            AddCommand(new DeviceCommand(CommandName.CurrentApplicationQuery));
 
-            AddCommand(new ADBShellDeviceCommand(CommandName.LaunchNetflix, @"com.netflix.ninja"));
-            AddCommand(new ADBShellDeviceCommand(CommandName.LaunchYoutube, @"com.google.android.youtube.tv"));
-            AddCommand(new ADBShellDeviceCommand(CommandName.LaunchPlex, @"com.plexapp.android"));
-            AddCommand(new ADBShellDeviceCommand(CommandName.LaunchAmazonVideo,
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchNetflix, @"com.netflix.ninja"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchYoutube, @"com.google.android.youtube.tv"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchPlex, @"com.plexapp.android"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchAmazonVideo,
                                                  @"com.amazon.amazonvideo.livingroom.nvidia", @"com.amazon.ignition.IgnitionActivity"));
-            AddCommand(new ADBShellDeviceCommand(CommandName.LaunchPBSKids, @"org.pbskids.video"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchPBSKids, @"org.pbskids.video"));
 
-            AddCommand(new DeviceCommand(CommandName.MacroStartCursorDownLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartCursorLeftLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartCursorRightLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartCursorUpLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStopCursorLoop));
-
-            AddCommand(new DeviceCommand(CommandName.MacroStartRewindLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartFastForwardLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartSkipBackwardLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStartSkipForwardLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStopMediaControlLoop));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventDown, 103, ADBShellSendEventCommand.ButtonPressType.Down));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventUp, 103, ADBShellSendEventCommand.ButtonPressType.Up));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventDown, 108, ADBShellSendEventCommand.ButtonPressType.Down));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventUp, 108, ADBShellSendEventCommand.ButtonPressType.Up));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventDown, 106, ADBShellSendEventCommand.ButtonPressType.Down));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventUp, 106, ADBShellSendEventCommand.ButtonPressType.Up));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventDown, 105, ADBShellSendEventCommand.ButtonPressType.Down));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventUp, 105, ADBShellSendEventCommand.ButtonPressType.Up));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
@@ -129,8 +127,6 @@ namespace Hspi.Devices
                 return false;
             }
         }
-
-        private static TimeSpan LoopCommandDelay => TimeSpan.FromMilliseconds(0);
 
         public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
@@ -193,8 +189,7 @@ namespace Hspi.Devices
 
         private void DisposeConnection()
         {
-            cursorLoopCancelSource?.Cancel();
-            mediaControlLoopCancelSource?.Cancel();
+            queryRunningApplicationTokenSource?.Cancel();
             if (adbClient != null)
             {
                 monitor?.Dispose();
@@ -224,16 +219,6 @@ namespace Hspi.Devices
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
         }
 
-        private void MacroCursorLoop(string commandId)
-        {
-            MacroStartCommandLoop(commandId, LoopCommandDelay, ref cursorLoopCancelSource);
-        }
-
-        private void MacroMediaControlLoop(string commandId)
-        {
-            MacroStartCommandLoop(commandId, LoopCommandDelay, ref mediaControlLoopCancelSource);
-        }
-
         private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
             if (e.Device.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal))
@@ -243,51 +228,32 @@ namespace Hspi.Devices
             }
         }
 
+        private async Task QueryCurrentApplication(CancellationToken token)
+        {
+            string output = await SendCommandCore("dumpsys window windows | grep mCurrentFocus", token).ConfigureAwait(false);
+
+            bool found = false;
+            var matches = windowRegEx.Match(output);
+            if (matches.Success)
+            {
+                var packageGroup = matches.Groups["package"];
+                if (packageGroup.Success)
+                {
+                    found = true;
+                    UpdateFeedback(FeedbackName.CurrentApplication, packageGroup.Value);
+                }
+            }
+            if (!found)
+            {
+                UpdateFeedback(FeedbackName.CurrentApplication, string.Empty);
+            }
+        }
+
         private async Task SendCommand(DeviceCommand command, CancellationToken token)
         {
             string output;
             switch (command.Id)
             {
-                case CommandName.MacroStartCursorDownLoop:
-                    MacroCursorLoop(CommandName.CursorDown);
-                    break;
-
-                case CommandName.MacroStartCursorUpLoop:
-                    MacroCursorLoop(CommandName.CursorUp);
-                    break;
-
-                case CommandName.MacroStartCursorRightLoop:
-                    MacroCursorLoop(CommandName.CursorRight);
-                    break;
-
-                case CommandName.MacroStartCursorLeftLoop:
-                    MacroCursorLoop(CommandName.CursorLeft);
-                    break;
-
-                case CommandName.MacroStopCursorLoop:
-                    MacroStopCommandLoop(ref cursorLoopCancelSource);
-                    break;
-
-                case CommandName.MacroStartRewindLoop:
-                    MacroMediaControlLoop(CommandName.MediaRewind);
-                    break;
-
-                case CommandName.MacroStartFastForwardLoop:
-                    MacroMediaControlLoop(CommandName.MediaFastForward);
-                    break;
-
-                case CommandName.MacroStartSkipBackwardLoop:
-                    MacroMediaControlLoop(CommandName.MediaSkipBackward);
-                    break;
-
-                case CommandName.MacroStartSkipForwardLoop:
-                    MacroMediaControlLoop(CommandName.MediaSkipForward);
-                    break;
-
-                case CommandName.MacroStopMediaControlLoop:
-                    MacroStopCommandLoop(ref mediaControlLoopCancelSource);
-                    break;
-
                 case CommandName.PowerQuery:
                     if (!await IsPoweredOn(token))
                     {
@@ -307,29 +273,54 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.CurrentApplicationQuery:
-                    output = await SendCommandCore("dumpsys window windows | grep mCurrentFocus", token).ConfigureAwait(false);
+                    await QueryCurrentApplication(token).ConfigureAwait(false);
+                    break;
 
-                    bool found = false;
-                    var matches = windowRegEx.Match(output);
-                    if (matches.Success)
-                    {
-                        var packageGroup = matches.Groups["package"];
-                        if (packageGroup.Success)
-                        {
-                            found = true;
-                            UpdateFeedback(FeedbackName.CurrentApplication, packageGroup.Value);
-                        }
-                    }
-                    if (!found)
-                    {
-                        UpdateFeedback(FeedbackName.CurrentApplication, null);
-                    }
+                case CommandName.CursorUpEventDown:
+                case CommandName.CursorDownEventDown:
+                case CommandName.CursorRightEventDown:
+                case CommandName.CursorLeftEventDown:
+                    await RevertDownKey(token).ConfigureAwait(false);
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    downKey = (command as ADBShellSendEventCommand)?.Key;
+                    break;
 
+                case CommandName.CursorUpEventUp:
+                case CommandName.CursorDownEventUp:
+                case CommandName.CursorRightEventUp:
+                case CommandName.CursorLeftEventUp:
+                    await RevertDownKey(token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.Home:
+                case CommandName.LaunchAmazonVideo:
+                case CommandName.LaunchNetflix:
+                case CommandName.LaunchPBSKids:
+                case CommandName.LaunchPlex:
+                case CommandName.LaunchYoutube:
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+
+                    // set a loop to update current application
+                    queryRunningApplicationTokenSource?.Cancel();
+                    queryRunningApplicationTokenSource = new CancellationTokenSource();
+                    queryRunningApplicationTokenSource.CancelAfter(10000);
+                    StartCommandLoop(GetCommand(CommandName.CurrentApplicationQuery),
+                                         TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
                     break;
 
                 default:
-                    await SendCommandCore(command.Data, token);
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
+            }
+        }
+
+        private async Task RevertDownKey(CancellationToken token)
+        {
+            if (downKey.HasValue)
+            {
+                var upCommand = new ADBShellSendEventCommand("Up Command", downKey.Value, ADBShellSendEventCommand.ButtonPressType.Up);
+                await SendCommandCore(upCommand.Data, token).ConfigureAwait(false);
+                downKey = null;
             }
         }
 
@@ -355,10 +346,7 @@ namespace Hspi.Devices
                     throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
                 }
 
-                Trace.WriteLine(Invariant($"ADB Device {Name}"));
                 await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, token, 1000).ConfigureAwait(false);
-                //adbClient.ExecuteRemoteCommand(commandData, device, receiver);
-                Trace.WriteLine(Invariant($"ADB Device {Name}"));
                 string output = receiver.ToString();
                 Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
 
@@ -384,26 +372,51 @@ namespace Hspi.Devices
         private readonly string adbPath;
         private readonly AsyncLock connectionLock = new AsyncLock();
         private AdbClient adbClient;
-        private CancellationTokenSource cursorLoopCancelSource;
-        private CancellationTokenSource mediaControlLoopCancelSource;
+        private int? downKey = null;
         private DeviceMonitor monitor;
+        private CancellationTokenSource queryRunningApplicationTokenSource;
     }
 
-    internal class ADBShellDeviceCommand : DeviceCommand
+    internal class ADBShellKeyEventCommand : DeviceCommand
     {
-        public ADBShellDeviceCommand(string id, AdbShellKeys key)
+        public ADBShellKeyEventCommand(string id, AdbShellKeys key)
             : base(id, Invariant($@"input keyevent {(int)key}"))
         {
         }
+    }
 
-        public ADBShellDeviceCommand(string id, string packageName, string activityName)
-            : base(id, Invariant($@"am start -n {packageName}/{activityName}"))
+    internal class ADBShellLaunchPackageCommand : DeviceCommand
+    {
+        public ADBShellLaunchPackageCommand(string id, string packageName, string activityName)
+           : base(id, Invariant($@"am start -n {packageName}/{activityName}"))
         {
         }
 
-        public ADBShellDeviceCommand(string id, string packageName)
+        public ADBShellLaunchPackageCommand(string id, string packageName)
             : base(id, Invariant($@"monkey -p {packageName} -c android.intent.category.LAUNCHER 1"))
         {
         }
+    }
+
+    internal class ADBShellSendEventCommand : DeviceCommand
+    {
+        public ADBShellSendEventCommand(string id, int key)
+            : base(id, Invariant($"sendevent /dev/input/event0 1 {key} 1 && sendevent /dev/input/event0 1 {key} 0 && sendevent /dev/input/event0 0 0 0"))
+        {
+        }
+
+        public ADBShellSendEventCommand(string id, int key, ButtonPressType type)
+            : base(id, Invariant($"sendevent /dev/input/event0 1  {key} {(int)type} && sendevent /dev/input/event0 0 0 0"))
+        {
+            Key = key;
+        }
+
+        public enum ButtonPressType
+        {
+            Down = 1,
+            Up = 0
+        }
+
+        public int Key { get; }
     }
 }
