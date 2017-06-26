@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Hspi.Devices
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class NetworkHelper
+    internal static class NetworkHelper
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public static async Task<bool> PingAddress(IPAddress ipAddress, TimeSpan? timeout = null)

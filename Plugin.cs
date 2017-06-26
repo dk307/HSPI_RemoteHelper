@@ -11,7 +11,9 @@ using System.Linq;
 
 namespace Hspi
 {
+    using Nito.AsyncEx;
     using System.Collections.ObjectModel;
+    using System.Diagnostics;
     using static System.FormattableString;
 
     /// <summary>
@@ -92,6 +94,8 @@ namespace Hspi
         {
             foreach (var control in colSend)
             {
+                //Trace.WriteLine(Invariant($"{control.ControlValue}"));
+                //continue;
                 try
                 {
                     int refId = control.Ref;
@@ -106,10 +110,11 @@ namespace Hspi
                         deviceId = deviceIdentifier?.DeviceId;
                     }
 
-                    lock (connectorManagerLock)
+                    using (connectorManagerLock.Lock())
                     {
                         if (connectorManager.TryGetValue(deviceId.Value, out var connector))
                         {
+                            Trace.WriteLine(Invariant($"{control.ControlValue}"));
                             connector.HandleCommand(deviceIdentifier, control.ControlValue).Wait();
                         }
                         else
@@ -173,7 +178,7 @@ namespace Hspi
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         private void RestartConnections()
         {
-            lock (connectorManagerLock)
+            using (connectorManagerLock.Lock())
             {
                 bool changed = false;
                 // Update changed or new
@@ -226,7 +231,7 @@ namespace Hspi
         }
 
         private CancellationTokenSource cancellationTokenSourceForUpdateDevice = new CancellationTokenSource();
-        private readonly object connectorManagerLock = new object();
+        private readonly AsyncLock connectorManagerLock = new AsyncLock();
 
         private readonly Dictionary<DeviceType, DeviceControlManagerBase> connectorManager
                                 = new Dictionary<DeviceType, DeviceControlManagerBase>();

@@ -54,16 +54,10 @@ namespace Hspi.Connector
 
         public async Task HandleCommand([AllowNull]DeviceIdentifier deviceIdentifier, double value)
         {
-            await deviceActionLock.WaitAsync(ShutdownToken);
-            try
+            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
             {
                 CheckConnection();
-
                 await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, ShutdownToken);
-            }
-            finally
-            {
-                deviceActionLock.Release();
             }
         }
 
@@ -71,17 +65,12 @@ namespace Hspi.Connector
         {
             var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
-            await deviceActionLock.WaitAsync(finalToken);
-            try
+            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
             {
                 CheckConnection();
 
                 var command = connector.GetCommand(commandId);
                 await connector.ExecuteCommand(command, finalToken);
-            }
-            finally
-            {
-                deviceActionLock.Release();
             }
         }
 
@@ -89,17 +78,11 @@ namespace Hspi.Connector
         {
             var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
-            await deviceActionLock.WaitAsync(finalToken);
-            try
+            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
             {
                 CheckConnection();
-
                 var feedback = connector.GetFeedback(feedbackName);
                 await connector.ExecuteCommand(new FeedbackValue(feedback, value), finalToken);
-            }
-            finally
-            {
-                deviceActionLock.Release();
             }
         }
 
@@ -119,7 +102,6 @@ namespace Hspi.Connector
                     combinedCancellationSource.Dispose();
 
                     DisposeConnector();
-                    deviceActionLock.Dispose();
                 }
 
                 disposedValue = true;
@@ -212,8 +194,7 @@ namespace Hspi.Connector
 
         private async Task UpdateDevices()
         {
-            await deviceActionLock.WaitAsync(ShutdownToken).ConfigureAwait(false);
-            try
+            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
             {
                 using (var deviceControl = Create())
                 {
@@ -222,10 +203,6 @@ namespace Hspi.Connector
                 }
 
                 await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
-            }
-            finally
-            {
-                deviceActionLock.Release();
             }
 
             var task1 = Task.Factory.StartNew(ProcessFeedbacks, ShutdownToken,
@@ -237,7 +214,7 @@ namespace Hspi.Connector
         private readonly AsyncProducerConsumerQueue<DeviceCommand> changedCommands = new AsyncProducerConsumerQueue<DeviceCommand>();
         private readonly AsyncProducerConsumerQueue<FeedbackValue> changedFeedbacks = new AsyncProducerConsumerQueue<FeedbackValue>();
         private readonly CancellationTokenSource combinedCancellationSource;
-        private readonly SemaphoreSlim deviceActionLock = new SemaphoreSlim(1);
+        private readonly AsyncLock deviceActionLock = new AsyncLock();
         private readonly ConcurrentDictionary<string, object> feedbackValues = new ConcurrentDictionary<string, object>();
         private readonly IHSApplication HS;
         private readonly CancellationTokenSource instanceCancellationSource = new CancellationTokenSource();

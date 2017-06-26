@@ -82,9 +82,7 @@ namespace Hspi.Devices
         private async Task MacroToggleMute(CancellationToken token)
         {
             var avr = GetConnection(DeviceType.DenonAVR);
-
             await avr.HandleCommand(CommandName.MuteQuery, token).ConfigureAwait(false);
-
             await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
             var muted = GetFeedbackAsBoolean(avr, FeedbackName.Mute) ?? false;
@@ -131,7 +129,7 @@ namespace Hspi.Devices
             UpdateFeedback(FeedbackName.MacroStatus, string.Empty);
         }
 
-        private async Task<bool> EnsureAVRState(DeviceControlManager avr, object value,
+        private static async Task<bool> EnsureAVRState(DeviceControlManager avr, object value,
                                             string valueQueryCommand, string valueChangeCommand,
                                             string feedbackName, CancellationToken token)
         {
@@ -165,7 +163,7 @@ namespace Hspi.Devices
             return conn;
         }
 
-        private async Task IgnoreException(Func<Task> action)
+        private static async Task IgnoreException(Func<Task> action)
         {
             try
             {
@@ -236,7 +234,7 @@ namespace Hspi.Devices
             await TurnOnDevice(input, inputSwitchCommand, device, timeoutToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> TurnDeviceOnIfOff(DeviceControlManager connection, CancellationToken token)
+        private static async Task<bool> TurnDeviceOnIfOff(DeviceControlManager connection, CancellationToken token)
         {
             bool turnedOn = false;
             do

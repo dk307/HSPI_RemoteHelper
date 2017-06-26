@@ -233,6 +233,7 @@
     <Compile Include="Devices\DenonAVRControl.cs" />
     <Compile Include="Devices\DeviceCommand.cs" />
     <Compile Include="Devices\DeviceControl.cs" />
+    <Compile Include="Devices\OutofOrderCommandDetector.cs" />
     <Compile Include="Exceptions\DeviceException.cs" />
     <Compile Include="Devices\DeviceFeedback.cs" />
     <Compile Include="Exceptions\DevicePoweredOffException.cs" />

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using System.Collections.Generic;
     using static System.FormattableString;
 
     internal enum AdbShellKeys
@@ -55,17 +56,14 @@ namespace Hspi.Devices
             }
 
             this.adbPath = adbPath;
-            //AddCommand(new ADBShellDeviceCommand(CommandName.Menu, AdbShellKeys.KEYCODE_MENU));
-            //AddCommand(new ADBShellDeviceCommand(CommandName.MediaStepBackward, AdbShellKeys.KEYCODE_MEDIA_STEP_BACKWARD));
-            //AddCommand(new ADBShellDeviceCommand(CommandName.MediaStepForward, AdbShellKeys.KEYCODE_MEDIA_STEP_FORWARD));
 
             AddCommand(new ADBShellKeyEventCommand(CommandName.AudioTrack, AdbShellKeys.KEYCODE_MEDIA_AUDIO_TRACK));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorDown, AdbShellKeys.KEYCODE_DPAD_DOWN));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorLeft, AdbShellKeys.KEYCODE_DPAD_LEFT));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorRight, AdbShellKeys.KEYCODE_DPAD_RIGHT));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.CursorUp, AdbShellKeys.KEYCODE_DPAD_UP));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorDown, 108));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeft, 105));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorRight, 106));
+            AddCommand(new ADBShellSendEventCommand(CommandName.CursorUp, 103));
             AddCommand(new ADBShellSendEventCommand(CommandName.Enter, 0x161));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.Home, AdbShellKeys.KEYCODE_HOME));
+            AddCommand(new ADBShellSendEventCommand(CommandName.Home, 172));
             AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO));
             AddCommand(new ADBShellSendEventCommand(CommandName.MediaFastForward, 208));
             AddCommand(new ADBShellKeyEventCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT));
@@ -249,8 +247,24 @@ namespace Hspi.Devices
             }
         }
 
+        private async Task RevertDownKey(CancellationToken token)
+        {
+            if (downKey.HasValue)
+            {
+                var upCommand = new ADBShellSendEventCommand("Up Command", downKey.Value, ADBShellSendEventCommand.ButtonPressType.Up);
+                await SendCommandCore(upCommand.Data, token).ConfigureAwait(false);
+                downKey = null;
+            }
+        }
+
         private async Task SendCommand(DeviceCommand command, CancellationToken token)
         {
+            if (ShouldIgnoreCommand(command.Id))
+            {
+                Trace.WriteLine(Invariant($"Ignoring Command from ADB Device {Name} {command.Id} as it is out of order"));
+                return;
+            }
+
             string output;
             switch (command.Id)
             {
@@ -314,16 +328,6 @@ namespace Hspi.Devices
             }
         }
 
-        private async Task RevertDownKey(CancellationToken token)
-        {
-            if (downKey.HasValue)
-            {
-                var upCommand = new ADBShellSendEventCommand("Up Command", downKey.Value, ADBShellSendEventCommand.ButtonPressType.Up);
-                await SendCommandCore(upCommand.Data, token).ConfigureAwait(false);
-                downKey = null;
-            }
-        }
-
         private async Task<string> SendCommandCore(string commandData, CancellationToken token)
         {
             using (await connectionLock.LockAsync(token).ConfigureAwait(false))
@@ -355,6 +359,19 @@ namespace Hspi.Devices
             }
         }
 
+        private bool ShouldIgnoreCommand(string commandId)
+        {
+            foreach (var outofCommandDetector in outofCommandDetectors)
+            {
+                if (outofCommandDetector.ShouldIgnore(commandId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void StartServer()
         {
             var status = AdbServer.Instance.GetStatus();
@@ -371,6 +388,15 @@ namespace Hspi.Devices
 
         private readonly string adbPath;
         private readonly AsyncLock connectionLock = new AsyncLock();
+
+        private readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
+        {
+            new OutofOrderCommandDetector(CommandName.CursorDownEventUp, CommandName.CursorDownEventDown),
+            new OutofOrderCommandDetector(CommandName.CursorUpEventUp, CommandName.CursorUpEventDown),
+            new OutofOrderCommandDetector(CommandName.CursorRightEventUp, CommandName.CursorRightEventDown),
+            new OutofOrderCommandDetector(CommandName.CursorLeftEventUp, CommandName.CursorLeftEventDown),
+        };
+
         private AdbClient adbClient;
         private int? downKey = null;
         private DeviceMonitor monitor;
