@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Nito.AsyncEx;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Globalization;
 
 namespace Hspi.Devices
 {
-    using Nito.AsyncEx;
     using static System.FormattableString;
 
     internal sealed class DenonAVRControl : IPAddressableDeviceControl
@@ -39,7 +40,8 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.ChangeInputMPLAY, "SIMPLAY"));
             AddCommand(new DeviceCommand(CommandName.MacroStartVolumeUpLoop));
             AddCommand(new DeviceCommand(CommandName.MacroStartVolumeDownLoop));
-            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeUpLoop));
+            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeDownLoop));
 
             //AddCommand(new DeviceCommand(CommandName.TesT, "PSCES OFF"));
 
@@ -69,58 +71,6 @@ namespace Hspi.Devices
             }
         }
 
-        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
-        {
-            Trace.WriteLine(Invariant($"Sending {command.Id} to Denon AVR {Name} on {DeviceIP}"));
-
-            switch (command.Id)
-            {
-                case CommandName.PowerQuery:
-                    if (!await IsNetworkOn(token).ConfigureAwait(false))
-                    {
-                        UpdateFeedback(FeedbackName.Power, false);
-                        return;
-                    }
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.AllStatusQuery:
-                    string[] commandsQuery = { CommandName.InputStatusQuery,
-                                               CommandName.SoundModeQuery,
-                                               CommandName.DialogEnhancerModeQuery,
-                                               CommandName.SubWooferLevelAdjustQuery,
-                                               CommandName.AudysseyQuery,
-                                               CommandName.PowerQuery,
-                                               CommandName.MuteQuery,
-                                               CommandName.VolumeQuery,
-                    };
-
-                    foreach (string macroCommand in commandsQuery)
-                    {
-                        await SendCommandForId(macroCommand, token).ConfigureAwait(false);
-                        await Task.Delay(DefaultCommandDelay, token).ConfigureAwait(false);
-                    }
-                    break;
-
-                case CommandName.MacroStartVolumeUpLoop:
-                    MacroStartCommandLoop(CommandName.VolumeUp, TimeSpan.FromMilliseconds(100), ref volumeCancelSource);
-
-                    break;
-
-                case CommandName.MacroStartVolumeDownLoop:
-                    MacroStartCommandLoop(CommandName.VolumeDown, TimeSpan.FromMilliseconds(100), ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStopVolumeLoop:
-                    MacroStopCommandLoop(ref volumeCancelSource);
-                    break;
-
-                default:
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    break;
-            }
-        }
-
         public override async Task ExecuteCommand(FeedbackValue value, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Setting {value.Feedback.Id} to Denon AVR {Name} on {DeviceIP} with value {value.Value}"));
@@ -145,6 +95,17 @@ namespace Hspi.Devices
             }
 
             await SendCommandCore(commandData, token).ConfigureAwait(false);
+        }
+
+        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        {
+            if (canIgnore && ShouldIgnoreCommand(command.Id))
+            {
+                Trace.WriteLine(Invariant($"Ignoring Command for Denon AVR {Name} {command.Id} as it is out of order"));
+                return Task.FromResult(true);
+            }
+
+            return ExecuteCommandCore2(command, token);
         }
 
         public async Task<bool> IsNetworkOn(CancellationToken token)
@@ -236,6 +197,59 @@ namespace Hspi.Devices
             if (client != null)
             {
                 client.Dispose();
+            }
+        }
+
+        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        {
+            Trace.WriteLine(Invariant($"Sending {command.Id} to Denon AVR {Name} on {DeviceIP}"));
+
+            switch (command.Id)
+            {
+                case CommandName.PowerQuery:
+                    if (!await IsNetworkOn(token).ConfigureAwait(false))
+                    {
+                        UpdateFeedback(FeedbackName.Power, false);
+                        return;
+                    }
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.AllStatusQuery:
+                    string[] commandsQuery = { CommandName.InputStatusQuery,
+                                               CommandName.SoundModeQuery,
+                                               CommandName.DialogEnhancerModeQuery,
+                                               CommandName.SubWooferLevelAdjustQuery,
+                                               CommandName.AudysseyQuery,
+                                               CommandName.PowerQuery,
+                                               CommandName.MuteQuery,
+                                               CommandName.VolumeQuery,
+                    };
+
+                    foreach (string macroCommand in commandsQuery)
+                    {
+                        await SendCommandForId(macroCommand, token).ConfigureAwait(false);
+                        await Task.Delay(DefaultCommandDelay, token).ConfigureAwait(false);
+                    }
+                    break;
+
+                case CommandName.MacroStartVolumeUpLoop:
+                    MacroStartCommandLoop(CommandName.VolumeUp, TimeSpan.FromMilliseconds(100), ref volumeCancelSource);
+
+                    break;
+
+                case CommandName.MacroStartVolumeDownLoop:
+                    MacroStartCommandLoop(CommandName.VolumeDown, TimeSpan.FromMilliseconds(100), ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStopVolumeUpLoop:
+                case CommandName.MacroStopVolumeDownLoop:
+                    MacroStopCommandLoop(ref volumeCancelSource);
+                    break;
+
+                default:
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
             }
         }
 
@@ -369,6 +383,19 @@ namespace Hspi.Devices
             await SendCommandCore(command.Data, token).ConfigureAwait(false);
         }
 
+        private bool ShouldIgnoreCommand(string commandId)
+        {
+            foreach (var outofCommandDetector in outofCommandDetectors)
+            {
+                if (outofCommandDetector.ShouldIgnore(commandId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void UpdateFeedbackForVolumeString(string feedbackName, string volString)
         {
             while (volString.Length < 3)
@@ -383,13 +410,23 @@ namespace Hspi.Devices
         }
 
         private const int AVRPort = 23;
+
         private const char Seperator = '\r';
+
+        private readonly AsyncLock connectionLock = new AsyncLock();
+
         private readonly Encoding encoding = Encoding.ASCII;
+
+        private readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
+        {
+            new OutofOrderCommandDetector(CommandName.MacroStartVolumeUpLoop, CommandName.MacroStopVolumeUpLoop),
+            new OutofOrderCommandDetector(CommandName.MacroStartVolumeDownLoop, CommandName.MacroStopVolumeDownLoop),
+        };
+
         private TcpClient client;
         private CancellationTokenSource combinedStopTokenSource;
         private CancellationTokenSource stopTokenSource;
         private NetworkStream stream;
         private CancellationTokenSource volumeCancelSource;
-        private readonly AsyncLock connectionLock = new AsyncLock();
     }
 }

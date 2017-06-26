@@ -41,15 +41,10 @@ namespace Hspi.Devices
             GC.SuppressFinalize(this);
         }
 
-        public virtual async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
-        {
-            await Task.Delay(0);
-            throw new NotImplementedException();
-        }
+        public abstract Task ExecuteCommand(DeviceCommand command, CancellationToken token);
 
-        public virtual async Task ExecuteCommand(FeedbackValue value, CancellationToken token)
+        public virtual Task ExecuteCommand(FeedbackValue value, CancellationToken token)
         {
-            await Task.Delay(0);
             throw new NotImplementedException();
         }
 

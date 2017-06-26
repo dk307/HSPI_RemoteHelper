@@ -66,7 +66,12 @@ namespace Hspi.Devices
 
         public PhysicalAddress MacAddress { get; }
 
-        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        {
+            return ExecuteCommand2(command, token);
+        }
+
+        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Sending {command.Id} to Samsung TV {Name} on {DeviceIP}"));
 

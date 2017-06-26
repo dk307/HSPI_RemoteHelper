@@ -60,7 +60,8 @@
         public const string ChangeInputMPLAY = "Change Input - MPLAY";
         public const string MacroStartVolumeUpLoop = "Macro - Volume Up Loop Start";
         public const string MacroStartVolumeDownLoop = "Macro - Volume Down Loop Start";
-        public const string MacroStopVolumeLoop = "Macro - Volume Loop Stop";
+        public const string MacroStopVolumeUpLoop = "Macro - Volume Up Loop Stop";
+        public const string MacroStopVolumeDownLoop = "Macro - Volume Down Loop Stop";
         public const string MacroToggleMute = "Macro - Toogle Mute";
         public const string ConnectedState = "Connected";
         public const string NotConnectedState = "Not-Connected";

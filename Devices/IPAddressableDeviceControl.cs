@@ -20,6 +20,13 @@ namespace Hspi.Devices
 
         public IPAddress DeviceIP { get; }
 
+        public override Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        {
+            return ExecuteCommandCore(command, true, token);
+        }
+
+        public abstract Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token);
+
         protected static void MacroStopCommandLoop([AllowNull]ref CancellationTokenSource cancelSource)
         {
             if (cancelSource != null)
@@ -57,7 +64,7 @@ namespace Hspi.Devices
                 TimeSpan delay = DefaultCommandDelay.Add(commandDelay);
                 do
                 {
-                    await ExecuteCommand(command, token).ConfigureAwait(false);
+                    await ExecuteCommandCore(command, false, token).ConfigureAwait(false);
                     token = cancelToken;
                     if (delay != TimeSpan.Zero)
                     {

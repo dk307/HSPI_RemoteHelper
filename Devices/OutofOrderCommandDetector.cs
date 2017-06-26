@@ -7,7 +7,7 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class OutofOrderCommandDetector
     {
-        public OutofOrderCommandDetector(string upCommandId, string downCommandId)
+        public OutofOrderCommandDetector(string downCommandId, string upCommandId)
         {
             this.downCommandId = downCommandId;
             this.upCommandId = upCommandId;

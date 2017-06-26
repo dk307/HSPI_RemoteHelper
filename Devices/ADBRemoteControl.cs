@@ -126,7 +126,18 @@ namespace Hspi.Devices
             }
         }
 
-        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        {
+            if (canIgnore && ShouldIgnoreCommand(command.Id))
+            {
+                Trace.WriteLine(Invariant($"Ignoring Command for ADB Device {Name} {command.Id} as it is out of order"));
+                return Task.FromResult(true);
+            }
+
+            return ExecuteCommand2(command, token);
+        }
+
+        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
         {
             try
             {
@@ -157,7 +168,7 @@ namespace Hspi.Devices
 
         private async Task<SharpAdbClient.DeviceData> Connect(CancellationToken token)
         {
-            if (!await IsPoweredOn(token))
+            if (!await IsPoweredOn(token).ConfigureAwait(false))
             {
                 throw new DevicePoweredOffException($"Andriod Device {Name} on {DeviceIP} not powered On");
             }
@@ -259,15 +270,17 @@ namespace Hspi.Devices
 
         private async Task SendCommand(DeviceCommand command, CancellationToken token)
         {
-            if (ShouldIgnoreCommand(command.Id))
-            {
-                Trace.WriteLine(Invariant($"Ignoring Command from ADB Device {Name} {command.Id} as it is out of order"));
-                return;
-            }
-
             string output;
             switch (command.Id)
             {
+                case CommandName.CursorDownEventDown:
+                    MacroStartCommandLoop(CommandName.CursorDown, TimeSpan.Zero, ref cursorCancelLoopSource);
+                    break;
+
+                case CommandName.CursorDownEventUp:
+                    MacroStopCommandLoop(ref cursorCancelLoopSource);
+                    break;
+
                 case CommandName.PowerQuery:
                     if (!await IsPoweredOn(token))
                     {
@@ -291,7 +304,7 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.CursorUpEventDown:
-                case CommandName.CursorDownEventDown:
+                //case CommandName.CursorDownEventDown:
                 case CommandName.CursorRightEventDown:
                 case CommandName.CursorLeftEventDown:
                     await RevertDownKey(token).ConfigureAwait(false);
@@ -300,7 +313,7 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.CursorUpEventUp:
-                case CommandName.CursorDownEventUp:
+                //case CommandName.CursorDownEventUp:
                 case CommandName.CursorRightEventUp:
                 case CommandName.CursorLeftEventUp:
                     await RevertDownKey(token).ConfigureAwait(false);
@@ -391,16 +404,17 @@ namespace Hspi.Devices
 
         private readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
-            new OutofOrderCommandDetector(CommandName.CursorDownEventUp, CommandName.CursorDownEventDown),
-            new OutofOrderCommandDetector(CommandName.CursorUpEventUp, CommandName.CursorUpEventDown),
-            new OutofOrderCommandDetector(CommandName.CursorRightEventUp, CommandName.CursorRightEventDown),
-            new OutofOrderCommandDetector(CommandName.CursorLeftEventUp, CommandName.CursorLeftEventDown),
+            new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
+            new OutofOrderCommandDetector(CommandName.CursorUpEventDown, CommandName.CursorUpEventUp),
+            new OutofOrderCommandDetector(CommandName.CursorRightEventDown, CommandName.CursorRightEventUp),
+            new OutofOrderCommandDetector(CommandName.CursorLeftEventDown, CommandName.CursorLeftEventUp),
         };
 
         private AdbClient adbClient;
         private int? downKey = null;
         private DeviceMonitor monitor;
         private CancellationTokenSource queryRunningApplicationTokenSource;
+        private CancellationTokenSource cursorCancelLoopSource;
     }
 
     internal class ADBShellKeyEventCommand : DeviceCommand

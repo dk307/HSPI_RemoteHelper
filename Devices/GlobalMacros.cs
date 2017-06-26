@@ -31,7 +31,113 @@ namespace Hspi.Devices
 
         public override bool InvalidState => false;
 
-        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        public override Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        {
+            return ExecuteCommand2(command, token);
+        }
+
+        private static async Task DelayDefaultCommandTime(CancellationToken timeoutToken, params DeviceControlManager[] devices)
+        {
+            int msWait = 0;
+            foreach (var device in devices)
+            {
+                msWait = Math.Max(msWait, (int)device.DefaultCommandDelay.TotalMilliseconds);
+            }
+
+            await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
+        }
+
+        private static async Task<bool> EnsureAVRState(DeviceControlManager avr, object value,
+                                            string valueQueryCommand, string valueChangeCommand,
+                                            string feedbackName, CancellationToken token)
+        {
+            bool changed = false;
+            await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
+            do
+            {
+                await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+
+                var currentInput = avr.GetFeedbackValue(feedbackName);
+                if (object.Equals(currentInput, value))
+                {
+                    break;
+                }
+                else
+                {
+                    changed = true;
+                    await avr.HandleCommand(valueChangeCommand, token).ConfigureAwait(false);
+                    await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+                }
+
+                await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
+            } while (!token.IsCancellationRequested);
+
+            return changed;
+        }
+
+        private static bool? GetFeedbackAsBoolean(DeviceControlManager connection, string feedbackName)
+        {
+            var value = connection.GetFeedbackValue(feedbackName);
+
+            if (value != null)
+            {
+                return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+            }
+
+            return null;
+        }
+
+        private static string GetFeedbackAsString(DeviceControlManager connection, string feedbackName)
+        {
+            var value = connection.GetFeedbackValue(feedbackName);
+
+            if (value != null)
+            {
+                return Convert.ToString(value, CultureInfo.InvariantCulture);
+            }
+
+            return null;
+        }
+
+        private static async Task IgnoreException(Func<Task> action)
+        {
+            try
+            {
+                await Task.Run(action).ConfigureAwait(false);
+            }
+            catch { }
+        }
+
+        private static async Task<bool> TurnDeviceOnIfOff(DeviceControlManager connection, CancellationToken token)
+        {
+            bool turnedOn = false;
+            do
+            {
+                var isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
+                if (isOn ?? true)
+                {
+                    break;
+                }
+                else
+                {
+                    turnedOn = true;
+                    await connection.HandleCommand(CommandName.PowerOn, token).ConfigureAwait(false);
+                    await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
+                }
+
+                await connection.HandleCommand(CommandName.PowerQuery, token).ConfigureAwait(false);
+                await Task.Delay(connection.DefaultCommandDelay, token).ConfigureAwait(false);
+            } while (!token.IsCancellationRequested);
+
+            return turnedOn;
+        }
+
+        private void ClearStatus()
+        {
+            UpdateFeedback(FeedbackName.MacroStatus, string.Empty);
+        }
+
+        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Executing {command.Id} "));
 
@@ -79,6 +185,12 @@ namespace Hspi.Devices
             }
         }
 
+        private DeviceControlManager GetConnection(DeviceType deviceType)
+        {
+            var conn = connections[deviceType];
+            return conn;
+        }
+
         private async Task MacroToggleMute(CancellationToken token)
         {
             var avr = GetConnection(DeviceType.DenonAVR);
@@ -87,89 +199,6 @@ namespace Hspi.Devices
 
             var muted = GetFeedbackAsBoolean(avr, FeedbackName.Mute) ?? false;
             await avr.HandleCommand(muted ? CommandName.MuteOff : CommandName.MuteOn, token).ConfigureAwait(false);
-        }
-
-        private static async Task DelayDefaultCommandTime(CancellationToken timeoutToken, params DeviceControlManager[] devices)
-        {
-            int msWait = 0;
-            foreach (var device in devices)
-            {
-                msWait = Math.Max(msWait, (int)device.DefaultCommandDelay.TotalMilliseconds);
-            }
-
-            await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
-        }
-
-        private static bool? GetFeedbackAsBoolean(DeviceControlManager connection, string feedbackName)
-        {
-            var value = connection.GetFeedbackValue(feedbackName);
-
-            if (value != null)
-            {
-                return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
-            }
-
-            return null;
-        }
-
-        private static string GetFeedbackAsString(DeviceControlManager connection, string feedbackName)
-        {
-            var value = connection.GetFeedbackValue(feedbackName);
-
-            if (value != null)
-            {
-                return Convert.ToString(value, CultureInfo.InvariantCulture);
-            }
-
-            return null;
-        }
-
-        private void ClearStatus()
-        {
-            UpdateFeedback(FeedbackName.MacroStatus, string.Empty);
-        }
-
-        private static async Task<bool> EnsureAVRState(DeviceControlManager avr, object value,
-                                            string valueQueryCommand, string valueChangeCommand,
-                                            string feedbackName, CancellationToken token)
-        {
-            bool changed = false;
-            await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
-            do
-            {
-                await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
-
-                var currentInput = avr.GetFeedbackValue(feedbackName);
-                if (object.Equals(currentInput, value))
-                {
-                    break;
-                }
-                else
-                {
-                    changed = true;
-                    await avr.HandleCommand(valueChangeCommand, token).ConfigureAwait(false);
-                    await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
-                }
-
-                await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
-            } while (!token.IsCancellationRequested);
-
-            return changed;
-        }
-
-        private DeviceControlManager GetConnection(DeviceType deviceType)
-        {
-            var conn = connections[deviceType];
-            return conn;
-        }
-
-        private static async Task IgnoreException(Func<Task> action)
-        {
-            try
-            {
-                await Task.Run(action).ConfigureAwait(false);
-            }
-            catch { }
         }
 
         private async Task MacroTurnGameMode(bool on, CancellationToken timeoutToken)
@@ -232,30 +261,6 @@ namespace Hspi.Devices
             string inputSwitchCommand = CommandName.ChangeInputMPLAY;
             var device = GetConnection(DeviceType.ADBRemoteControl);
             await TurnOnDevice(input, inputSwitchCommand, device, timeoutToken).ConfigureAwait(false);
-        }
-
-        private static async Task<bool> TurnDeviceOnIfOff(DeviceControlManager connection, CancellationToken token)
-        {
-            bool turnedOn = false;
-            do
-            {
-                var isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
-                if (isOn ?? true)
-                {
-                    break;
-                }
-                else
-                {
-                    turnedOn = true;
-                    await connection.HandleCommand(CommandName.PowerOn, token).ConfigureAwait(false);
-                    await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
-                }
-
-                await connection.HandleCommand(CommandName.PowerQuery, token).ConfigureAwait(false);
-                await Task.Delay(connection.DefaultCommandDelay, token).ConfigureAwait(false);
-            } while (!token.IsCancellationRequested);
-
-            return turnedOn;
         }
 
         private async Task TurnOnDevice(string input, string inputSwitchCommand,
