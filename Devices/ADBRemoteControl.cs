@@ -13,14 +13,11 @@ using System.Threading.Tasks;
 namespace Hspi.Devices
 {
     using System.Collections.Generic;
+    using System.Text;
     using static System.FormattableString;
 
     internal enum AdbShellKeys
     {
-        //KEYCODE_MENU = 82,
-        //KEYCODE_MEDIA_STEP_BACKWARD = 275,
-        //KEYCODE_MEDIA_STEP_FORWARD = 274,
-
         KEYCODE_CAPTIONS = 175,
         KEYCODE_DPAD_DOWN = 20,
         KEYCODE_DPAD_LEFT = 21,
@@ -90,14 +87,23 @@ namespace Hspi.Devices
                                                  @"com.amazon.amazonvideo.livingroom.nvidia", @"com.amazon.ignition.IgnitionActivity"));
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchPBSKids, @"org.pbskids.video"));
 
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventDown, 103, ADBShellSendEventCommand.ButtonPressType.Down));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventUp, 103, ADBShellSendEventCommand.ButtonPressType.Up));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventDown, 108, ADBShellSendEventCommand.ButtonPressType.Down));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventUp, 108, ADBShellSendEventCommand.ButtonPressType.Up));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventDown, 106, ADBShellSendEventCommand.ButtonPressType.Down));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventUp, 106, ADBShellSendEventCommand.ButtonPressType.Up));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventDown, 105, ADBShellSendEventCommand.ButtonPressType.Down));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventUp, 105, ADBShellSendEventCommand.ButtonPressType.Up));
+            AddCommand(new DeviceCommand(CommandName.CursorUpEventDown));
+            AddCommand(new DeviceCommand(CommandName.CursorUpEventUp));
+            AddCommand(new DeviceCommand(CommandName.CursorDownEventDown));
+            AddCommand(new DeviceCommand(CommandName.CursorDownEventUp));
+            AddCommand(new DeviceCommand(CommandName.CursorRightEventDown));
+            AddCommand(new DeviceCommand(CommandName.CursorRightEventUp));
+            AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown));
+            AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp));
+
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventDown, 103, ADBShellSendEventCommand.ButtonPressType.Down));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventUp, 103, ADBShellSendEventCommand.ButtonPressType.Up));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventDown, 108, ADBShellSendEventCommand.ButtonPressType.Down));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventUp, 108, ADBShellSendEventCommand.ButtonPressType.Up));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventDown, 106, ADBShellSendEventCommand.ButtonPressType.Down));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventUp, 106, ADBShellSendEventCommand.ButtonPressType.Up));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventDown, 105, ADBShellSendEventCommand.ButtonPressType.Down));
+            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventUp, 105, ADBShellSendEventCommand.ButtonPressType.Up));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
@@ -135,20 +141,6 @@ namespace Hspi.Devices
             }
 
             return ExecuteCommand2(command, token);
-        }
-
-        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
-        {
-            try
-            {
-                Trace.WriteLine(Invariant($"Sending {command.Id} to Andriod Device {Name} on {DeviceIP}"));
-                await SendCommand(command, token).ConfigureAwait(false);
-            }
-            catch
-            {
-                DisposeConnection();
-                throw;
-            }
         }
 
         protected override void Dispose(bool disposing)
@@ -206,6 +198,20 @@ namespace Hspi.Devices
             }
         }
 
+        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
+        {
+            try
+            {
+                Trace.WriteLine(Invariant($"Sending {command.Id} to Andriod Device {Name} on {DeviceIP}"));
+                await SendCommand(command, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                DisposeConnection();
+                throw;
+            }
+        }
+
         private SharpAdbClient.DeviceData GetOnlineDevice()
         {
             var device = adbClient?.GetDevices()?.Where((x) =>
@@ -226,6 +232,11 @@ namespace Hspi.Devices
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
+        }
+
+        private void MacroStartCommandLoop(string commandId)
+        {
+            MacroStartCommandLoop(commandId, TimeSpan.FromMilliseconds(100), ref cursorCancelLoopSource);
         }
 
         private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
@@ -258,25 +269,30 @@ namespace Hspi.Devices
             }
         }
 
-        private async Task RevertDownKey(CancellationToken token)
-        {
-            if (downKey.HasValue)
-            {
-                var upCommand = new ADBShellSendEventCommand("Up Command", downKey.Value, ADBShellSendEventCommand.ButtonPressType.Up);
-                await SendCommandCore(upCommand.Data, token).ConfigureAwait(false);
-                downKey = null;
-            }
-        }
-
         private async Task SendCommand(DeviceCommand command, CancellationToken token)
         {
             string output;
             switch (command.Id)
             {
                 case CommandName.CursorDownEventDown:
-                    MacroStartCommandLoop(CommandName.CursorDown, TimeSpan.Zero, ref cursorCancelLoopSource);
+                    MacroStartCommandLoop(CommandName.CursorDown);
                     break;
 
+                case CommandName.CursorLeftEventDown:
+                    MacroStartCommandLoop(CommandName.CursorLeft);
+                    break;
+
+                case CommandName.CursorRightEventDown:
+                    MacroStartCommandLoop(CommandName.CursorRight);
+                    break;
+
+                case CommandName.CursorUpEventDown:
+                    MacroStartCommandLoop(CommandName.CursorUp);
+                    break;
+
+                case CommandName.CursorLeftEventUp:
+                case CommandName.CursorRightEventUp:
+                case CommandName.CursorUpEventUp:
                 case CommandName.CursorDownEventUp:
                     MacroStopCommandLoop(ref cursorCancelLoopSource);
                     break;
@@ -301,22 +317,6 @@ namespace Hspi.Devices
 
                 case CommandName.CurrentApplicationQuery:
                     await QueryCurrentApplication(token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.CursorUpEventDown:
-                //case CommandName.CursorDownEventDown:
-                case CommandName.CursorRightEventDown:
-                case CommandName.CursorLeftEventDown:
-                    await RevertDownKey(token).ConfigureAwait(false);
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    downKey = (command as ADBShellSendEventCommand)?.Key;
-                    break;
-
-                case CommandName.CursorUpEventUp:
-                //case CommandName.CursorDownEventUp:
-                case CommandName.CursorRightEventUp:
-                case CommandName.CursorLeftEventUp:
-                    await RevertDownKey(token).ConfigureAwait(false);
                     break;
 
                 case CommandName.Home:
@@ -363,7 +363,9 @@ namespace Hspi.Devices
                     throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
                 }
 
-                await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, token, 1000).ConfigureAwait(false);
+                // the reason we do not send cancellation token is to not break commands in between
+                await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, default(CancellationToken), 1000).ConfigureAwait(false);
+                token.ThrowIfCancellationRequested();
                 string output = receiver.ToString();
                 Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
 
@@ -411,10 +413,9 @@ namespace Hspi.Devices
         };
 
         private AdbClient adbClient;
-        private int? downKey = null;
+        private CancellationTokenSource cursorCancelLoopSource;
         private DeviceMonitor monitor;
         private CancellationTokenSource queryRunningApplicationTokenSource;
-        private CancellationTokenSource cursorCancelLoopSource;
     }
 
     internal class ADBShellKeyEventCommand : DeviceCommand
@@ -441,22 +442,31 @@ namespace Hspi.Devices
     internal class ADBShellSendEventCommand : DeviceCommand
     {
         public ADBShellSendEventCommand(string id, int key)
-            : base(id, Invariant($"sendevent /dev/input/event0 1 {key} 1 && sendevent /dev/input/event0 1 {key} 0 && sendevent /dev/input/event0 0 0 0"))
+            : base(id, BuildCommand(key))
         {
         }
 
-        public ADBShellSendEventCommand(string id, int key, ButtonPressType type)
-            : base(id, Invariant($"sendevent /dev/input/event0 1  {key} {(int)type} && sendevent /dev/input/event0 0 0 0"))
-        {
-            Key = key;
-        }
+        //public ADBShellSendEventCommand(string id, int key, ButtonPressType type)
+        //    : base(id, Invariant($"sendevent /dev/input/event0 1  {key} {(int)type} && sendevent /dev/input/event0 0 0 0"))
+        //{
+        //    Key = key;
+        //}
 
-        public enum ButtonPressType
-        {
-            Down = 1,
-            Up = 0
-        }
+        //public enum ButtonPressType
+        //{
+        //    Down = 1,
+        //    Up = 0
+        //}
 
-        public int Key { get; }
+        private static string BuildCommand(int key)
+        {
+            StringBuilder stb = new StringBuilder();
+            stb.Append(Invariant($"sendevent /dev/input/event0 1 {key} 1 && "));
+            stb.Append(Invariant($"sendevent /dev/input/event0 0 0 0 && "));
+            stb.Append(Invariant($"sendevent /dev/input/event0 1 {key} 0 && "));
+            stb.Append(Invariant($"sendevent /dev/input/event0 0 0 0"));
+            //stb.Append(Invariant($"sendevent /dev/input/event0 4 4 8420876"));
+            return stb.ToString();
+        }
     }
 }

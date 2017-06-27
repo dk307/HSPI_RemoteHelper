@@ -4,6 +4,9 @@ namespace Hspi.Devices
 {
     using System.Collections.Generic;
 
+    // The whole idea of this class is to make sure that down and up are in pairs and sequence.
+    // If up comes first, down is ignored.
+    // This is need because Hstouch is unreliable on down/release commands
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class OutofOrderCommandDetector
     {

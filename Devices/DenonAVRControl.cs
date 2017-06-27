@@ -373,7 +373,10 @@ namespace Hspi.Devices
                 }
 
                 byte[] bytesCommand = encoding.GetBytes(Invariant($"{commandData}{Seperator}"));
-                await stream.WriteAsync(bytesCommand, 0, bytesCommand.Length, token).ConfigureAwait(false);
+
+                // the reason we do not send cancellation token is to not break commands in between
+                await stream.WriteAsync(bytesCommand, 0, bytesCommand.Length, default(CancellationToken)).ConfigureAwait(false);
+                token.ThrowIfCancellationRequested();
             }
         }
 
