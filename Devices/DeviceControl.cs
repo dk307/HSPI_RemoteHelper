@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using System.Linq;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -104,12 +105,41 @@ namespace Hspi.Devices
             Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to [{value}]"));
             if (feedbacks.TryGetValue(feedbackName, out var feedback))
             {
+                if ((value != null) && (value.GetType() == typeof(string)))
+                {
+                    value = TranslateStringFeedback((string)value);
+                }
                 FeedbackChanged?.Invoke(this, new FeedbackValue(feedback, value));
             }
             else
             {
                 Trace.WriteLine(Invariant($"Unknown Feedback {feedbackName} for {Name}"));
             }
+        }
+
+        protected virtual string TranslateStringFeedback(string input)
+        {
+            if (String.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            var words = input.Split(' ', ':');
+
+            var newWords = new List<string>(words.Length);
+            foreach (var v in words)
+            {
+                if (v.Length > 1)
+                {
+                    newWords.Add(v[0].ToString().ToUpperInvariant() + v.Substring(1).ToLowerInvariant());
+                }
+                else
+                {
+                    newWords.Add(v);
+                }
+            }
+
+            return string.Join(" ", newWords);
         }
 
         public static readonly DeviceCommand ConnectCommand

@@ -47,6 +47,7 @@ namespace Hspi.DeviceData
             var pairs = new List<VSVGPairs.VSPair>();
             int value = -100;
             int row = 1;
+            int col = 1;
             foreach (var command in commands)
             {
                 int statusValue = command.FixedValue ?? value++;
@@ -65,8 +66,8 @@ namespace Hspi.DeviceData
                             Render = Enums.CAPIControlType.Button,
                             Render_Location = new Enums.CAPIControlLocation()
                             {
-                                Row = row++,
-                                Column = 1,
+                                Row = row,
+                                Column = col++,
                             }
                         });
                         break;
@@ -90,14 +91,20 @@ namespace Hspi.DeviceData
                             Render = Enums.CAPIControlType.Button,
                             Render_Location = new Enums.CAPIControlLocation()
                             {
-                                Row = row++,
-                                Column = 1,
+                                Row = row,
+                                Column = col++,
                             }
                         });
                         break;
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(commands));
+                }
+
+                if (col > 5)
+                {
+                    col = 1;
+                    row++;
                 }
             }
 

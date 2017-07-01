@@ -2,6 +2,7 @@
 {
     public static class FeedbackName
     {
+        public const string DynamicVolume = "Dynamic Volume";
         public const string Audyssey = "Audyssey";
         public const string CurrentApplication = "Current Application";
         public const string DialogEnhancementLevel = "Dialog Enhancement Level";

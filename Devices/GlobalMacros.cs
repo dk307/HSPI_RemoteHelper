@@ -307,6 +307,8 @@ namespace Hspi.Devices
                      CommandName.DialogEnhancerModeOff, FeedbackName.DialogEnhancementMode, timeoutToken).ConfigureAwait(false);
                 await EnsureAVRState(avr, false, CommandName.SubWooferLevelAdjustQuery,
                      CommandName.SubWooferLevelAdjustOff, FeedbackName.SubwooferAdjustMode, timeoutToken).ConfigureAwait(false);
+                await EnsureAVRState(avr, "Off", CommandName.DynamicVolumeQuery,
+                     CommandName.DynamicVolumeOff, FeedbackName.DynamicVolume, timeoutToken).ConfigureAwait(false);
             }
         }
 

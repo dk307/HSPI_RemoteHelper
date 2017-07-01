@@ -105,12 +105,39 @@ namespace Hspi.Devices
             //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventDown, 105, ADBShellSendEventCommand.ButtonPressType.Down));
             //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventUp, 105, ADBShellSendEventCommand.ButtonPressType.Up));
 
+            AddKeyboardCommands();
+
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.ScreenSaverRunning, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.CurrentApplication, TypeCode.String));
 
             StartServer();
+        }
+
+        private void AddKeyboardCommands()
+        {
+            for (char c = '0'; c <= '9'; c++)
+            {
+                AddCommand(new ADBShellCharCommand(c.ToString(), c));
+            }
+
+            for (char c = 'a'; c <= 'z'; c++)
+            {
+                AddCommand(new ADBShellCharCommand(c.ToString(), c));
+            }
+
+            for (char c = 'A'; c <= 'Z'; c++)
+            {
+                AddCommand(new ADBShellCharCommand(c.ToString(), c));
+            }
+            //string otherChars = "!,?.~;()'^*%?@&#=+,:/_-";
+            //foreach (char c in otherChars)
+            //{
+            //    AddCommand(new ADBShellCharCommand(c.ToString(), c));
+            //}
+
+            //AddCommand(new ADBShellCharCommand("Space", "%s"));
         }
 
         public override bool InvalidState
@@ -422,6 +449,19 @@ namespace Hspi.Devices
     {
         public ADBShellKeyEventCommand(string id, AdbShellKeys key)
             : base(id, Invariant($@"input keyevent {(int)key}"))
+        {
+        }
+    }
+
+    internal class ADBShellCharCommand : DeviceCommand
+    {
+        public ADBShellCharCommand(string id, char key)
+            : base(id, Invariant($"input text \"{key}\""))
+        {
+        }
+
+        public ADBShellCharCommand(string id, string key)
+            : base(id, Invariant($"input text \"{key}\""))
         {
         }
     }
