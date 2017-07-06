@@ -47,7 +47,7 @@ namespace Hspi.Devices
             await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
         }
 
-        private static async Task<bool> EnsureAVRState(DeviceControlManager avr, object value,
+        private static async Task<bool> EnsureAVRState(DeviceControlManager avr, object expectedValue,
                                             string valueQueryCommand, string valueChangeCommand,
                                             string feedbackName, CancellationToken token)
         {
@@ -57,8 +57,8 @@ namespace Hspi.Devices
             {
                 await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
-                var currentInput = avr.GetFeedbackValue(feedbackName);
-                if (object.Equals(currentInput, value))
+                var currentValue = avr.GetFeedbackValue(feedbackName);
+                if (object.Equals(currentValue, expectedValue))
                 {
                     break;
                 }
@@ -257,7 +257,7 @@ namespace Hspi.Devices
 
         private async Task MacroTurnOnNvidiaShield(CancellationToken timeoutToken)
         {
-            string input = "MPLAY";
+            string input = DenonAVRControl.NvidiaShieldInput;
             string inputSwitchCommand = CommandName.ChangeInputMPLAY;
             var device = GetConnection(DeviceType.ADBRemoteControl);
             await TurnOnDevice(input, inputSwitchCommand, device, timeoutToken).ConfigureAwait(false);
@@ -286,7 +286,7 @@ namespace Hspi.Devices
             bool turnedOnAVR = await TurnDeviceOnIfOff(avr, timeoutToken).ConfigureAwait(false);
 
             // switch to input
-            UpdateStatus($"Switching {avr.Name} Inputs");
+            UpdateStatus($"Switching {avr.Name} to {input}");
             bool inputChanged = await EnsureAVRState(avr, input, CommandName.InputStatusQuery,
                                  inputSwitchCommand, FeedbackName.Input, timeoutToken).ConfigureAwait(false);
 

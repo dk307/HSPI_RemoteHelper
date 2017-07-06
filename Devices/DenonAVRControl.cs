@@ -128,6 +128,9 @@ namespace Hspi.Devices
 
                 case "MCH STEREO":
                     return "All Channel Stereo";
+
+                case "MPLAY":
+                    return NvidiaShieldInput;
             }
             return base.TranslateStringFeedback(input);
         }
@@ -265,7 +268,7 @@ namespace Hspi.Devices
             combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
             CancellationToken combinedToken = combinedStopTokenSource.Token;
 
-            await client.ConnectAsync(DeviceIP.ToString(), AVRPort);
+            await client.ConnectAsync(DeviceIP.ToString(), AVRPort).ConfigureAwait(false);
             UpdateConnectedState(true);
 
             stream = client.GetStream();
@@ -532,6 +535,7 @@ namespace Hspi.Devices
         }
 
         private const int AVRPort = 23;
+        public const string NvidiaShieldInput = "Nvidia Shield";
         private const char Seperator = '\r';
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly Encoding encoding = Encoding.ASCII;

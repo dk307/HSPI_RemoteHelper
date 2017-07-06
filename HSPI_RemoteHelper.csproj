@@ -95,8 +95,8 @@
     <Reference Include="Nito.AsyncEx.Tasks, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Nito.AsyncEx.Tasks.5.0.0-pre-02\lib\netstandard1.3\Nito.AsyncEx.Tasks.dll</HintPath>
     </Reference>
-    <Reference Include="Nito.Cancellation, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Nito.Cancellation.1.0.1\lib\portable45-net45+win8+wp8+wpa81\Nito.Cancellation.dll</HintPath>
+    <Reference Include="Nito.Cancellation, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Nito.Cancellation.1.0.2\lib\netstandard1.0\Nito.Cancellation.dll</HintPath>
     </Reference>
     <Reference Include="Nito.Collections.Deque, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Nito.Collections.Deque.1.0.0\lib\portable45-net45+win8+wp8+wpa81\Nito.Collections.Deque.dll</HintPath>
@@ -283,12 +283,64 @@
     <None Include="FodyWeavers.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="packages\Fody.2.0.11-beta0001\build\netstandard1.4\Fody.targets" Condition="Exists('packages\Fody.2.0.11-beta0001\build\netstandard1.4\Fody.targets')" />
+  <Import Project="packages\Fody.2.1.0\build\netstandard1.0\Fody.targets" Condition="Exists('packages\Fody.2.1.0\build\netstandard1.0\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\Fody.2.0.11-beta0001\build\netstandard1.4\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Fody.2.0.11-beta0001\build\netstandard1.4\Fody.targets'))" />
+    <Error Condition="!Exists('packages\Fody.2.1.0\build\netstandard1.0\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Fody.2.1.0\build\netstandard1.0\Fody.targets'))" />
+    <Error Condition="!Exists('packages\ILRepack.Lib.MSBuild.Task.2.0.13\build\ILRepack.Lib.MSBuild.Task.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ILRepack.Lib.MSBuild.Task.2.0.13\build\ILRepack.Lib.MSBuild.Task.targets'))" />
+  </Target>
+  <Import Project="packages\ILRepack.Lib.MSBuild.Task.2.0.13\build\ILRepack.Lib.MSBuild.Task.targets" Condition="Exists('packages\ILRepack.Lib.MSBuild.Task.2.0.13\build\ILRepack.Lib.MSBuild.Task.targets')" />
+  <!-- ILRepack -->
+  <Target Name="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <InputAssemblies Include="$(OutputPath)\HSPI_RemoteHelper.exe" />
+      <InputAssemblies Include="$(OutputPath)\Microsoft.Win32.Primitives.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Context.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Interop.WaitHandles.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Oop.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.Cancellation.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
+      <InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
+      <InputAssemblies Include="$(OutputPath)\SharpAdbClient.dll" />
+      <InputAssemblies Include="$(OutputPath)\SuperSocket.ClientEngine.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.AppContext.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Collections.Specialized.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Console.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Diagnostics.DiagnosticSource.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Diagnostics.Tracing.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Globalization.Calendars.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.IO.Compression.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.IO.Compression.ZipFile.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.IO.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.IO.FileSystem.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.IO.FileSystem.Primitives.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Net.Http.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Net.NameResolution.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Net.Security.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Net.Sockets.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Reflection.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Runtime.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Runtime.Extensions.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Runtime.InteropServices.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Runtime.InteropServices.RuntimeInformation.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Security.Cryptography.Algorithms.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Security.Cryptography.Encoding.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Security.Cryptography.Primitives.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Security.Cryptography.X509Certificates.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Threading.ThreadPool.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Xml.ReaderWriter.dll" />
+      <InputAssemblies Include="$(OutputPath)\WebSocket4Net.dll" />
+    </ItemGroup>
+    <ItemGroup>
+      <!-- Must be a fully qualified name -->
+      <!--<DoNotInternalizeAssemblies Include="ExampleAssemblyToMerge3" />-->
+    </ItemGroup>
+    <ILRepack Parallel="true" Internalize="true" InternalizeExclude="@(DoNotInternalizeAssemblies)" InputAssemblies="@(InputAssemblies)" TargetKind="SameAsPrimaryAssembly" OutputFile="$(OutputPath)\$(AssemblyName).exe" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
