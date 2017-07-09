@@ -1,4 +1,5 @@
-﻿using NullGuard;
+﻿using Nito.AsyncEx;
+using NullGuard;
 using System;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -75,7 +76,7 @@ namespace Hspi.Devices
             using (var cl = new UdpClient())
             {
                 var sendTask = cl.SendAsync(packet, packet.Length, target);
-                await sendTask.WaitOnRequestCompletion(token).ConfigureAwait(false);
+                await sendTask.WaitAsync(token).ConfigureAwait(false);
             }
         }
 

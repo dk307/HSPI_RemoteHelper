@@ -29,6 +29,7 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.SamsungTV);
             LoadDeviceConfig(DeviceType.DenonAVR);
             LoadDeviceConfig(DeviceType.ADBRemoteControl);
+            LoadDeviceConfig(DeviceType.IP2IR);
         }
 
         public event EventHandler<EventArgs> ConfigChanged;

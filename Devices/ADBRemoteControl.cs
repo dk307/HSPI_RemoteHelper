@@ -258,7 +258,7 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
         }
 
         private void MacroStartCommandLoop(string commandId)
@@ -456,11 +456,6 @@ namespace Hspi.Devices
     internal class ADBShellCharCommand : DeviceCommand
     {
         public ADBShellCharCommand(string id, char key)
-            : base(id, Invariant($"input text \"{key}\""))
-        {
-        }
-
-        public ADBShellCharCommand(string id, string key)
             : base(id, Invariant($"input text \"{key}\""))
         {
         }

@@ -135,7 +135,7 @@ namespace Hspi.Devices
             webSocket.Closed += WebSocket_Closed;
             webSocket.Open();
 
-            await connectedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            await connectedSource.Task.WaitAsync(token).ConfigureAwait(false);
             Trace.WriteLine(Invariant($"Connected to Samsung TV {Name} on {DeviceIP}"));
             UpdateConnectedState(true);
         }
@@ -157,7 +157,7 @@ namespace Hspi.Devices
         {
             // TV keeps reponding to Pings for 7s after it has been turned off
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
-            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitOnRequestCompletion(token);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
         }
 
         private async Task SendCommandCore(string commandData, CancellationToken token)
@@ -172,12 +172,6 @@ namespace Hspi.Devices
                 string commandJson = Invariant($"{{\"method\":\"ms.remote.control\",\"params\":{{\"Cmd\":\"Click\",\"DataOfCmd\":\"{commandData}\",\"Option\":\"false\",\"TypeOfRemote\":\"SendRemoteKey\"}}}}");
                 webSocket.Send(commandJson);
             }
-        }
-
-        private async Task SendCommandForId(string commandId, CancellationToken token)
-        {
-            var command = GetCommand(commandId);
-            await SendCommandCore(command.Data, token);
         }
 
         private async Task UpdatePowerFeedbackState(CancellationToken token = default(CancellationToken))

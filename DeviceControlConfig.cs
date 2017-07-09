@@ -15,6 +15,7 @@ namespace Hspi
         ADBRemoteControl,
         DenonAVR,
         GlobalMacros,
+        IP2IR
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -55,6 +56,9 @@ namespace Hspi
 
                 case DeviceType.GlobalMacros:
                     return new string[] { };
+
+                case DeviceType.IP2IR:
+                    return new string[] { DefaultCommandDelayId, IP2IRFileNameId };
             }
 
             throw new KeyNotFoundException();
@@ -76,6 +80,9 @@ namespace Hspi
 
                 case DeviceType.DenonAVR:
                     return new DenonAVRControl(Name, DeviceIP, DefaultCommandDelay);
+
+                case DeviceType.IP2IR:
+                    return new IP2IRDeviceControl(Name, DeviceIP, DefaultCommandDelay, AdditionalValues[IP2IRFileNameId]);
             }
 
             throw new KeyNotFoundException();
@@ -101,6 +108,7 @@ namespace Hspi
         public const string DefaultCommandDelayId = "CommandDelay(ms)";
         public const string DefaultPowerOnDelayId = "PowerOnDelay(ms)";
         public const string PhysicalAddressId = "PhysicalAddress";
+        public const string IP2IRFileNameId = "IP2IRFileName";
         public IReadOnlyDictionary<string, string> AdditionalValues;
         private Lazy<TimeSpan> defaultCommandDelay;
         private Lazy<TimeSpan> powerOnDelay;

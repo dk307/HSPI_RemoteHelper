@@ -468,7 +468,7 @@ namespace Hspi.Devices
         {
             try
             {
-                using (StreamReader reader = new StreamReader(stream, Encoding.ASCII))
+                using (StreamReader reader = new StreamReader(stream, encoding))
                 {
                     while (!combinedToken.IsCancellationRequested)
                     {

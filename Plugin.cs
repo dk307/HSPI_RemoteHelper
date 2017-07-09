@@ -8,12 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
+using Nito.AsyncEx;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace Hspi
 {
-    using Nito.AsyncEx;
-    using System.Collections.ObjectModel;
-    using System.Diagnostics;
     using static System.FormattableString;
 
     /// <summary>
