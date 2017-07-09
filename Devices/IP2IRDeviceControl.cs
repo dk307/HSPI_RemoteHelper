@@ -2,7 +2,6 @@
 using NullGuard;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -22,8 +21,11 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class IP2IRDeviceControl : IPAddressableDeviceControl
     {
-        public IP2IRDeviceControl(string name, IPAddress deviceIP, TimeSpan defaultCommandDelay, string fileName) :
-            base(name, deviceIP, defaultCommandDelay)
+        public IP2IRDeviceControl(string name, IPAddress deviceIP,
+                                  TimeSpan defaultCommandDelay,
+                                  string fileName,
+                                  IConnectionProvider connectionProvider) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider)
         {
             // <commands>
             // <ir name="Samsung TV HDMI4",\  id="-100", port="1:2", pronto="0000 33 44 "/>
@@ -60,17 +62,6 @@ namespace Hspi.Devices
             }
         }
 
-        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
-        {
-            if (canIgnore && ShouldIgnoreCommand(command.Id))
-            {
-                Trace.WriteLine(Invariant($"Ignoring Command for IP2IR {Name} {command.Id} as it is out of order"));
-                return Task.FromResult(true);
-            }
-
-            return ExecuteCommandCore2(command, token);
-        }
-
         protected override void Dispose(bool disposing)
         {
             stopTokenSource?.Cancel();
@@ -80,6 +71,11 @@ namespace Hspi.Devices
             }
 
             base.Dispose(disposing);
+        }
+
+        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        {
+            return ExecuteCommandCore2(command, token);
         }
 
         private static async Task<string> ReadLineAsync(StreamReader reader)
@@ -227,7 +223,6 @@ namespace Hspi.Devices
                     }
                     break;
 
-                case var genericError when feedback.StartsWith("ERROR:", StringComparison.Ordinal):
                 default:
                     SetError(feedback);
                     break;
@@ -268,19 +263,6 @@ namespace Hspi.Devices
                     completionSource.SetException(new DeviceException(Invariant($"Failed with {error}")));
                 }
             }
-        }
-
-        private bool ShouldIgnoreCommand(string commandId)
-        {
-            foreach (var outofCommandDetector in outofCommandDetectors)
-            {
-                if (outofCommandDetector.ShouldIgnore(commandId))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private const int Port = 4998;
@@ -359,11 +341,6 @@ namespace Hspi.Devices
         private readonly AsyncLock connectionLock = new AsyncLock();
 
         private readonly Encoding encoding = Encoding.GetEncoding("ISO-8859-1");
-
-        private readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
-        {
-            //new OutofOrderCommandDetector(CommandName.MacroStartVolumeUpLoop, CommandName.MacroStopVolumeUpLoop),
-        };
 
         private TcpClient client;
 

@@ -13,9 +13,9 @@ namespace Hspi.Connector
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal abstract class DeviceControlManagerBase : IDisposable
+    internal abstract class DeviceControlManagerCore : IDisposable, IDeviceFeedbackProvider
     {
-        public DeviceControlManagerBase(IHSApplication HS, ILogger logger, string name,
+        public DeviceControlManagerCore(IHSApplication HS, ILogger logger, string name,
                                         DeviceType deviceType, CancellationToken shutdownToken)
         {
             Name = name;
@@ -221,7 +221,6 @@ namespace Hspi.Connector
         private readonly ILogger logger;
         private readonly DeviceRootDeviceManager rootDeviceData;
         private DeviceControl connector;
-
         private bool disposedValue = false; // To detect redundant calls
     }
 }

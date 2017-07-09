@@ -1,19 +1,27 @@
 ﻿using NullGuard;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using System.Collections.Generic;
+    using static System.FormattableString;
+
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class IPAddressableDeviceControl : DeviceControl
     {
-        protected IPAddressableDeviceControl(string name, IPAddress deviceIP, TimeSpan defaultCommandDelay) :
-            base(name)
+        protected IPAddressableDeviceControl(string name, IPAddress deviceIP,
+                                             TimeSpan defaultCommandDelay,
+                                             IConnectionProvider connectionProvider,
+                                             IList<OutofOrderCommandDetector> outofCommandDetectors = null) :
+            base(name, connectionProvider)
         {
             DefaultCommandDelay = defaultCommandDelay;
             DeviceIP = deviceIP;
+            this.outofCommandDetectors = outofCommandDetectors ?? new List<OutofOrderCommandDetector>();
         }
 
         public TimeSpan DefaultCommandDelay { get; }
@@ -25,7 +33,16 @@ namespace Hspi.Devices
             return ExecuteCommandCore(command, true, token);
         }
 
-        public abstract Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token);
+        public Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        {
+            if (canIgnore && ShouldIgnoreCommand(command.Id))
+            {
+                Trace.WriteLine(Invariant($"Ignoring Command for IP2IR {Name} {command.Id} as it is out of order"));
+                return Task.FromResult(true);
+            }
+
+            return ExecuteCommandCore(command, token);
+        }
 
         protected static void MacroStopCommandLoop([AllowNull]ref CancellationTokenSource cancelSource)
         {
@@ -35,6 +52,8 @@ namespace Hspi.Devices
                 cancelSource = null;
             }
         }
+
+        protected abstract Task ExecuteCommandCore(DeviceCommand command, CancellationToken token);
 
         protected void MacroStartCommandLoop(string commandId, TimeSpan commandDelay,
                                              [AllowNull]ref CancellationTokenSource cancelSource)
@@ -73,5 +92,20 @@ namespace Hspi.Devices
                 } while ((!token.IsCancellationRequested));
             });
         }
+
+        private bool ShouldIgnoreCommand(string commandId)
+        {
+            foreach (var outofCommandDetector in outofCommandDetectors)
+            {
+                if (outofCommandDetector.ShouldIgnore(commandId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private readonly IList<OutofOrderCommandDetector> outofCommandDetectors;
     }
 }

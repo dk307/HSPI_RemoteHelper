@@ -44,8 +44,10 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class ADBRemoteControl : IPAddressableDeviceControl
     {
-        public ADBRemoteControl(string name, IPAddress deviceIP, string adbPath, TimeSpan defaultCommandDelay) :
-            base(name, deviceIP, defaultCommandDelay)
+        public ADBRemoteControl(string name, IPAddress deviceIP,
+                                string adbPath, TimeSpan defaultCommandDelay,
+                                IConnectionProvider connectionProvider) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, adbOutofCommandDetectors)
         {
             if (!File.Exists(adbPath))
             {
@@ -159,15 +161,18 @@ namespace Hspi.Devices
             }
         }
 
-        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
-            if (canIgnore && ShouldIgnoreCommand(command.Id))
+            try
             {
-                Trace.WriteLine(Invariant($"Ignoring Command for ADB Device {Name} {command.Id} as it is out of order"));
-                return Task.FromResult(true);
+                Trace.WriteLine(Invariant($"Sending {command.Id} to Andriod Device {Name} on {DeviceIP}"));
+                return SendCommand(command, token);
             }
-
-            return ExecuteCommand2(command, token);
+            catch
+            {
+                DisposeConnection();
+                throw;
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -222,20 +227,6 @@ namespace Hspi.Devices
             {
                 monitor?.Dispose();
                 //do not set null
-            }
-        }
-
-        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
-        {
-            try
-            {
-                Trace.WriteLine(Invariant($"Sending {command.Id} to Andriod Device {Name} on {DeviceIP}"));
-                await SendCommand(command, token).ConfigureAwait(false);
-            }
-            catch
-            {
-                DisposeConnection();
-                throw;
             }
         }
 
@@ -401,19 +392,6 @@ namespace Hspi.Devices
             }
         }
 
-        private bool ShouldIgnoreCommand(string commandId)
-        {
-            foreach (var outofCommandDetector in outofCommandDetectors)
-            {
-                if (outofCommandDetector.ShouldIgnore(commandId))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private void StartServer()
         {
             var status = AdbServer.Instance.GetStatus();
@@ -431,7 +409,7 @@ namespace Hspi.Devices
         private readonly string adbPath;
         private readonly AsyncLock connectionLock = new AsyncLock();
 
-        private readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
+        private static readonly List<OutofOrderCommandDetector> adbOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
             new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
             new OutofOrderCommandDetector(CommandName.CursorUpEventDown, CommandName.CursorUpEventUp),
@@ -480,18 +458,6 @@ namespace Hspi.Devices
             : base(id, BuildCommand(key))
         {
         }
-
-        //public ADBShellSendEventCommand(string id, int key, ButtonPressType type)
-        //    : base(id, Invariant($"sendevent /dev/input/event0 1  {key} {(int)type} && sendevent /dev/input/event0 0 0 0"))
-        //{
-        //    Key = key;
-        //}
-
-        //public enum ButtonPressType
-        //{
-        //    Down = 1,
-        //    Up = 0
-        //}
 
         private static string BuildCommand(int key)
         {

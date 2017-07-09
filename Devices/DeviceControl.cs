@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
-    using System.Linq;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControl : IDisposable
     {
-        protected DeviceControl(string name)
+        protected DeviceControl(string name, IConnectionProvider connectionProvider)
         {
+            ConnectionProvider = connectionProvider;
             Name = name;
             AddCommand(ConnectCommand);
             AddCommand(NotConnectedCommand);
@@ -35,6 +35,7 @@ namespace Hspi.Devices
         public IEnumerable<DeviceFeedback> Feedbacks => feedbacks;
         public abstract bool InvalidState { get; }
         public string Name { get; }
+        protected IConnectionProvider ConnectionProvider { get; }
 
         public void Dispose()
         {
@@ -85,6 +86,31 @@ namespace Hspi.Devices
             }
         }
 
+        protected virtual string TranslateStringFeedback(string input)
+        {
+            if (String.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            var words = input.Split(' ', ':');
+
+            var newWords = new List<string>(words.Length);
+            foreach (var v in words)
+            {
+                if (v.Length > 1)
+                {
+                    newWords.Add(v[0].ToString().ToUpperInvariant() + v.Substring(1).ToLowerInvariant());
+                }
+                else
+                {
+                    newWords.Add(v);
+                }
+            }
+
+            return string.Join(" ", newWords);
+        }
+
         protected void UpdateCommand(DeviceCommand command)
         {
             Trace.WriteLine(Invariant($"Updating Command {command.Id} for {Name}"));
@@ -115,31 +141,6 @@ namespace Hspi.Devices
             {
                 Trace.WriteLine(Invariant($"Unknown Feedback {feedbackName} for {Name}"));
             }
-        }
-
-        protected virtual string TranslateStringFeedback(string input)
-        {
-            if (String.IsNullOrEmpty(input))
-            {
-                return input;
-            }
-
-            var words = input.Split(' ', ':');
-
-            var newWords = new List<string>(words.Length);
-            foreach (var v in words)
-            {
-                if (v.Length > 1)
-                {
-                    newWords.Add(v[0].ToString().ToUpperInvariant() + v.Substring(1).ToLowerInvariant());
-                }
-                else
-                {
-                    newWords.Add(v);
-                }
-            }
-
-            return string.Join(" ", newWords);
         }
 
         public static readonly DeviceCommand ConnectCommand

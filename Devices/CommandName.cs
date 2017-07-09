@@ -87,5 +87,6 @@
         public const string VolumeUp = "Volume Up";
         public const string DynamicVolumeQuery = "Dynamic Volume Query";
         public const string DynamicVolumeOff = "Dynamic Volume - Off";
+        public const string MacroTurnOnXBoxOne = "Macro - Turn On Xbox One";
     }
 }

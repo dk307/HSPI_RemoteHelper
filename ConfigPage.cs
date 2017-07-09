@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Web;
+using Hspi.Connector;
 
 namespace Hspi
 {
@@ -19,7 +20,7 @@ namespace Hspi
     /// </summary>
     /// <seealso cref="Scheduler.PageBuilderAndMenu.clsPageBuilder" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class ConfigPage : PageBuilderAndMenu.clsPageBuilder
+    internal class ConfigPage : PageBuilderAndMenu.clsPageBuilder, IConnectionProvider
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ConfigPage" /> class.
@@ -142,7 +143,7 @@ namespace Hspi
 
                     try
                     {
-                        using (var tmp = device.Create()) { }
+                        using (var tmp = device.Create(this)) { }
                         this.pluginConfig.UpdateDevice(device);
                         this.pluginConfig.FireConfigChanged();
                         this.divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
@@ -292,6 +293,16 @@ namespace Hspi
             stb.Append(@"</div>");
 
             return stb.ToString();
+        }
+
+        IDeviceCommandHandler IConnectionProvider.GetCommandHandler(DeviceType deviceType)
+        {
+            throw new NotImplementedException();
+        }
+
+        IDeviceFeedbackProvider IConnectionProvider.GetFeedbackProvider(DeviceType deviceType)
+        {
+            throw new NotImplementedException();
         }
 
         private const string EnabledId = "EnabledId";

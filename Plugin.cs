@@ -11,17 +11,26 @@ using System.Linq;
 using Nito.AsyncEx;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Hspi;
+using System.Collections.Concurrent;
 
 namespace Hspi
 {
     using static System.FormattableString;
+
+    internal interface IConnectionProvider
+    {
+        IDeviceCommandHandler GetCommandHandler(DeviceType deviceType);
+
+        IDeviceFeedbackProvider GetFeedbackProvider(DeviceType deviceType);
+    }
 
     /// <summary>
     /// Plugin class
     /// </summary>
     /// <seealso cref="Hspi.HspiBase" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class Plugin : HspiBase
+    internal class Plugin : HspiBase, IConnectionProvider
     {
         public Plugin()
             : base(PluginData.PluginName)
@@ -112,7 +121,7 @@ namespace Hspi
 
                     using (connectorManagerLock.Lock())
                     {
-                        if (connectorManager.TryGetValue(deviceId.Value, out var connector))
+                        if (connectorManagers.TryGetValue(deviceId.Value, out var connector))
                         {
                             Trace.WriteLine(Invariant($"{control.ControlValue}"));
                             connector.HandleCommand(deviceIdentifier, control.ControlValue).Wait();
@@ -184,7 +193,7 @@ namespace Hspi
                 // Update changed or new
                 foreach (var device in pluginConfig.Devices)
                 {
-                    if (connectorManager.TryGetValue(device.Key, out var oldConnectorBase))
+                    if (connectorManagers.TryGetValue(device.Key, out var oldConnectorBase))
                     {
                         var oldConnector = oldConnectorBase as DeviceControlManager;
                         if (oldConnector == null)
@@ -198,9 +207,13 @@ namespace Hspi
                             oldConnector.Dispose();
                             if (device.Value.Enabled)
                             {
-                                connectorManager[device.Key] =
-                                        new DeviceControlManager(HS, device.Value, this as ILogger, ShutdownCancellationToken);
-                                connectorManager[device.Key].Start();
+                                var connection = new DeviceControlManager(HS,
+                                                                          device.Value,
+                                                                          this as ILogger,
+                                                                          this as IConnectionProvider,
+                                                                          ShutdownCancellationToken);
+                                connectorManagers[device.Key] = connection;
+                                connection.Start();
                             }
                         }
                     }
@@ -209,32 +222,61 @@ namespace Hspi
                         if (device.Value.Enabled)
                         {
                             changed = true;
-                            connectorManager[device.Key] =
-                                    new DeviceControlManager(HS, device.Value, this as ILogger, ShutdownCancellationToken);
-                            connectorManager[device.Key].Start();
+                            var connection = new DeviceControlManager(HS,
+                                                                      device.Value,
+                                                                      this as ILogger,
+                                                                      this as IConnectionProvider,
+                                                                      ShutdownCancellationToken);
+                            connectorManagers[device.Key] = connection;
+                            connection.Start();
                         }
                     }
                 }
 
                 if (changed)
                 {
-                    connectorManager.Remove(DeviceType.GlobalMacros);
-
-                    connectorManager[DeviceType.GlobalMacros] =
-                           new GlobalMacrosDeviceControlManager(HS,
-                                                                this as ILogger,
-                                                                connectorManager.Select((x) => (DeviceControlManager)x.Value).ToDictionary(x => x.DeviceType),
-                                                                ShutdownCancellationToken);
-                    connectorManager[DeviceType.GlobalMacros].Start();
+                    var connection =
+                        new GlobalMacrosDeviceControlManager(HS,
+                                                             this as ILogger,
+                                                             this as IConnectionProvider,
+                                                             ShutdownCancellationToken);
+                    connectorManagers[DeviceType.GlobalMacros] = connection;
+                    connection.Start();
                 }
             }
+        }
+
+        IDeviceCommandHandler IConnectionProvider.GetCommandHandler(DeviceType deviceType)
+        {
+            if (connectorManagers.TryGetValue(deviceType, out var connection))
+            {
+                var connectionBase = connection as IDeviceCommandHandler;
+                if (connectionBase != null)
+                {
+                    return connectionBase;
+                }
+            }
+            throw new HspiException("Not Found");
+        }
+
+        IDeviceFeedbackProvider IConnectionProvider.GetFeedbackProvider(DeviceType deviceType)
+        {
+            if (connectorManagers.TryGetValue(deviceType, out var connection))
+            {
+                var connectionBase = connection as IDeviceFeedbackProvider;
+                if (connectionBase != null)
+                {
+                    return connectionBase;
+                }
+            }
+            throw new HspiException("Not Found");
         }
 
         private CancellationTokenSource cancellationTokenSourceForUpdateDevice = new CancellationTokenSource();
         private readonly AsyncLock connectorManagerLock = new AsyncLock();
 
-        private readonly Dictionary<DeviceType, DeviceControlManagerBase> connectorManager
-                                = new Dictionary<DeviceType, DeviceControlManagerBase>();
+        private readonly ConcurrentDictionary<DeviceType, DeviceControlManagerCore> connectorManagers
+                                = new ConcurrentDictionary<DeviceType, DeviceControlManagerCore>();
 
         private ConfigPage configPage;
         private PluginConfig pluginConfig;

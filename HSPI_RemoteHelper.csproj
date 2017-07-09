@@ -216,7 +216,7 @@
     <Compile Include="ConfigPage.cs" />
     <Compile Include="DeviceControlConfig.cs" />
     <Compile Include="DeviceControlManager.cs" />
-    <Compile Include="DeviceControlManagerBase.cs" />
+    <Compile Include="DeviceControlManagerCore.cs" />
     <Compile Include="DeviceData\BoolFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\DeviceDataBase.cs" />
     <Compile Include="DeviceData\DeviceIdentifier.cs" />
@@ -235,6 +235,7 @@
     <Compile Include="Devices\DeviceControl.cs" />
     <Compile Include="Devices\IP2IRDeviceControl.cs" />
     <Compile Include="Devices\OutofOrderCommandDetector.cs" />
+    <Compile Include="Devices\XBoxIRControl.cs" />
     <Compile Include="Exceptions\DeviceException.cs" />
     <Compile Include="Devices\DeviceFeedback.cs" />
     <Compile Include="Exceptions\DevicePoweredOffException.cs" />
@@ -250,6 +251,7 @@
     <Compile Include="GlobalMacrosDeviceControlManager.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
+    <Compile Include="IDeviceControlManager.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="Devices\NetworkHelper.cs" />
     <Compile Include="Plugin.cs" />

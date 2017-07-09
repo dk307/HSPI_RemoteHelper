@@ -1,4 +1,5 @@
-﻿using NullGuard;
+﻿using Nito.AsyncEx;
+using NullGuard;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -10,7 +11,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocket4Net;
-using Nito.AsyncEx;
 
 namespace Hspi.Devices
 {
@@ -19,8 +19,11 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class SamsungTVControl : IPAddressableDeviceControl
     {
-        public SamsungTVControl(string name, IPAddress deviceIP, PhysicalAddress macAddress, TimeSpan defaultCommandDelay) :
-            base(name, deviceIP, defaultCommandDelay)
+        public SamsungTVControl(string name, IPAddress deviceIP,
+                                PhysicalAddress macAddress,
+                                TimeSpan defaultCommandDelay,
+                                IConnectionProvider connectionProvider) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider)
         {
             //"KEY_0", "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6", "KEY_7", "KEY_8", "KEY_9",
             //"KEY_BLUE", "KEY_CH_LIST", "KEY_CHDOWN", "KEY_CHUP", "KEY_CONTENTS",
@@ -66,12 +69,12 @@ namespace Hspi.Devices
 
         public PhysicalAddress MacAddress { get; }
 
-        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
-            return ExecuteCommand2(command, token);
+            return ExecuteCommandCore2(command, token);
         }
 
-        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
+        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Sending {command.Id} to Samsung TV {Name} on {DeviceIP}"));
 

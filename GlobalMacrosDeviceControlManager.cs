@@ -7,20 +7,20 @@ using System.Collections.Generic;
 namespace Hspi.Connector
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class GlobalMacrosDeviceControlManager : DeviceControlManagerBase
+    internal class GlobalMacrosDeviceControlManager : DeviceControlManagerCore
     {
         public GlobalMacrosDeviceControlManager(IHSApplication HS, ILogger logger,
-                    IReadOnlyDictionary<DeviceType, DeviceControlManager> connection, CancellationToken shutdownToken) :
+                    IConnectionProvider connectionProvider, CancellationToken shutdownToken) :
             base(HS, logger, "Global Macros", DeviceType.GlobalMacros, shutdownToken)
         {
-            this.connections = connection;
+            this.connectionProvider = connectionProvider;
         }
 
         public override DeviceControl Create()
         {
-            return new GlobalMacros(Name, connections);
+            return new GlobalMacros(Name, connectionProvider);
         }
 
-        private readonly IReadOnlyDictionary<DeviceType, DeviceControlManager> connections;
+        private readonly IConnectionProvider connectionProvider;
     }
 }

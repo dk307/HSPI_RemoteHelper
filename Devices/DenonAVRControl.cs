@@ -16,8 +16,10 @@ namespace Hspi.Devices
 
     internal sealed class DenonAVRControl : IPAddressableDeviceControl
     {
-        public DenonAVRControl(string name, IPAddress deviceIP, TimeSpan defaultCommandDelay) :
-            base(name, deviceIP, defaultCommandDelay)
+        public DenonAVRControl(string name, IPAddress deviceIP,
+                                TimeSpan defaultCommandDelay,
+                                IConnectionProvider connectionProvider) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, avrOutofCommandDetectors)
         {
             AddDynamicVolumeCommands(-500);
             AddDialogEnhancerCommands(-400);
@@ -86,15 +88,88 @@ namespace Hspi.Devices
             await SendCommandCore(commandData, token).ConfigureAwait(false);
         }
 
-        public override Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
-            if (canIgnore && ShouldIgnoreCommand(command.Id))
-            {
-                Trace.WriteLine(Invariant($"Ignoring Command for Denon AVR {Name} {command.Id} as it is out of order"));
-                return Task.FromResult(true);
-            }
-
             return ExecuteCommandCore2(command, token);
+        }
+
+        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        {
+            Trace.WriteLine(Invariant($"Sending {command.Id} to Denon AVR {Name} on {DeviceIP}"));
+            switch (command.Id)
+            {
+                case CommandName.PowerQuery:
+                    if (!await IsNetworkOn(token).ConfigureAwait(false))
+                    {
+                        UpdateFeedback(FeedbackName.Power, false);
+                        return;
+                    }
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.AllStatusQuery:
+                    string[] commandsQuery = { CommandName.InputStatusQuery,
+                                               CommandName.SoundModeQuery,
+                                               CommandName.DialogEnhancerModeQuery,
+                                               CommandName.SubWooferLevelAdjustQuery,
+                                               CommandName.DynamicVolumeQuery,
+                                               CommandName.AudysseyQuery,
+                                               CommandName.PowerQuery,
+                                               CommandName.MuteQuery,
+                                               CommandName.VolumeQuery,
+                    };
+
+                    foreach (string macroCommand in commandsQuery)
+                    {
+                        await SendCommandForId(macroCommand, token).ConfigureAwait(false);
+                        await Task.Delay(DefaultCommandDelay, token).ConfigureAwait(false);
+                    }
+                    break;
+
+                case CommandName.MacroStartVolumeUpLoop:
+                    MacroStartCommandLoop(CommandName.VolumeUp, repeatDelays, ref volumeCancelSource);
+
+                    break;
+
+                case CommandName.MacroStartVolumeDownLoop:
+                    MacroStartCommandLoop(CommandName.VolumeDown, repeatDelays, ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStopVolumeUpLoop:
+                case CommandName.MacroStopVolumeDownLoop:
+                    MacroStopCommandLoop(ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStartSubwooferLevelDownLoop:
+                    MacroStartCommandLoop(CommandName.SubWooferLevelDown, repeatDelays, ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStartSubwooferLevelUpLoop:
+                    MacroStartCommandLoop(CommandName.SubWooferLevelUp, repeatDelays, ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStopSubwooferLevelDownLoop:
+                case CommandName.MacroStopSubwooferLevelUpLoop:
+                    MacroStopCommandLoop(ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStartDialogEnhancerDownLoop:
+                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelDown, repeatDelays, ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStartDialogEnhancerUpLoop:
+                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelUp, repeatDelays, ref volumeCancelSource);
+                    break;
+
+                case CommandName.MacroStopDialogEnhancerDownLoop:
+                case CommandName.MacroStopDialogEnhancerUpLoop:
+                    MacroStopCommandLoop(ref volumeCancelSource);
+                    break;
+
+                default:
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -286,85 +361,6 @@ namespace Hspi.Devices
             }
         }
 
-        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
-        {
-            Trace.WriteLine(Invariant($"Sending {command.Id} to Denon AVR {Name} on {DeviceIP}"));
-            switch (command.Id)
-            {
-                case CommandName.PowerQuery:
-                    if (!await IsNetworkOn(token).ConfigureAwait(false))
-                    {
-                        UpdateFeedback(FeedbackName.Power, false);
-                        return;
-                    }
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.AllStatusQuery:
-                    string[] commandsQuery = { CommandName.InputStatusQuery,
-                                               CommandName.SoundModeQuery,
-                                               CommandName.DialogEnhancerModeQuery,
-                                               CommandName.SubWooferLevelAdjustQuery,
-                                               CommandName.DynamicVolumeQuery,
-                                               CommandName.AudysseyQuery,
-                                               CommandName.PowerQuery,
-                                               CommandName.MuteQuery,
-                                               CommandName.VolumeQuery,
-                    };
-
-                    foreach (string macroCommand in commandsQuery)
-                    {
-                        await SendCommandForId(macroCommand, token).ConfigureAwait(false);
-                        await Task.Delay(DefaultCommandDelay, token).ConfigureAwait(false);
-                    }
-                    break;
-
-                case CommandName.MacroStartVolumeUpLoop:
-                    MacroStartCommandLoop(CommandName.VolumeUp, repeatDelays, ref volumeCancelSource);
-
-                    break;
-
-                case CommandName.MacroStartVolumeDownLoop:
-                    MacroStartCommandLoop(CommandName.VolumeDown, repeatDelays, ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStopVolumeUpLoop:
-                case CommandName.MacroStopVolumeDownLoop:
-                    MacroStopCommandLoop(ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStartSubwooferLevelDownLoop:
-                    MacroStartCommandLoop(CommandName.SubWooferLevelDown, repeatDelays, ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStartSubwooferLevelUpLoop:
-                    MacroStartCommandLoop(CommandName.SubWooferLevelUp, repeatDelays, ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStopSubwooferLevelDownLoop:
-                case CommandName.MacroStopSubwooferLevelUpLoop:
-                    MacroStopCommandLoop(ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStartDialogEnhancerDownLoop:
-                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelDown, repeatDelays, ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStartDialogEnhancerUpLoop:
-                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelUp, repeatDelays, ref volumeCancelSource);
-                    break;
-
-                case CommandName.MacroStopDialogEnhancerDownLoop:
-                case CommandName.MacroStopDialogEnhancerUpLoop:
-                    MacroStopCommandLoop(ref volumeCancelSource);
-                    break;
-
-                default:
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    break;
-            }
-        }
-
         private async Task<bool> IsNetworkOn(CancellationToken token)
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
@@ -508,19 +504,6 @@ namespace Hspi.Devices
             await SendCommandCore(command.Data, token).ConfigureAwait(false);
         }
 
-        private bool ShouldIgnoreCommand(string commandId)
-        {
-            foreach (var outofCommandDetector in outofCommandDetectors)
-            {
-                if (outofCommandDetector.ShouldIgnore(commandId))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private void UpdateFeedbackForVolumeString(string feedbackName, string volString)
         {
             while (volString.Length < 3)
@@ -540,7 +523,7 @@ namespace Hspi.Devices
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly Encoding encoding = Encoding.ASCII;
 
-        private readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
+        private static readonly List<OutofOrderCommandDetector> avrOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
             new OutofOrderCommandDetector(CommandName.MacroStartVolumeUpLoop, CommandName.MacroStopVolumeUpLoop),
             new OutofOrderCommandDetector(CommandName.MacroStartVolumeDownLoop, CommandName.MacroStopVolumeDownLoop),

@@ -15,7 +15,8 @@ namespace Hspi
         ADBRemoteControl,
         DenonAVR,
         GlobalMacros,
-        IP2IR
+        IP2IR,
+        XboxOne
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -59,30 +60,43 @@ namespace Hspi
 
                 case DeviceType.IP2IR:
                     return new string[] { DefaultCommandDelayId, IP2IRFileNameId };
+
+                case DeviceType.XboxOne:
+                    return new string[] { DefaultCommandDelayId };
             }
 
             throw new KeyNotFoundException();
         }
 
-        public DeviceControl Create()
+        public DeviceControl Create(IConnectionProvider connectionProvider)
         {
             switch (DeviceType)
             {
                 case DeviceType.SamsungTV:
                     return new SamsungTVControl(Name, DeviceIP,
                                                 PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
-                                                DefaultCommandDelay);
+                                                DefaultCommandDelay,
+                                                connectionProvider);
 
                 case DeviceType.ADBRemoteControl:
                     return new ADBRemoteControl(Name, DeviceIP,
                                                 AdditionalValues[ADBPathId],
-                                                DefaultCommandDelay);
+                                                DefaultCommandDelay,
+                                                connectionProvider);
 
                 case DeviceType.DenonAVR:
-                    return new DenonAVRControl(Name, DeviceIP, DefaultCommandDelay);
+                    return new DenonAVRControl(Name, DeviceIP, DefaultCommandDelay, connectionProvider);
 
                 case DeviceType.IP2IR:
-                    return new IP2IRDeviceControl(Name, DeviceIP, DefaultCommandDelay, AdditionalValues[IP2IRFileNameId]);
+                    return new IP2IRDeviceControl(Name, DeviceIP,
+                                                  DefaultCommandDelay,
+                                                  AdditionalValues[IP2IRFileNameId],
+                                                  connectionProvider);
+
+                case DeviceType.XboxOne:
+                    return new XBoxIRControl(Name, DeviceIP,
+                                                   DefaultCommandDelay,
+                                                   connectionProvider);
             }
 
             throw new KeyNotFoundException();
