@@ -50,6 +50,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.CursorLeft, "KEY_LEFT"));
             AddCommand(new DeviceCommand(CommandName.Enter, "KEY_ENTER"));
             AddCommand(new DeviceCommand(CommandName.Exit, "KEY_EXIT"));
+            AddCommand(new DeviceCommand(CommandName.TVAVRInput));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
         }
@@ -91,6 +92,11 @@ namespace Hspi.Devices
 
                 case CommandName.PowerQuery:
                     await UpdatePowerFeedbackState(token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.TVAVRInput:
+                    var connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
+                    await connector.HandleCommand("Samsung TV - INPUT HDMI 4", token).ConfigureAwait(false);
                     break;
 
                 default:

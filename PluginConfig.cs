@@ -30,6 +30,7 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.DenonAVR);
             LoadDeviceConfig(DeviceType.ADBRemoteControl);
             LoadDeviceConfig(DeviceType.IP2IR);
+            LoadDeviceConfig(DeviceType.XboxOne);
         }
 
         public event EventHandler<EventArgs> ConfigChanged;

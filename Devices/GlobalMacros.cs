@@ -1,12 +1,12 @@
 ﻿using Hspi.Connector;
+using Nito.AsyncEx;
+using NullGuard;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using NullGuard;
-using System.Globalization;
-using Nito.AsyncEx;
 
 namespace Hspi.Devices
 {
@@ -192,8 +192,7 @@ namespace Hspi.Devices
         private async Task MacroTurnGameMode(bool on, CancellationToken timeoutToken)
         {
             UpdateStatus($"Setting TV Game Mode to {(on ? "ON" : "OFF")}");
-
-            await MacroTurnGameModeCore(on, timeoutToken);
+            await MacroTurnGameModeCore(on, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnGameModeCore(bool on, CancellationToken timeoutToken)
@@ -267,8 +266,8 @@ namespace Hspi.Devices
 
         private async Task MacroTurnOnXboxOne(CancellationToken timeoutToken)
         {
-            string input = DenonAVRControl.NvidiaShieldInput;
-            string inputSwitchCommand = CommandName.ChangeInputMPLAY;
+            string input = DenonAVRControl.XBoxOneInput;
+            string inputSwitchCommand = CommandName.ChangeInputGAME2;
             var device = GetConnection(DeviceType.XboxOne);
             var shutdownDevices = new IDeviceCommandHandler[]
             {
@@ -364,6 +363,10 @@ namespace Hspi.Devices
             await TurnDeviceOnIfOff(tv, timeoutToken).ConfigureAwait(false);
             bool turnedOnAVR = await TurnDeviceOnIfOff(avr, timeoutToken).ConfigureAwait(false);
 
+            UpdateStatus($"Switching {tv.Name} Input");
+            await tv.HandleCommand(CommandName.TVAVRInput, timeoutToken).ConfigureAwait(false);
+            await DelayDefaultCommandTime(timeoutToken, tv).ConfigureAwait(false);
+
             // switch to input
             UpdateStatus($"Switching {avr.Name} to {input}");
             bool inputChanged = await EnsureAVRState(avr, input, CommandName.InputStatusQuery,
@@ -372,8 +375,6 @@ namespace Hspi.Devices
             UpdateStatus($"Turning on {device.Name}");
 
             bool deviceOn = await TurnDeviceOnIfOff(device, timeoutToken).ConfigureAwait(false);
-
-            tasks.Clear();
 
             UpdateStatus($"Setting up rest...");
 
@@ -395,6 +396,7 @@ namespace Hspi.Devices
             tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken));
 
             await tasks.WhenAll().ConfigureAwait(false);
+            tasks.Clear();
         }
 
         private void UpdateStatus(System.FormattableString formatableString)

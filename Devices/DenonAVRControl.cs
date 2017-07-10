@@ -36,6 +36,8 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.AudysseyQuery, "PSMULTEQ: ?", fixedValue: -83));
             AddCommand(new DeviceCommand(CommandName.ChangeInputMPLAY, "SIMPLAY", fixedValue: -82));
             AddCommand(new DeviceCommand(CommandName.AllStatusQuery, string.Empty, fixedValue: -77));
+            AddCommand(new DeviceCommand(CommandName.ChangeInputGAME2, "SIGAME2", fixedValue: -76));
+            AddCommand(new DeviceCommand(CommandName.ChangeInputBD, "SIBD", fixedValue: -75));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Mute, TypeCode.Boolean));
@@ -206,6 +208,12 @@ namespace Hspi.Devices
 
                 case "MPLAY":
                     return NvidiaShieldInput;
+
+                case "BD":
+                    return BlueRayPlayerInput;
+
+                case "AUX2":
+                    return XBoxOneInput;
             }
             return base.TranslateStringFeedback(input);
         }
@@ -519,6 +527,8 @@ namespace Hspi.Devices
 
         private const int AVRPort = 23;
         public const string NvidiaShieldInput = "Nvidia Shield";
+        public const string BlueRayPlayerInput = "Blu Ray Player";
+        public const string XBoxOneInput = "XBox One";
         private const char Seperator = '\r';
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly Encoding encoding = Encoding.ASCII;

@@ -23,7 +23,7 @@ namespace Hspi.Devices
         {
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));
             AddCommand(new DeviceCommand(CommandName.PowerOff, fixedValue: -199));
-            AddCommand(new DeviceCommand(CommandName.PowerOff, fixedValue: -198));
+            AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue: -198));
 
             AddCommand(new DeviceCommand(CommandName.CursorDown));
             AddCommand(new DeviceCommand(CommandName.CursorLeft));

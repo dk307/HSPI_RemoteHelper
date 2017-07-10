@@ -62,7 +62,7 @@ namespace Hspi
                     return new string[] { DefaultCommandDelayId, IP2IRFileNameId };
 
                 case DeviceType.XboxOne:
-                    return new string[] { DefaultCommandDelayId };
+                    return new string[] { DefaultCommandDelayId, DefaultPowerOnDelayId };
             }
 
             throw new KeyNotFoundException();
