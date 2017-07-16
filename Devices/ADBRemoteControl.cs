@@ -33,8 +33,6 @@ namespace Hspi.Devices
         KEYCODE_MEDIA_PLAY_PAUSE = 126,
         KEYCODE_MEDIA_PREVIOUS = 88,
         KEYCODE_MEDIA_REWIND = 89,
-        KEYCODE_MEDIA_SKIP_BACKWARD = 273,
-        KEYCODE_MEDIA_SKIP_FORWARD = 272,
         KEYCODE_MEDIA_STOP = 86,
         KEYCODE_SLEEP = 223,
         KEYCODE_WAKEUP = 224,
@@ -69,8 +67,8 @@ namespace Hspi.Devices
             AddCommand(new ADBShellSendEventCommand(CommandName.MediaPlayPause, 164));
             AddCommand(new ADBShellKeyEventCommand(CommandName.MediaPrevious, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
             AddCommand(new ADBShellSendEventCommand(CommandName.MediaRewind, 168));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipBackward, AdbShellKeys.KEYCODE_MEDIA_SKIP_BACKWARD));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipForward, AdbShellKeys.KEYCODE_MEDIA_SKIP_FORWARD));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipBackward, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipForward, AdbShellKeys.KEYCODE_MEDIA_NEXT));
             AddCommand(new ADBShellSendEventCommand(CommandName.MediaStop, 128));
             AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP));
             AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
