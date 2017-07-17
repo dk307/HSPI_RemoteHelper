@@ -105,7 +105,10 @@ namespace Hspi.Devices
             //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventDown, 105, ADBShellSendEventCommand.ButtonPressType.Down));
             //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventUp, 105, ADBShellSendEventCommand.ButtonPressType.Up));
 
-            AddKeyboardCommands();
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchSling, @"com.sling"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchKodi, @"com.semperpax.spmc16"));
+
+            AddKeyboardCommands(1000);
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
@@ -113,31 +116,6 @@ namespace Hspi.Devices
             AddFeedback(new DeviceFeedback(FeedbackName.CurrentApplication, TypeCode.String));
 
             StartServer();
-        }
-
-        private void AddKeyboardCommands()
-        {
-            for (char c = '0'; c <= '9'; c++)
-            {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c));
-            }
-
-            for (char c = 'a'; c <= 'z'; c++)
-            {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c));
-            }
-
-            for (char c = 'A'; c <= 'Z'; c++)
-            {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c));
-            }
-            //string otherChars = "!,?.~;()'^*%?@&#=+,:/_-";
-            //foreach (char c in otherChars)
-            //{
-            //    AddCommand(new ADBShellCharCommand(c.ToString(), c));
-            //}
-
-            //AddCommand(new ADBShellCharCommand("Space", "%s"));
         }
 
         public override bool InvalidState
@@ -159,6 +137,15 @@ namespace Hspi.Devices
             }
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                DisposeConnection();
+            }
+            base.Dispose(disposing);
+        }
+
         protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
             try
@@ -173,13 +160,29 @@ namespace Hspi.Devices
             }
         }
 
-        protected override void Dispose(bool disposing)
+        private void AddKeyboardCommands(int start)
         {
-            if (disposing)
+            for (char c = '0'; c <= '9'; c++)
             {
-                DisposeConnection();
+                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
             }
-            base.Dispose(disposing);
+
+            for (char c = 'a'; c <= 'z'; c++)
+            {
+                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
+            }
+
+            for (char c = 'A'; c <= 'Z'; c++)
+            {
+                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
+            }
+            //string otherChars = "!,?.~;()'^*%?@&#=+,:/_-";
+            //foreach (char c in otherChars)
+            //{
+            //    AddCommand(new ADBShellCharCommand(c.ToString(), c));
+            //}
+
+            //AddCommand(new ADBShellCharCommand("Space", "%s"));
         }
 
         private async Task<bool> CheckScreenOn(CancellationToken token)
@@ -401,12 +404,6 @@ namespace Hspi.Devices
             }
         }
 
-        private static readonly Regex windowRegEx = new Regex(@"mCurrentFocus=Window{(?<id>.+?) (?<user>.+) (?<package>.+?)(?:\/(?<activity>.+?))?}",
-                                                              RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
-
-        private readonly string adbPath;
-        private readonly AsyncLock connectionLock = new AsyncLock();
-
         private static readonly List<OutofOrderCommandDetector> adbOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
             new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
@@ -415,24 +412,29 @@ namespace Hspi.Devices
             new OutofOrderCommandDetector(CommandName.CursorLeftEventDown, CommandName.CursorLeftEventUp),
         };
 
+        private static readonly Regex windowRegEx = new Regex(@"mCurrentFocus=Window{(?<id>.+?) (?<user>.+) (?<package>.+?)(?:\/(?<activity>.+?))?}",
+                                                                      RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
+        private readonly string adbPath;
+        private readonly AsyncLock connectionLock = new AsyncLock();
         private AdbClient adbClient;
         private CancellationTokenSource cursorCancelLoopSource;
         private DeviceMonitor monitor;
         private CancellationTokenSource queryRunningApplicationTokenSource;
     }
 
-    internal class ADBShellKeyEventCommand : DeviceCommand
+    internal class ADBShellCharCommand : DeviceCommand
     {
-        public ADBShellKeyEventCommand(string id, AdbShellKeys key)
-            : base(id, Invariant($@"input keyevent {(int)key}"))
+        public ADBShellCharCommand(string id, char key, int? fixedValue = null)
+            : base(id, Invariant($"input text \"{key}\""), fixedValue: fixedValue)
         {
         }
     }
 
-    internal class ADBShellCharCommand : DeviceCommand
+    internal class ADBShellKeyEventCommand : DeviceCommand
     {
-        public ADBShellCharCommand(string id, char key)
-            : base(id, Invariant($"input text \"{key}\""))
+        public ADBShellKeyEventCommand(string id, AdbShellKeys key)
+            : base(id, Invariant($@"input keyevent {(int)key}"))
         {
         }
     }
