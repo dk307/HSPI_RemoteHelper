@@ -86,6 +86,7 @@ namespace Hspi.Devices
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         protected virtual string TranslateStringFeedback(string input)
         {
             if (String.IsNullOrEmpty(input))

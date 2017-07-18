@@ -48,6 +48,7 @@ namespace Hspi.Devices
             await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private static string GetFeedbackAsString(IDeviceFeedbackProvider connection, string feedbackName)
         {
             var value = connection.GetFeedbackValue(feedbackName);
