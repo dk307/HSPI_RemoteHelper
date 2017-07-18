@@ -272,25 +272,21 @@ namespace Hspi
 
         public virtual void LogDebug(string message)
         {
-            Trace.WriteLine(message);
             HS.WriteLog(Name, Invariant($"Debug:{message}"));
         }
 
         public void LogError(string message)
         {
-            Trace.TraceError(message);
             HS.WriteLog(Name, Invariant($"Error:{message}"));
         }
 
         public void LogInfo(string message)
         {
-            Trace.TraceInformation(message);
             HS.WriteLog(Name, message);
         }
 
         public void LogWarning(string message)
         {
-            Trace.TraceWarning(message);
             HS.WriteLog(Name, Invariant($"Warning:{message}"));
         }
 
