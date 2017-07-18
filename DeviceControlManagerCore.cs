@@ -57,7 +57,7 @@ namespace Hspi.Connector
             using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
             {
                 CheckConnection();
-                await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, ShutdownToken);
+                await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, ShutdownToken).ConfigureAwait(false);
             }
         }
 
@@ -70,7 +70,7 @@ namespace Hspi.Connector
                 CheckConnection();
 
                 var command = connector.GetCommand(commandId);
-                await connector.ExecuteCommand(command, finalToken);
+                await connector.ExecuteCommand(command, finalToken).ConfigureAwait(false);
             }
         }
 

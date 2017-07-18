@@ -103,8 +103,6 @@ namespace Hspi
         {
             foreach (var control in colSend)
             {
-                //Trace.WriteLine(Invariant($"{control.ControlValue}"));
-                //continue;
                 try
                 {
                     int refId = control.Ref;
@@ -123,7 +121,6 @@ namespace Hspi
                     {
                         if (connectorManagers.TryGetValue(deviceId.Value, out var connector))
                         {
-                            Trace.WriteLine(Invariant($"{control.ControlValue}"));
                             connector.HandleCommand(deviceIdentifier, control.ControlValue).Wait();
                         }
                         else

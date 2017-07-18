@@ -242,7 +242,7 @@ namespace Hspi.Devices
             var buffer = new char[1];
             while (!reader.EndOfStream)
             {
-                await reader.ReadAsync(buffer, 0, 1);
+                await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
 
                 if (buffer[0] == Seperator)
                 {
@@ -337,7 +337,7 @@ namespace Hspi.Devices
 
         private async Task Connect(CancellationToken token)
         {
-            if (!await IsNetworkOn(token))
+            if (!await IsNetworkOn(token).ConfigureAwait(false))
             {
                 throw new DevicePoweredOffException($"Denon AVR {Name} on {DeviceIP} not powered On");
             }

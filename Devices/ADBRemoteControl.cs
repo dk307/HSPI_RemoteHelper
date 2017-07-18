@@ -322,11 +322,11 @@ namespace Hspi.Devices
                         UpdateFeedback(FeedbackName.Power, false);
                         break;
                     }
-                    UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token));
+                    UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token).ConfigureAwait(false));
                     break;
 
                 case CommandName.ScreenQuery:
-                    UpdateFeedback(FeedbackName.Screen, await CheckScreenOn(token));
+                    UpdateFeedback(FeedbackName.Screen, await CheckScreenOn(token).ConfigureAwait(false));
                     break;
 
                 case CommandName.ScreenSaveRunningQuery:

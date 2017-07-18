@@ -125,7 +125,7 @@ namespace Hspi.Devices
 
         private async Task Connect(CancellationToken token)
         {
-            if (!await IsPoweredOn(token))
+            if (!await IsPoweredOn(token).ConfigureAwait(false))
             {
                 throw new DevicePoweredOffException($"Samsung TV {Name} on {DeviceIP} not powered On");
             }

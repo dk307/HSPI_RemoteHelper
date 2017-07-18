@@ -115,7 +115,7 @@ namespace Hspi.DeviceData
         {
             if (commandValues.TryGetValue(value, out var commandId))
             {
-                await connector.ExecuteCommand(commandId, token);
+                await connector.ExecuteCommand(commandId, token).ConfigureAwait(false);
             }
         }
 

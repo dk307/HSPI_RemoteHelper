@@ -63,13 +63,13 @@ namespace Hspi.DeviceData
         {
             if (deviceIdentifier == null)
             {
-                await parentDeviceData.HandleCommand(connector, value, token);
+                await parentDeviceData.HandleCommand(connector, value, token).ConfigureAwait(false);
             }
             else
             {
                 if (currentChildDevices.TryGetValue(deviceIdentifier.Address, out var device))
                 {
-                    await device.HandleCommand(connector, value, token);
+                    await device.HandleCommand(connector, value, token).ConfigureAwait(false);
                 }
             }
         }
