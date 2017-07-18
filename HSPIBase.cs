@@ -80,6 +80,9 @@ namespace Hspi
                 HS = HsClient.ServiceProxy;
 
                 var apiVersion = HS.APIVersion; // just to make sure our connection is valid
+
+                hsTraceListener = new HSTraceListener(this as ILogger);
+                Debug.Listeners.Add(hsTraceListener);
             }
             catch (Exception ex)
             {
@@ -253,6 +256,7 @@ namespace Hspi
                         HsClient.Disconnected -= HsClient_Disconnected;
                         HsClient.Dispose();
                     }
+                    hsTraceListener?.Dispose();
                     CallbackClient?.Dispose();
                     cancellationTokenSource.Dispose();
                 }
@@ -290,6 +294,7 @@ namespace Hspi
             HS.WriteLog(Name, Invariant($"Warning:{message}"));
         }
 
+        private HSTraceListener hsTraceListener;
         private readonly int accessLevel;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly int capabilities;

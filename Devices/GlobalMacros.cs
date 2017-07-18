@@ -167,7 +167,7 @@ namespace Hspi.Devices
             return GetFeedbackAsBoolean(deviceFeedbackProvider, feedbackName);
         }
 
-        private bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
+        private static bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
         {
             var value = deviceFeedbackProvider.GetFeedbackValue(feedbackName);
 

@@ -2,18 +2,18 @@
 using NullGuard;
 using SharpAdbClient;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
-    using System.Collections.Generic;
-    using System.Text;
     using static System.FormattableString;
 
     internal enum AdbShellKeys
@@ -317,7 +317,7 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.PowerQuery:
-                    if (!await IsPoweredOn(token))
+                    if (!await IsPoweredOn(token).ConfigureAwait(false))
                     {
                         UpdateFeedback(FeedbackName.Power, false);
                         break;

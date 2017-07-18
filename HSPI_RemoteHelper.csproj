@@ -251,6 +251,7 @@
     <Compile Include="GlobalMacrosDeviceControlManager.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
+    <Compile Include="HSTraceListener.cs" />
     <Compile Include="IDeviceControlManager.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="Devices\NetworkHelper.cs" />
