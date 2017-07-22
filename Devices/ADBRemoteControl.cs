@@ -36,6 +36,8 @@ namespace Hspi.Devices
         KEYCODE_MEDIA_STOP = 86,
         KEYCODE_SLEEP = 223,
         KEYCODE_WAKEUP = 224,
+        KEYCODE_SPACE = 62,
+        KEYCODE_DEL = 67,
     };
 
     // nvidia shield 2015
@@ -176,13 +178,15 @@ namespace Hspi.Devices
             {
                 AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
             }
-            //string otherChars = "!,?.~;()'^*%?@&#=+,:/_-";
-            //foreach (char c in otherChars)
-            //{
-            //    AddCommand(new ADBShellCharCommand(c.ToString(), c));
-            //}
 
-            //AddCommand(new ADBShellCharCommand("Space", "%s"));
+            AddCommand(new ADBShellKeyEventCommand("Space", AdbShellKeys.KEYCODE_SPACE, start++));
+            AddCommand(new ADBShellKeyEventCommand("BackSpace", AdbShellKeys.KEYCODE_DEL, start++));
+
+            string otherChars = "!,?.~;'^*%@&#=+:/\\_-|{}[]()\"<>`";
+            foreach (char c in otherChars)
+            {
+                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
+            }
         }
 
         private async Task<bool> CheckScreenOn(CancellationToken token)
@@ -433,8 +437,8 @@ namespace Hspi.Devices
 
     internal class ADBShellKeyEventCommand : DeviceCommand
     {
-        public ADBShellKeyEventCommand(string id, AdbShellKeys key)
-            : base(id, Invariant($@"input keyevent {(int)key}"))
+        public ADBShellKeyEventCommand(string id, AdbShellKeys key, int? fixedValue = null)
+            : base(id, Invariant($@"input keyevent {(int)key}"), fixedValue: fixedValue)
         {
         }
     }
@@ -454,8 +458,8 @@ namespace Hspi.Devices
 
     internal class ADBShellSendEventCommand : DeviceCommand
     {
-        public ADBShellSendEventCommand(string id, int key)
-            : base(id, BuildCommand(key))
+        public ADBShellSendEventCommand(string id, int key, int? fixedValue = null)
+            : base(id, BuildCommand(key), fixedValue: fixedValue)
         {
         }
 
