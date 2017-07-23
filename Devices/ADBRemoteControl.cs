@@ -294,6 +294,9 @@ namespace Hspi.Devices
 
         private async Task SendCommand(DeviceCommand command, CancellationToken token)
         {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             string output;
             switch (command.Id)
             {
@@ -362,6 +365,8 @@ namespace Hspi.Devices
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
             }
+
+            Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
         }
 
         private async Task<string> SendCommandCore(string commandData, CancellationToken token)
