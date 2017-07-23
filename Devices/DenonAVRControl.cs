@@ -354,6 +354,8 @@ namespace Hspi.Devices
             await client.ConnectAsync(DeviceIP.ToString(), AVRPort).ConfigureAwait(false);
             UpdateConnectedState(true);
 
+            client.SetSocketKeepAliveValues(10 * 1000, 1000);
+
             stream = client.GetStream();
             Task readTask = Task.Factory.StartNew(() => ProcessRead(combinedToken),
                                  combinedToken,

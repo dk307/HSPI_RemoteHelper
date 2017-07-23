@@ -4,6 +4,7 @@ using System;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +13,28 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal static class NetworkHelper
     {
+        /// <summary>
+        /// Using IOControl code to configue socket KeepAliveValues for line disconnection detection(because default is toooo slow)
+        /// </summary>
+        /// <param name="tcpc">TcpClient</param>
+        /// <param name="KeepAliveTime">The keep alive time. (ms)</param>
+        /// <param name="KeepAliveInterval">The keep alive interval. (ms)</param>
+        public static void SetSocketKeepAliveValues(this TcpClient tcpc, int KeepAliveTime, int KeepAliveInterval)
+        {
+            //KeepAliveTime: default value is 2hr
+            //KeepAliveInterval: default value is 1s and Detect 5 times
+
+            uint dummy = 0; //length = 4
+            byte[] inOptionValues = new byte[Marshal.SizeOf(dummy) * 3]; //size = lenth * 3 = 12
+            bool OnOff = true;
+
+            BitConverter.GetBytes((uint)(OnOff ? 1 : 0)).CopyTo(inOptionValues, 0);
+            BitConverter.GetBytes((uint)KeepAliveTime).CopyTo(inOptionValues, Marshal.SizeOf(dummy));
+            BitConverter.GetBytes((uint)KeepAliveInterval).CopyTo(inOptionValues, Marshal.SizeOf(dummy) * 2);
+
+            tcpc.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public static async Task<bool> PingAddress(IPAddress ipAddress, TimeSpan? timeout = null)
         {

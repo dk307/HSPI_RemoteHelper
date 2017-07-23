@@ -98,15 +98,6 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown));
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp));
 
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventDown, 103, ADBShellSendEventCommand.ButtonPressType.Down));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorUpEventUp, 103, ADBShellSendEventCommand.ButtonPressType.Up));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventDown, 108, ADBShellSendEventCommand.ButtonPressType.Down));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorDownEventUp, 108, ADBShellSendEventCommand.ButtonPressType.Up));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventDown, 106, ADBShellSendEventCommand.ButtonPressType.Down));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorRightEventUp, 106, ADBShellSendEventCommand.ButtonPressType.Up));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventDown, 105, ADBShellSendEventCommand.ButtonPressType.Down));
-            //AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeftEventUp, 105, ADBShellSendEventCommand.ButtonPressType.Up));
-
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchSling, @"com.sling"));
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchKodi, @"com.semperpax.spmc16"));
 
@@ -475,7 +466,6 @@ namespace Hspi.Devices
             stb.Append(Invariant($"sendevent /dev/input/event0 0 0 0 && "));
             stb.Append(Invariant($"sendevent /dev/input/event0 1 {key} 0 && "));
             stb.Append(Invariant($"sendevent /dev/input/event0 0 0 0"));
-            //stb.Append(Invariant($"sendevent /dev/input/event0 4 4 8420876"));
             return stb.ToString();
         }
     }
