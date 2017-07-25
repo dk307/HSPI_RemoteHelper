@@ -44,6 +44,7 @@
     <CodeAnalysisRuleSet>HSPI_RemoteHelper.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -228,11 +229,13 @@
     <Compile Include="DeviceData\SettableRangedFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\StringFeedbackDeviceData.cs" />
     <Compile Include="Devices\ADBRemoteControl.cs" />
+    <Compile Include="Devices\AdbShellKeys.cs" />
     <Compile Include="Devices\CommandName.cs" />
     <Compile Include="DeviceData\CommandNotFoundException.cs" />
     <Compile Include="Devices\DenonAVRControl.cs" />
     <Compile Include="Devices\DeviceCommand.cs" />
     <Compile Include="Devices\DeviceControl.cs" />
+    <Compile Include="Devices\DirectInputKeys.cs" />
     <Compile Include="Devices\IP2IRDeviceControl.cs" />
     <Compile Include="Devices\OutofOrderCommandDetector.cs" />
     <Compile Include="Devices\XBoxIRControl.cs" />

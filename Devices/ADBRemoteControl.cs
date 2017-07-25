@@ -14,31 +14,9 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using System.Globalization;
+    using System.Runtime.InteropServices;
     using static System.FormattableString;
-
-    internal enum AdbShellKeys
-    {
-        KEYCODE_CAPTIONS = 175,
-        KEYCODE_DPAD_DOWN = 20,
-        KEYCODE_DPAD_LEFT = 21,
-        KEYCODE_DPAD_RIGHT = 22,
-        KEYCODE_DPAD_UP = 19,
-        KEYCODE_ENTER = 66,
-        KEYCODE_ESCAPE = 111,
-        KEYCODE_HOME = 3,
-        KEYCODE_INFO = 165,
-        KEYCODE_MEDIA_AUDIO_TRACK = 222,
-        KEYCODE_MEDIA_FAST_FORWARD = 90,
-        KEYCODE_MEDIA_NEXT = 87,
-        KEYCODE_MEDIA_PLAY_PAUSE = 126,
-        KEYCODE_MEDIA_PREVIOUS = 88,
-        KEYCODE_MEDIA_REWIND = 89,
-        KEYCODE_MEDIA_STOP = 86,
-        KEYCODE_SLEEP = 223,
-        KEYCODE_WAKEUP = 224,
-        KEYCODE_SPACE = 62,
-        KEYCODE_DEL = 67,
-    };
 
     // nvidia shield 2015
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -55,28 +33,27 @@ namespace Hspi.Devices
             }
 
             this.adbPath = adbPath;
-
             AddCommand(new ADBShellKeyEventCommand(CommandName.AudioTrack, AdbShellKeys.KEYCODE_MEDIA_AUDIO_TRACK));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorDown, 108));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorLeft, 105));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorRight, 106));
-            AddCommand(new ADBShellSendEventCommand(CommandName.CursorUp, 103));
-            AddCommand(new ADBShellSendEventCommand(CommandName.Enter, 0x161));
-            AddCommand(new ADBShellSendEventCommand(CommandName.Home, 172));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorDown, DirectInputKeys.KEY_DOWN, DefaultKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorLeft, DirectInputKeys.KEY_LEFT, DefaultKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorRight, DirectInputKeys.KEY_RIGHT, DefaultKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorUp, DirectInputKeys.KEY_UP, DefaultKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, DefaultKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE, MediaKeyboardDevice));
             AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO));
-            AddCommand(new ADBShellSendEventCommand(CommandName.MediaFastForward, 208));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaFastForward, DirectInputKeys.KEY_FASTFORWARD, MediaKeyboardDevice));
             AddCommand(new ADBShellKeyEventCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT));
-            AddCommand(new ADBShellSendEventCommand(CommandName.MediaPlayPause, 164));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaPlayPause, DirectInputKeys.KEY_PLAYPAUSE, MediaKeyboardDevice));
             AddCommand(new ADBShellKeyEventCommand(CommandName.MediaPrevious, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
-            AddCommand(new ADBShellSendEventCommand(CommandName.MediaRewind, 168));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipBackward, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaSkipForward, AdbShellKeys.KEYCODE_MEDIA_NEXT));
-            AddCommand(new ADBShellSendEventCommand(CommandName.MediaStop, 128));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaRewind, DirectInputKeys.KEY_REWIND, MediaKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaSkipBackward, DirectInputKeys.KEY_PREVIOUSSONG, MediaKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaSkipForward, DirectInputKeys.KEY_NEXTSONG, MediaKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaStop, DirectInputKeys.KEY_STOP, MediaKeyboardDevice));
             AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP));
             AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
             AddCommand(new DeviceCommand(CommandName.PowerQuery));
-            AddCommand(new ADBShellSendEventCommand(CommandName.Return, 158));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS));
+            AddCommand(new ADBShellDDCommand(CommandName.Return, DirectInputKeys.KEY_BACK, MediaKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.Subtitle, DirectInputKeys.KEY_F2, DefaultKeyboardDevice));
 
             AddCommand(new DeviceCommand(CommandName.ScreenQuery));
             AddCommand(new DeviceCommand(CommandName.ScreenSaveRunningQuery));
@@ -155,29 +132,108 @@ namespace Hspi.Devices
 
         private void AddKeyboardCommands(int start)
         {
+            var numberKeys = new DirectInputKeys[]
+            {
+                DirectInputKeys.KEY_0,
+                DirectInputKeys.KEY_1,
+                DirectInputKeys.KEY_2,
+                DirectInputKeys.KEY_3,
+                DirectInputKeys.KEY_4,
+                DirectInputKeys.KEY_5,
+                DirectInputKeys.KEY_6,
+                DirectInputKeys.KEY_7,
+                DirectInputKeys.KEY_8,
+                DirectInputKeys.KEY_9,
+            };
+
             for (char c = '0'; c <= '9'; c++)
             {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
+                AddCommand(new ADBShellDDCommand(c.ToString(), numberKeys[c - '0'], DefaultKeyboardDevice, start++));
             }
+
+            var charKeys = new DirectInputKeys[]
+           {
+                DirectInputKeys.KEY_A,
+                DirectInputKeys.KEY_B,
+                DirectInputKeys.KEY_C,
+                DirectInputKeys.KEY_D,
+                DirectInputKeys.KEY_E,
+                DirectInputKeys.KEY_F,
+                DirectInputKeys.KEY_G,
+                DirectInputKeys.KEY_H,
+                DirectInputKeys.KEY_I,
+                DirectInputKeys.KEY_J,
+                DirectInputKeys.KEY_K,
+                DirectInputKeys.KEY_L,
+                DirectInputKeys.KEY_M,
+                DirectInputKeys.KEY_N,
+                DirectInputKeys.KEY_O,
+                DirectInputKeys.KEY_P,
+                DirectInputKeys.KEY_Q,
+                DirectInputKeys.KEY_R,
+                DirectInputKeys.KEY_S,
+                DirectInputKeys.KEY_T,
+                DirectInputKeys.KEY_U,
+                DirectInputKeys.KEY_V,
+                DirectInputKeys.KEY_W,
+                DirectInputKeys.KEY_X,
+                DirectInputKeys.KEY_Y,
+                DirectInputKeys.KEY_Z,
+           };
 
             for (char c = 'a'; c <= 'z'; c++)
             {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
+                AddCommand(new ADBShellDDCommand(c.ToString(), charKeys[c - 'a'], DefaultKeyboardDevice, start++));
             }
 
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
+                AddCommand(new ADBShellDDCommand(c.ToString(), charKeys[c - 'A'], DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
             }
 
-            AddCommand(new ADBShellKeyEventCommand("Space", AdbShellKeys.KEYCODE_SPACE, start++));
-            AddCommand(new ADBShellKeyEventCommand("BackSpace", AdbShellKeys.KEYCODE_DEL, start++));
+            AddCommand(new ADBShellDDCommand("Space", DirectInputKeys.KEY_SPACE, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("BackSpace", DirectInputKeys.KEY_BACKSPACE, DefaultKeyboardDevice, start++));
 
-            string otherChars = "!,?.~;'^*%@&#=+:/\\_-|{}[]()\"<>`";
-            foreach (char c in otherChars)
-            {
-                AddCommand(new ADBShellCharCommand(c.ToString(), c, start++));
-            }
+            AddCommand(new ADBShellDDCommand("!", DirectInputKeys.KEY_1, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand(",", DirectInputKeys.KEY_COMMA, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("?", DirectInputKeys.KEY_SLASH, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand(".", DirectInputKeys.KEY_DOT, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("~", DirectInputKeys.KEY_GRAVE, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand(";", DirectInputKeys.KEY_SEMICOLON, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("'", DirectInputKeys.KEY_APOSTROPHE, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("^", DirectInputKeys.KEY_6, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("*", DirectInputKeys.KEY_7, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("%", DirectInputKeys.KEY_5, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("@", DirectInputKeys.KEY_2, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("&", DirectInputKeys.KEY_7, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("#", DirectInputKeys.KEY_3, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("=", DirectInputKeys.KEY_EQUAL, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("+", DirectInputKeys.KEY_EQUAL, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand(":", DirectInputKeys.KEY_SEMICOLON, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("/", DirectInputKeys.KEY_SLASH, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("\\", DirectInputKeys.KEY_BACKSLASH, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("_", DirectInputKeys.KEY_MINUS, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("-", DirectInputKeys.KEY_MINUS, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("|", DirectInputKeys.KEY_BACKSLASH, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("{", DirectInputKeys.KEY_LEFTBRACE, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("}", DirectInputKeys.KEY_RIGHTBRACE, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("[", DirectInputKeys.KEY_LEFTBRACE, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("]", DirectInputKeys.KEY_RIGHTBRACE, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("(", DirectInputKeys.KEY_9, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand(")", DirectInputKeys.KEY_0, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("\"", DirectInputKeys.KEY_APOSTROPHE, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("<", DirectInputKeys.KEY_COMMA, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand(">", DirectInputKeys.KEY_DOT, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellDDCommand("`", DirectInputKeys.KEY_GRAVE, DefaultKeyboardDevice, start++));
+
+            AddCommand(new ADBShellDDCommand("F1", DirectInputKeys.KEY_F1, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F2", DirectInputKeys.KEY_F2, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F3", DirectInputKeys.KEY_F3, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F4", DirectInputKeys.KEY_F4, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F5", DirectInputKeys.KEY_F5, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F6", DirectInputKeys.KEY_F6, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F7", DirectInputKeys.KEY_F7, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("F8", DirectInputKeys.KEY_F8, DefaultKeyboardDevice, start++));
         }
 
         private async Task<bool> CheckScreenOn(CancellationToken token)
@@ -404,6 +460,9 @@ namespace Hspi.Devices
             }
         }
 
+        private const int DefaultKeyboardDevice = 2;
+        private const int MediaKeyboardDevice = 3;
+
         private static readonly List<OutofOrderCommandDetector> adbOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
             new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
@@ -423,11 +482,87 @@ namespace Hspi.Devices
         private CancellationTokenSource queryRunningApplicationTokenSource;
     }
 
-    internal class ADBShellCharCommand : DeviceCommand
+    internal class ADBShellDDCommand : DeviceCommand
     {
-        public ADBShellCharCommand(string id, char key, int? fixedValue = null)
-            : base(id, Invariant($"input text \"{key}\""), fixedValue: fixedValue)
+        public ADBShellDDCommand(string id, DirectInputKeys key, int eventDeviceId, int? fixedValue = null, DirectInputKeys? modifier = null)
+            : base(id, BuildCommand(key, modifier, eventDeviceId), fixedValue: fixedValue)
         {
+        }
+
+        private enum EventValue
+        {
+            KeyDown = 1,
+            KeyUp = 0,
+        }
+
+        private static string BuildCommand(DirectInputKeys key, DirectInputKeys? modifier, int eventDeviceId)
+        {
+            StringBuilder stb = new StringBuilder();
+            stb.Append("echo -e -n '");
+
+            if (modifier.HasValue)
+            {
+                stb.Append(GetString(GetEventBytes(modifier.Value, EventValue.KeyDown)));
+                stb.Append(GetString(GetBytes(new InputEvent())));
+            }
+
+            stb.Append(GetString(GetEventBytes(key, EventValue.KeyDown)));
+            stb.Append(GetString(GetBytes(new InputEvent())));
+
+            stb.Append(GetString(GetEventBytes(key, EventValue.KeyUp)));
+            stb.Append(GetString(GetBytes(new InputEvent())));
+
+            if (modifier.HasValue)
+            {
+                stb.Append(GetString(GetEventBytes(modifier.Value, EventValue.KeyUp)));
+                stb.Append(GetString(GetBytes(new InputEvent())));
+            }
+
+            stb.Append(Invariant($@"' | dd of=/dev/input/event{eventDeviceId}"));
+            return stb.ToString();
+        }
+
+        private static byte[] GetBytes(InputEvent inputEvent)
+        {
+            var size = Marshal.SizeOf(inputEvent);
+            byte[] arr = new byte[size];
+
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+            Marshal.StructureToPtr(inputEvent, ptr, true);
+            Marshal.Copy(ptr, arr, 0, size);
+            Marshal.FreeHGlobal(ptr);
+            return arr;
+        }
+
+        private static byte[] GetEventBytes(DirectInputKeys key, EventValue eventValue)
+        {
+            InputEvent inputEvent = new InputEvent()
+            {
+                Type = 1,
+                Code = (Int16)key,
+                Value = (Int32)eventValue,
+            };
+
+            return GetBytes(inputEvent);
+        }
+
+        private static string GetString(byte[] data)
+        {
+            StringBuilder stb = new StringBuilder();
+            foreach (var b in data)
+            {
+                stb.AppendFormat(CultureInfo.InvariantCulture, @"\x{0:x2}", b);
+            }
+            return stb.ToString();
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 0)]
+        private unsafe struct InputEvent
+        {
+            public fixed byte Timestamp[16];
+            public Int16 Type;
+            public Int16 Code;
+            public Int32 Value;
         }
     }
 
@@ -449,24 +584,6 @@ namespace Hspi.Devices
         public ADBShellLaunchPackageCommand(string id, string packageName)
             : base(id, Invariant($@"monkey -p {packageName} -c android.intent.category.LAUNCHER 1"))
         {
-        }
-    }
-
-    internal class ADBShellSendEventCommand : DeviceCommand
-    {
-        public ADBShellSendEventCommand(string id, int key, int? fixedValue = null)
-            : base(id, BuildCommand(key), fixedValue: fixedValue)
-        {
-        }
-
-        private static string BuildCommand(int key)
-        {
-            StringBuilder stb = new StringBuilder();
-            stb.Append(Invariant($"sendevent /dev/input/event0 1 {key} 1 && "));
-            stb.Append(Invariant($"sendevent /dev/input/event0 0 0 0 && "));
-            stb.Append(Invariant($"sendevent /dev/input/event0 1 {key} 0 && "));
-            stb.Append(Invariant($"sendevent /dev/input/event0 0 0 0"));
-            return stb.ToString();
         }
     }
 }
