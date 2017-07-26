@@ -4,9 +4,11 @@ using SharpAdbClient;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -14,8 +16,6 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
-    using System.Globalization;
-    using System.Runtime.InteropServices;
     using static System.FormattableString;
 
     // nvidia shield 2015
@@ -306,7 +306,7 @@ namespace Hspi.Devices
 
         private void MacroStartCommandLoop(string commandId)
         {
-            MacroStartCommandLoop(commandId, TimeSpan.FromMilliseconds(100), ref cursorCancelLoopSource);
+            MacroStartCommandLoop(commandId, TimeSpan.FromMilliseconds(150), ref cursorCancelLoopSource);
         }
 
         private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
