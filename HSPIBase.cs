@@ -277,7 +277,7 @@ namespace Hspi
 
         public void LogError(string message)
         {
-            HS.WriteLog(Name, Invariant($"Error:{message}"));
+            HS.WriteLogEx(Name, Invariant($"Error:{message}"), "#FF0000");
         }
 
         public void LogInfo(string message)
@@ -287,7 +287,7 @@ namespace Hspi
 
         public void LogWarning(string message)
         {
-            HS.WriteLog(Name, Invariant($"Warning:{message}"));
+            HS.WriteLogEx(Name, Invariant($"Warning:{message}"), "#D58000");
         }
 
         private HSTraceListener hsTraceListener;

@@ -2,17 +2,13 @@
 using Hspi.Connector;
 using Hspi.DeviceData;
 using Hspi.Exceptions;
+using Nito.AsyncEx;
 using NullGuard;
 using Scheduler.Classes;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Linq;
-using Nito.AsyncEx;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using Hspi;
-using System.Collections.Concurrent;
 
 namespace Hspi
 {
