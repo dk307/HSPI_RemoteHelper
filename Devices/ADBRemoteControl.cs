@@ -225,6 +225,10 @@ namespace Hspi.Devices
             AddCommand(new ADBShellDDCommand("<", DirectInputKeys.KEY_COMMA, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
             AddCommand(new ADBShellDDCommand(">", DirectInputKeys.KEY_DOT, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
             AddCommand(new ADBShellDDCommand("`", DirectInputKeys.KEY_GRAVE, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand("$", DirectInputKeys.KEY_4, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
+            AddCommand(new ADBShellCharCommand("€", '€', start++));
+            AddCommand(new ADBShellCharCommand("£", '£', start++));
+            AddCommand(new ADBShellCharCommand("¥", '¥', start++));
 
             AddCommand(new ADBShellDDCommand("F1", DirectInputKeys.KEY_F1, DefaultKeyboardDevice, start++));
             AddCommand(new ADBShellDDCommand("F2", DirectInputKeys.KEY_F2, DefaultKeyboardDevice, start++));
@@ -583,6 +587,14 @@ namespace Hspi.Devices
 
         public ADBShellLaunchPackageCommand(string id, string packageName)
             : base(id, Invariant($@"monkey -p {packageName} -c android.intent.category.LAUNCHER 1"))
+        {
+        }
+    }
+
+    internal class ADBShellCharCommand : DeviceCommand
+    {
+        public ADBShellCharCommand(string id, char key, int? fixedValue = null)
+            : base(id, Invariant($"input text \"{key}\""), fixedValue: fixedValue)
         {
         }
     }
