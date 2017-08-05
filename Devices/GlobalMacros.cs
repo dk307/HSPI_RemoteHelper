@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Hspi.Devices
 {
@@ -24,6 +25,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroGameModeOff, type: DeviceCommandType.Both, fixedValue: -97));
             AddCommand(new DeviceCommand(CommandName.MacroToggleMute, type: DeviceCommandType.Both, fixedValue: -96));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnXBoxOne, type: DeviceCommandType.Both, fixedValue: -95));
+            AddCommand(new DeviceCommand(CommandName.MacroTurnOnSonyBluRay, type: DeviceCommandType.Both, fixedValue: -94));
 
             AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
@@ -48,6 +50,18 @@ namespace Hspi.Devices
             await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
         }
 
+        private static bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
+        {
+            var value = deviceFeedbackProvider.GetFeedbackValue(feedbackName);
+
+            if (value != null)
+            {
+                return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+            }
+
+            return null;
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private static string GetFeedbackAsString(IDeviceFeedbackProvider connection, string feedbackName)
         {
@@ -61,11 +75,11 @@ namespace Hspi.Devices
             return null;
         }
 
-        private static async Task IgnoreException(Func<Task> action)
+        private static async Task IgnoreException(Task task)
         {
             try
             {
-                await Task.Run(action).ConfigureAwait(false);
+                await Task.WhenAll(task).ConfigureAwait(false);
             }
             catch { }
         }
@@ -134,6 +148,10 @@ namespace Hspi.Devices
                         await MacroTurnoffEverything(timeoutToken).ConfigureAwait(false);
                         break;
 
+                    case CommandName.MacroTurnOnSonyBluRay:
+                        await MacroTurnOnSonyBluRay(timeoutToken).ConfigureAwait(false);
+                        break;
+
                     case CommandName.MacroGameModeOn:
                         await MacroTurnGameMode(true, timeoutToken).ConfigureAwait(false);
                         break;
@@ -156,6 +174,16 @@ namespace Hspi.Devices
             }
         }
 
+        private IDeviceCommandHandler[] GetAllDevices()
+        {
+            return new IDeviceCommandHandler[]
+            {
+                GetConnection(DeviceType.XboxOne),
+                GetConnection(DeviceType.ADBRemoteControl),
+                GetConnection(DeviceType.SonyBluRay),
+            };
+        }
+
         private IDeviceCommandHandler GetConnection(DeviceType deviceType)
         {
             var connection = ConnectionProvider.GetCommandHandler(deviceType);
@@ -166,18 +194,6 @@ namespace Hspi.Devices
         {
             IDeviceFeedbackProvider deviceFeedbackProvider = ConnectionProvider.GetFeedbackProvider(connection.DeviceType);
             return GetFeedbackAsBoolean(deviceFeedbackProvider, feedbackName);
-        }
-
-        private static bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
-        {
-            var value = deviceFeedbackProvider.GetFeedbackValue(feedbackName);
-
-            if (value != null)
-            {
-                return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
-            }
-
-            return null;
         }
 
         private async Task MacroToggleMute(CancellationToken token)
@@ -241,16 +257,11 @@ namespace Hspi.Devices
 
             var tv = GetConnection(DeviceType.SamsungTV);
             var avr = GetConnection(DeviceType.DenonAVR);
-
-            var shutdownDevices = new IDeviceCommandHandler[]
-            {
-                GetConnection(DeviceType.XboxOne),
-                GetConnection(DeviceType.ADBRemoteControl),
-            };
+            var shutdownDevices = GetAllDevices();
 
             await ShutdownDevices(shutdownDevices, timeoutToken).ConfigureAwait(false);
-            await IgnoreException(async () => await tv.HandleCommand(CommandName.PowerOff, timeoutToken));
-            await IgnoreException(async () => await avr.HandleCommand(CommandName.PowerOff, timeoutToken));
+            await IgnoreException(tv.HandleCommand(CommandName.PowerOff, timeoutToken)).ConfigureAwait(false);
+            await IgnoreException(avr.HandleCommand(CommandName.PowerOff, timeoutToken)).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnNvidiaShield(CancellationToken timeoutToken)
@@ -258,11 +269,17 @@ namespace Hspi.Devices
             string input = DenonAVRControl.NvidiaShieldInput;
             string inputSwitchCommand = CommandName.ChangeInputMPLAY;
             var device = GetConnection(DeviceType.ADBRemoteControl);
-            var shutdownDevices = new IDeviceCommandHandler[]
-            {
-                GetConnection(DeviceType.XboxOne),
-            };
+            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.ADBRemoteControl);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
+        }
+
+        private async Task MacroTurnOnSonyBluRay(CancellationToken timeoutToken)
+        {
+            string input = DenonAVRControl.BlueRayPlayerInput;
+            string inputSwitchCommand = CommandName.ChangeInputBD;
+            var device = GetConnection(DeviceType.SonyBluRay);
+            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.SonyBluRay);
+            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnXboxOne(CancellationToken timeoutToken)
@@ -270,10 +287,7 @@ namespace Hspi.Devices
             string input = DenonAVRControl.XBoxOneInput;
             string inputSwitchCommand = CommandName.ChangeInputGAME2;
             var device = GetConnection(DeviceType.XboxOne);
-            var shutdownDevices = new IDeviceCommandHandler[]
-            {
-                GetConnection(DeviceType.ADBRemoteControl),
-            };
+            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.XboxOne);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
@@ -298,7 +312,7 @@ namespace Hspi.Devices
             var shutdownTasks = new List<Task>();
             foreach (var shutdownDevice in shutdownDevices)
             {
-                shutdownTasks.Add(shutdownDevice.HandleCommand(CommandName.PowerQuery, timeoutToken));
+                shutdownTasks.Add(IgnoreException(shutdownDevice.HandleCommand(CommandName.PowerQuery, timeoutToken)));
             }
 
             await shutdownTasks.WhenAll().ConfigureAwait(false);
