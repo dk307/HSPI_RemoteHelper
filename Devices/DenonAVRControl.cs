@@ -129,12 +129,12 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.MacroStartVolumeUpLoop:
-                    MacroStartCommandLoop(CommandName.VolumeUp, repeatDelays, ref volumeCancelSource);
+                    MacroStartCommandLoop(CommandName.VolumeUp, ref volumeCancelSource);
 
                     break;
 
                 case CommandName.MacroStartVolumeDownLoop:
-                    MacroStartCommandLoop(CommandName.VolumeDown, repeatDelays, ref volumeCancelSource);
+                    MacroStartCommandLoop(CommandName.VolumeDown, ref volumeCancelSource);
                     break;
 
                 case CommandName.MacroStopVolumeUpLoop:
@@ -143,11 +143,11 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.MacroStartSubwooferLevelDownLoop:
-                    MacroStartCommandLoop(CommandName.SubWooferLevelDown, repeatDelays, ref volumeCancelSource);
+                    MacroStartCommandLoop(CommandName.SubWooferLevelDown, ref volumeCancelSource);
                     break;
 
                 case CommandName.MacroStartSubwooferLevelUpLoop:
-                    MacroStartCommandLoop(CommandName.SubWooferLevelUp, repeatDelays, ref volumeCancelSource);
+                    MacroStartCommandLoop(CommandName.SubWooferLevelUp, ref volumeCancelSource);
                     break;
 
                 case CommandName.MacroStopSubwooferLevelDownLoop:
@@ -156,11 +156,11 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.MacroStartDialogEnhancerDownLoop:
-                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelDown, repeatDelays, ref volumeCancelSource);
+                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelDown, ref volumeCancelSource);
                     break;
 
                 case CommandName.MacroStartDialogEnhancerUpLoop:
-                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelUp, repeatDelays, ref volumeCancelSource);
+                    MacroStartCommandLoop(CommandName.DialogEnhancerLevelUp, ref volumeCancelSource);
                     break;
 
                 case CommandName.MacroStopDialogEnhancerDownLoop:
@@ -547,7 +547,6 @@ namespace Hspi.Devices
 
         private TcpClient client;
         private CancellationTokenSource combinedStopTokenSource;
-        private TimeSpan repeatDelays = TimeSpan.FromMilliseconds(100);
         private CancellationTokenSource stopTokenSource;
         private NetworkStream stream;
         private CancellationTokenSource volumeCancelSource;

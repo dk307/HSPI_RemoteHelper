@@ -55,13 +55,13 @@ namespace Hspi.Devices
 
         protected abstract Task ExecuteCommandCore(DeviceCommand command, CancellationToken token);
 
-        protected void MacroStartCommandLoop(string commandId, TimeSpan commandDelay,
+        protected void MacroStartCommandLoop(string commandId,
                                              [AllowNull]ref CancellationTokenSource cancelSource)
         {
-            MacroStartCommandLoop(GetCommand(commandId), commandDelay, ref cancelSource);
+            MacroStartCommandLoop(GetCommand(commandId), ref cancelSource);
         }
 
-        protected void MacroStartCommandLoop(DeviceCommand command, TimeSpan commandDelay,
+        protected void MacroStartCommandLoop(DeviceCommand command,
                                              [AllowNull]ref CancellationTokenSource cancelSource)
         {
             if (cancelSource != null)
@@ -72,7 +72,7 @@ namespace Hspi.Devices
 
             var cancelToken = cancelSource.Token;
 
-            StartCommandLoop(command, commandDelay, cancelToken);
+            StartCommandLoop(command, DefaultCommandDelay, cancelToken);
         }
 
         protected void StartCommandLoop(DeviceCommand command, TimeSpan commandDelay, CancellationToken cancelToken)

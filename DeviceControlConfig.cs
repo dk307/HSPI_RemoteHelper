@@ -16,7 +16,8 @@ namespace Hspi
         DenonAVR,
         GlobalMacros,
         IP2IR,
-        XboxOne
+        XboxOne,
+        SonyBluRay
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -63,6 +64,9 @@ namespace Hspi
 
                 case DeviceType.XboxOne:
                     return new string[] { DefaultCommandDelayId, DefaultPowerOnDelayId };
+
+                case DeviceType.SonyBluRay:
+                    return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId };
             }
 
             throw new KeyNotFoundException();
@@ -97,6 +101,12 @@ namespace Hspi
                     return new XBoxIRControl(Name, DeviceIP,
                                                    DefaultCommandDelay,
                                                    connectionProvider);
+
+                case DeviceType.SonyBluRay:
+                    return new SonyBluRayControl(Name, DeviceIP,
+                                                PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
+                                                DefaultCommandDelay,
+                                                connectionProvider);
             }
 
             throw new KeyNotFoundException();

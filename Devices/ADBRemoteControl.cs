@@ -310,7 +310,7 @@ namespace Hspi.Devices
 
         private void MacroStartCommandLoop(string commandId)
         {
-            MacroStartCommandLoop(commandId, TimeSpan.FromMilliseconds(150), ref cursorCancelLoopSource);
+            MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
         }
 
         private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)

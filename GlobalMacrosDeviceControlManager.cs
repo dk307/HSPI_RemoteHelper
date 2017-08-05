@@ -1,8 +1,7 @@
 ﻿using HomeSeerAPI;
+using Hspi.Devices;
 using NullGuard;
 using System.Threading;
-using Hspi.Devices;
-using System.Collections.Generic;
 
 namespace Hspi.Connector
 {

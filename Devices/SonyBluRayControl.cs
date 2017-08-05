@@ -1,0 +1,183 @@
+﻿using Nito.AsyncEx;
+using NullGuard;
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net;
+using System.Net.Http;
+using System.Net.NetworkInformation;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Hspi.Devices
+{
+    using static System.FormattableString;
+
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
+    internal sealed class SonyBluRayControl : IPAddressableDeviceControl
+    {
+        public SonyBluRayControl(string name, IPAddress deviceIP,
+                                PhysicalAddress macAddress,
+                                TimeSpan defaultCommandDelay,
+                                IConnectionProvider connectionProvider) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider)
+        {
+            MacAddress = macAddress;
+            AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));
+            AddCommand(new SonyBluRayCommand(CommandName.PowerOff, "AAAAAwAAHFoAAAAVAw==", -199));
+            AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue: -198));
+
+            AddCommand(new SonyBluRayCommand(CommandName.CursorDown, "AAAAAwAAHFoAAAA6Aw==", -197));
+            AddCommand(new SonyBluRayCommand(CommandName.CursorUp, "AAAAAwAAHFoAAAA5Aw==", -196));
+            AddCommand(new SonyBluRayCommand(CommandName.CursorRight, "AAAAAwAAHFoAAAA8Aw==", -195));
+            AddCommand(new SonyBluRayCommand(CommandName.CursorLeft, "AAAAAwAAHFoAAAA7Aw==", -194));
+            AddCommand(new SonyBluRayCommand(CommandName.Enter, "AAAAAwAAHFoAAAA9Aw==", -193));
+            AddCommand(new SonyBluRayCommand(CommandName.Return, "AAAAAwAAHFoAAABDAw==", -192));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaPlayPause, "AAAAAwAAHFoAAAAaAw==", -191));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaStop, "AAAAAwAAHFoAAAAYAw==", -190));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaRewind, "AAAAAwAAHFoAAAAbAw==", -189));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaFastForward, "AAAAAwAAHFoAAAAcAw==", -188));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaStepForward, "AAAAAwAAHFoAAABWAw==", -187));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaStepBackward, "AAAAAwAAHFoAAABXAw==", -186));
+            AddCommand(new SonyBluRayCommand(CommandName.Home, "AAAAAwAAHFoAAABCAw==", -185));
+            AddCommand(new SonyBluRayCommand(CommandName.Info, "AAAAAwAAHFoAAABBAw==", -183));
+            AddCommand(new SonyBluRayCommand(CommandName.AudioTrack, "AAAAAwAAHFoAAABkAw==", -182));
+            AddCommand(new SonyBluRayCommand(CommandName.Subtitle, "AAAAAwAAHFoAAABjAw==", -181));
+            AddCommand(new SonyBluRayCommand(CommandName.Options, "AAAAAwAAHFoAAAA/Aw==", -180));
+            AddCommand(new SonyBluRayCommand(CommandName.Eject, "AAAAAwAAHFoAAAAWAw==", -179));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaSkipBackward, "AAAAAwAAHFoAAAB2Aw==", -178));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaSkipForward, "AAAAAwAAHFoAAAB1Aw==", -177));
+            AddCommand(new SonyBluRayCommand(CommandName.Menu, "AAAAAwAAHFoAAAApAw==", -176));
+
+            var digitCommands = new string[10]
+            {
+                "AAAAAwAAHFoAAAAJAw==",
+                "AAAAAwAAHFoAAAAAAw==",
+                "AAAAAwAAHFoAAAABAw==",
+                "AAAAAwAAHFoAAAACAw==",
+                "AAAAAwAAHFoAAAADAw==",
+                "AAAAAwAAHFoAAAAEAw==",
+                "AAAAAwAAHFoAAAAFAw==",
+                "AAAAAwAAHFoAAAAGAw==",
+                "AAAAAwAAHFoAAAAHAw==",
+                "AAAAAwAAHFoAAAAIAw==",
+            };
+
+            for (int i = 0; i <= 9; i++)
+            {
+                AddCommand(new SonyBluRayCommand(i.ToString(CultureInfo.InvariantCulture), digitCommands[i], -1000 + i));
+            }
+
+            AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
+
+            UriBuilder uriBuilder = new UriBuilder();
+            uriBuilder.Host = deviceIP.ToString();
+            uriBuilder.Port = Port;
+            uriBuilder.Scheme = "http";
+
+            client.BaseAddress = uriBuilder.Uri;
+        }
+
+        public override bool InvalidState => false;
+
+        public PhysicalAddress MacAddress { get; }
+
+        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        {
+            return ExecuteCommandCore2(command, token);
+        }
+
+        private async Task Connect(CancellationToken token)
+        {
+            if (!await IsPoweredOn(token).ConfigureAwait(false))
+            {
+                throw new DevicePoweredOffException($"Sony Blu Ray {Name} on {DeviceIP} not powered On");
+            }
+
+            UpdateFeedback(FeedbackName.Power, true);
+            Trace.WriteLine(Invariant($"Connected to Sony Blu Ray {Name} on {DeviceIP}"));
+            UpdateConnectedState(true);
+        }
+
+        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        {
+            Trace.WriteLine(Invariant($"Sending {command.Id} to Sony Blu Ray {Name} on {DeviceIP}"));
+
+            switch (command.Id)
+            {
+                case CommandName.PowerOn:
+                    await NetworkHelper.SendWolAsync(new IPEndPoint(IPAddress.Broadcast, 9), MacAddress, token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.PowerQuery:
+                    await UpdatePowerFeedbackState(token).ConfigureAwait(false);
+                    break;
+
+                default:
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
+            }
+        }
+
+        private async Task<bool> IsPoweredOn(CancellationToken token)
+        {
+            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
+        }
+
+        private async Task SendCommandCore(string commandData, CancellationToken token)
+        {
+            using (await connectionLock.LockAsync(token).ConfigureAwait(false))
+            {
+                if (!Connected)
+                {
+                    await Connect(token).ConfigureAwait(false);
+                }
+
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/upnp/control/IRCC?"))
+                {
+                    request.Content = new StringContent(commandData, Encoding.UTF8, "text/xml");//CONTENT-TYPE header
+                    request.Headers.Add("SOAPACTION", "\"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC\"");
+
+                    var response = await client.SendAsync(request, token).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+                    var responseBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    var output = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length - 1);
+                    Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
+                }
+            }
+        }
+
+        private async Task UpdatePowerFeedbackState(CancellationToken token)
+        {
+            UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
+        }
+
+        private const int Port = 50001;
+        private readonly HttpClient client = new HttpClient();
+        private readonly AsyncLock connectionLock = new AsyncLock();
+
+        private class SonyBluRayCommand : DeviceCommand
+        {
+            public SonyBluRayCommand(string id, string command, int? fixedValue)
+                : base(id, MakeCommand(command), DeviceCommandType.Control, fixedValue)
+            {
+            }
+
+            private static string MakeCommand(string command)
+            {
+                StringBuilder stb = new StringBuilder();
+                stb.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                stb.Append("<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">");
+                stb.Append("<s:Body>");
+                stb.Append("<u:X_SendIRCC xmlns:u=\"urn:schemas-sony-com:service:IRCC:1\">");
+                stb.AppendFormat(CultureInfo.InvariantCulture, "<IRCCCode>{0}</IRCCCode>", command);
+                stb.Append("</u:X_SendIRCC>");
+                stb.Append("</s:Body>");
+                stb.Append("</s:Envelope>");
+                return stb.ToString();
+            }
+        }
+    }
+}

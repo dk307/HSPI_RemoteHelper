@@ -239,6 +239,7 @@
     <Compile Include="Devices\DirectInputKeys.cs" />
     <Compile Include="Devices\IP2IRDeviceControl.cs" />
     <Compile Include="Devices\OutofOrderCommandDetector.cs" />
+    <Compile Include="Devices\SonyBluRayControl.cs" />
     <Compile Include="Devices\XBoxIRControl.cs" />
     <Compile Include="Exceptions\DeviceException.cs" />
     <Compile Include="Devices\DeviceFeedback.cs" />

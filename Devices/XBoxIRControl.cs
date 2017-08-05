@@ -114,7 +114,7 @@ namespace Hspi.Devices
 
         private void MacroStartCommandLoop(string commandId)
         {
-            MacroStartCommandLoop(commandId, TimeSpan.FromMilliseconds(100), ref cursorCancelLoopSource);
+            MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
         }
 
         private async Task<bool> IsPoweredOn(CancellationToken token)

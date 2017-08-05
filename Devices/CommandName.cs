@@ -93,5 +93,7 @@
         public const string ChangeInputGAME2 = "Change Input - GAME2";
         public const string ChangeInputBD = "Change Input - BD";
         public const string TVAVRInput = "TV AVR Input";
+        public const string Options = "Options";
+        public const string Eject = "Eject";
     }
 }
