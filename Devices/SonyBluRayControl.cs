@@ -141,10 +141,16 @@ namespace Hspi.Devices
                     request.Headers.Add("SOAPACTION", "\"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC\"");
 
                     var response = await client.SendAsync(request, token).ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
-                    var responseBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                    var output = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length - 1);
-                    Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                        var output = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length - 1);
+                        Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
+                    }
+                    else
+                    {
+                        throw new DeviceException(Invariant($"Failed command to {Name} with [{response.StatusCode}] "));
+                    }
                 }
             }
         }
