@@ -57,6 +57,8 @@
         public const string MediaFastForward = "Media Fast Forward";
         public const string MediaNext = "Media Next";
         public const string MediaPlayPause = "Media Play\\Pause";
+        public const string MediaPlay = "Media Play";
+        public const string MediaPause = "Media Pause";
         public const string MediaPrevious = "Media Previous";
         public const string MediaRewind = "Media Rewind";
         public const string MediaSkipBackward = "Media Skip Backward";

@@ -34,7 +34,7 @@ namespace Hspi.Devices
             AddCommand(new SonyBluRayCommand(CommandName.CursorLeft, "AAAAAwAAHFoAAAA7Aw==", -194));
             AddCommand(new SonyBluRayCommand(CommandName.Enter, "AAAAAwAAHFoAAAA9Aw==", -193));
             AddCommand(new SonyBluRayCommand(CommandName.Return, "AAAAAwAAHFoAAABDAw==", -192));
-            AddCommand(new SonyBluRayCommand(CommandName.MediaPlayPause, "AAAAAwAAHFoAAAAaAw==", -191));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaPlay, "AAAAAwAAHFoAAAAaAw==", -191));
             AddCommand(new SonyBluRayCommand(CommandName.MediaStop, "AAAAAwAAHFoAAAAYAw==", -190));
             AddCommand(new SonyBluRayCommand(CommandName.MediaRewind, "AAAAAwAAHFoAAAAbAw==", -189));
             AddCommand(new SonyBluRayCommand(CommandName.MediaFastForward, "AAAAAwAAHFoAAAAcAw==", -188));
@@ -49,6 +49,7 @@ namespace Hspi.Devices
             AddCommand(new SonyBluRayCommand(CommandName.MediaSkipBackward, "AAAAAwAAHFoAAAB2Aw==", -178));
             AddCommand(new SonyBluRayCommand(CommandName.MediaSkipForward, "AAAAAwAAHFoAAAB1Aw==", -177));
             AddCommand(new SonyBluRayCommand(CommandName.Menu, "AAAAAwAAHFoAAAApAw==", -176));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaPause, "AAAAAwAAHFoAAAAZAw==", -175));
 
             var digitCommands = new string[10]
             {
@@ -123,7 +124,7 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
+            return await NetworkHelper.PingHost(DeviceIP, Port, networkPingTimeout, token).ConfigureAwait(false);
         }
 
         private async Task SendCommandCore(string commandData, CancellationToken token)
