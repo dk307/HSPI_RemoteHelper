@@ -279,7 +279,7 @@ namespace Hspi.Devices
             string inputSwitchCommand = CommandName.ChangeInputBD;
             var device = GetConnection(DeviceType.SonyBluRay);
             var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.SonyBluRay);
-            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
+            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnXboxOne(CancellationToken timeoutToken)
