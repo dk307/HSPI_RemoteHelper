@@ -89,12 +89,6 @@
     <Reference Include="Nito.AsyncEx.Coordination, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Nito.AsyncEx.Coordination.5.0.0-pre-02\lib\netstandard1.3\Nito.AsyncEx.Coordination.dll</HintPath>
     </Reference>
-    <Reference Include="Nito.AsyncEx.Interop.WaitHandles, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Nito.AsyncEx.Interop.WaitHandles.5.0.0-pre-02\lib\netstandard1.3\Nito.AsyncEx.Interop.WaitHandles.dll</HintPath>
-    </Reference>
-    <Reference Include="Nito.AsyncEx.Oop, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Nito.AsyncEx.Oop.5.0.0-pre-02\lib\netstandard1.3\Nito.AsyncEx.Oop.dll</HintPath>
-    </Reference>
     <Reference Include="Nito.AsyncEx.Tasks, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Nito.AsyncEx.Tasks.5.0.0-pre-02\lib\netstandard1.3\Nito.AsyncEx.Tasks.dll</HintPath>
     </Reference>
@@ -309,9 +303,9 @@
       <InputAssemblies Include="$(OutputPath)\HSPI_RemoteHelper.exe" />
       <InputAssemblies Include="$(OutputPath)\Microsoft.Win32.Primitives.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Context.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Interop.WaitHandles.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Oop.dll" />
+      <!-- <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" /> -->
+      <!-- <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Interop.WaitHandles.dll" /> -->
+      <!-- <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Oop.dll" />-->
       <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.Cancellation.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
