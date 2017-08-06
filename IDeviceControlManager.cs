@@ -1,8 +1,7 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Hspi.DeviceData;
-using NullGuard;
+﻿using Hspi.DeviceData;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Hspi.Connector
 {

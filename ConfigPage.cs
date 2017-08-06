@@ -1,4 +1,5 @@
 ﻿using HomeSeerAPI;
+using Hspi.Connector;
 using NullGuard;
 using Scheduler;
 using System;
@@ -9,7 +10,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Web;
-using Hspi.Connector;
 
 namespace Hspi
 {

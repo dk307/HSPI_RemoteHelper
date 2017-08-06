@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NullGuard;
+using System;
 using System.Runtime.Serialization;
-using NullGuard;
 
 namespace Hspi.Devices
 {
