@@ -186,6 +186,7 @@ namespace Hspi.Devices
                 GetConnection(DeviceType.XboxOne),
                 GetConnection(DeviceType.ADBRemoteControl),
                 GetConnection(DeviceType.SonyBluRay),
+                GetConnection(DeviceType.PS3),
             };
         }
 
