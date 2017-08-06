@@ -78,6 +78,9 @@ namespace Hspi.Devices
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchSling, @"com.sling"));
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchKodi, @"com.semperpax.spmc16"));
 
+            AddCommand(new DeviceCommand(CommandName.BackspaceEventUp));
+            AddCommand(new DeviceCommand(CommandName.BackspaceEventDown));
+
             AddKeyboardCommands(1000);
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
@@ -192,7 +195,7 @@ namespace Hspi.Devices
             }
 
             AddCommand(new ADBShellDDCommand("Space", DirectInputKeys.KEY_SPACE, DefaultKeyboardDevice, start++));
-            AddCommand(new ADBShellDDCommand("BackSpace", DirectInputKeys.KEY_BACKSPACE, DefaultKeyboardDevice, start++));
+            AddCommand(new ADBShellDDCommand(CommandName.Backspace, DirectInputKeys.KEY_BACKSPACE, DefaultKeyboardDevice, start++));
 
             AddCommand(new ADBShellDDCommand("!", DirectInputKeys.KEY_1, DefaultKeyboardDevice, start++, DirectInputKeys.KEY_LEFTSHIFT));
             AddCommand(new ADBShellDDCommand(",", DirectInputKeys.KEY_COMMA, DefaultKeyboardDevice, start++));
@@ -367,10 +370,15 @@ namespace Hspi.Devices
                     MacroStartCommandLoop(CommandName.CursorUp);
                     break;
 
+                case CommandName.BackspaceEventDown:
+                    MacroStartCommandLoop(CommandName.Backspace);
+                    break;
+
                 case CommandName.CursorLeftEventUp:
                 case CommandName.CursorRightEventUp:
                 case CommandName.CursorUpEventUp:
                 case CommandName.CursorDownEventUp:
+                case CommandName.Backspace:
                     MacroStopCommandLoop(ref cursorCancelLoopSource);
                     break;
 

@@ -38,6 +38,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.AllStatusQuery, string.Empty, fixedValue: -77));
             AddCommand(new DeviceCommand(CommandName.ChangeInputGAME2, "SIGAME2", fixedValue: -76));
             AddCommand(new DeviceCommand(CommandName.ChangeInputBD, "SIBD", fixedValue: -75));
+            AddCommand(new DeviceCommand(CommandName.ChangeInputCD, "SICD", fixedValue: -74));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Mute, TypeCode.Boolean));
@@ -214,6 +215,9 @@ namespace Hspi.Devices
 
                 case "AUX2":
                     return XBoxOneInput;
+
+                case "CD":
+                    return PS3Input;
             }
             return base.TranslateStringFeedback(input);
         }
@@ -531,6 +535,7 @@ namespace Hspi.Devices
         public const string NvidiaShieldInput = "Nvidia Shield";
         public const string BlueRayPlayerInput = "Blu Ray Player";
         public const string XBoxOneInput = "XBox One";
+        public const string PS3Input = "PS3";
         private const char Seperator = '\r';
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly Encoding encoding = Encoding.ASCII;

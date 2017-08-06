@@ -26,6 +26,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroToggleMute, type: DeviceCommandType.Both, fixedValue: -96));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnXBoxOne, type: DeviceCommandType.Both, fixedValue: -95));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnSonyBluRay, type: DeviceCommandType.Both, fixedValue: -94));
+            AddCommand(new DeviceCommand(CommandName.MacroTurnOnPS3, type: DeviceCommandType.Both, fixedValue: -93));
 
             AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
@@ -142,6 +143,10 @@ namespace Hspi.Devices
 
                     case CommandName.MacroTurnOnXBoxOne:
                         await MacroTurnOnXboxOne(timeoutToken).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroTurnOnPS3:
+                        await MacroTurnOnPS3(timeoutToken).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroTurnOffEverything:
@@ -271,6 +276,15 @@ namespace Hspi.Devices
             var device = GetConnection(DeviceType.ADBRemoteControl);
             var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.ADBRemoteControl);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
+        }
+
+        private async Task MacroTurnOnPS3(CancellationToken timeoutToken)
+        {
+            string input = DenonAVRControl.PS3Input;
+            string inputSwitchCommand = CommandName.ChangeInputCD;
+            var device = GetConnection(DeviceType.PS3);
+            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.PS3);
+            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnSonyBluRay(CancellationToken timeoutToken)

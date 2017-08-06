@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using System.Collections.Generic;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -21,7 +22,7 @@ namespace Hspi.Devices
                                 PhysicalAddress macAddress,
                                 TimeSpan defaultCommandDelay,
                                 IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider)
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, outofCommandDetectors)
         {
             MacAddress = macAddress;
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));
@@ -70,6 +71,15 @@ namespace Hspi.Devices
                 AddCommand(new SonyBluRayCommand(i.ToString(CultureInfo.InvariantCulture), digitCommands[i], -1000 + i));
             }
 
+            AddCommand(new DeviceCommand(CommandName.CursorUpEventDown, fixedValue: 2000));
+            AddCommand(new DeviceCommand(CommandName.CursorUpEventUp, fixedValue: 2001));
+            AddCommand(new DeviceCommand(CommandName.CursorDownEventDown, fixedValue: 2002));
+            AddCommand(new DeviceCommand(CommandName.CursorDownEventUp, fixedValue: 2003));
+            AddCommand(new DeviceCommand(CommandName.CursorRightEventDown, fixedValue: 2004));
+            AddCommand(new DeviceCommand(CommandName.CursorRightEventUp, fixedValue: 2005));
+            AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown, fixedValue: 2006));
+            AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp, fixedValue: 2007));
+
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
 
             UriBuilder uriBuilder = new UriBuilder();
@@ -115,6 +125,29 @@ namespace Hspi.Devices
                     await UpdatePowerFeedbackState(token).ConfigureAwait(false);
                     break;
 
+                case CommandName.CursorDownEventDown:
+                    MacroStartCommandLoop(CommandName.CursorDown);
+                    break;
+
+                case CommandName.CursorLeftEventDown:
+                    MacroStartCommandLoop(CommandName.CursorLeft);
+                    break;
+
+                case CommandName.CursorRightEventDown:
+                    MacroStartCommandLoop(CommandName.CursorRight);
+                    break;
+
+                case CommandName.CursorUpEventDown:
+                    MacroStartCommandLoop(CommandName.CursorUp);
+                    break;
+
+                case CommandName.CursorLeftEventUp:
+                case CommandName.CursorRightEventUp:
+                case CommandName.CursorUpEventUp:
+                case CommandName.CursorDownEventUp:
+                    MacroStopCommandLoop(ref cursorCancelLoopSource);
+                    break;
+
                 default:
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
@@ -125,6 +158,11 @@ namespace Hspi.Devices
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
             return await NetworkHelper.PingHost(DeviceIP, Port, networkPingTimeout, token).ConfigureAwait(false);
+        }
+
+        private void MacroStartCommandLoop(string commandId)
+        {
+            MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
         }
 
         private async Task SendCommandCore(string commandData, CancellationToken token)
@@ -164,6 +202,15 @@ namespace Hspi.Devices
         private const int Port = 50001;
         private readonly HttpClient client = new HttpClient();
         private readonly AsyncLock connectionLock = new AsyncLock();
+        private CancellationTokenSource cursorCancelLoopSource;
+
+        private static readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
+        {
+            new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
+            new OutofOrderCommandDetector(CommandName.CursorUpEventDown, CommandName.CursorUpEventUp),
+            new OutofOrderCommandDetector(CommandName.CursorRightEventDown, CommandName.CursorRightEventUp),
+            new OutofOrderCommandDetector(CommandName.CursorLeftEventDown, CommandName.CursorLeftEventUp),
+        };
 
         private class SonyBluRayCommand : DeviceCommand
         {

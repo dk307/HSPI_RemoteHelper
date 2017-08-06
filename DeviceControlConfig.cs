@@ -17,7 +17,8 @@ namespace Hspi
         GlobalMacros,
         IP2IR,
         XboxOne,
-        SonyBluRay
+        SonyBluRay,
+        PS3
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -67,6 +68,9 @@ namespace Hspi
 
                 case DeviceType.SonyBluRay:
                     return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId };
+
+                case DeviceType.PS3:
+                    return new string[] { };
             }
 
             throw new KeyNotFoundException();
@@ -107,6 +111,9 @@ namespace Hspi
                                                 PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
                                                 DefaultCommandDelay,
                                                 connectionProvider);
+
+                case DeviceType.PS3:
+                    return new PS3FakeControlDevice(Name, connectionProvider);
             }
 
             throw new KeyNotFoundException();
