@@ -32,8 +32,28 @@ namespace Hspi
             DeviceIP = deviceIP;
             DeviceType = deviceType;
             AdditionalValues = additionalValues;
-            powerOnDelay = new Lazy<TimeSpan>(() => TimeSpan.FromMilliseconds(uint.Parse(AdditionalValues[DefaultPowerOnDelayId], CultureInfo.InvariantCulture)));
-            defaultCommandDelay = new Lazy<TimeSpan>(() => TimeSpan.FromMilliseconds(uint.Parse(AdditionalValues[DefaultCommandDelayId], CultureInfo.InvariantCulture)));
+            defaultCommandDelay = new Lazy<TimeSpan>(() =>
+            {
+                if (AdditionalValues.TryGetValue(DefaultCommandDelayId, out string value))
+                {
+                    return TimeSpan.FromMilliseconds(uint.Parse(value, CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    return TimeSpan.Zero;
+                }
+            });
+            powerOnDelay = new Lazy<TimeSpan>(() =>
+            {
+                if (AdditionalValues.TryGetValue(DefaultPowerOnDelayId, out string value))
+                {
+                    return TimeSpan.FromMilliseconds(uint.Parse(value, CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    return TimeSpan.Zero;
+                }
+            });
         }
 
         public TimeSpan DefaultCommandDelay => defaultCommandDelay.Value;
@@ -138,8 +158,8 @@ namespace Hspi
         public const string ADBPathId = "ADBPath";
         public const string DefaultCommandDelayId = "CommandDelay(ms)";
         public const string DefaultPowerOnDelayId = "PowerOnDelay(ms)";
-        public const string PhysicalAddressId = "PhysicalAddress";
         public const string IP2IRFileNameId = "IP2IRFileName";
+        public const string PhysicalAddressId = "PhysicalAddress";
         public IReadOnlyDictionary<string, string> AdditionalValues;
         private Lazy<TimeSpan> defaultCommandDelay;
         private Lazy<TimeSpan> powerOnDelay;
