@@ -5,17 +5,15 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Hspi.Devices
 {
-    using System.Collections.Generic;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class XBoxIRControl : IPAddressableDeviceControl
     {
-        private CancellationTokenSource cursorCancelLoopSource;
-
         public XBoxIRControl(string name, IPAddress deviceIP,
                                   TimeSpan defaultCommandDelay,
                                    IConnectionProvider connectionProvider) :
@@ -43,6 +41,15 @@ namespace Hspi.Devices
         }
 
         public override bool InvalidState => false;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                cursorCancelLoopSource?.Cancel();
+            }
+            base.Dispose(disposing);
+        }
 
         protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
@@ -112,15 +119,15 @@ namespace Hspi.Devices
             }
         }
 
-        private void MacroStartCommandLoop(string commandId)
-        {
-            MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
-        }
-
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
+        }
+
+        private void MacroStartCommandLoop(string commandId)
+        {
+            MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
         }
 
         private async Task SendCommandCore(string commandId, CancellationToken token)
@@ -136,5 +143,7 @@ namespace Hspi.Devices
             new OutofOrderCommandDetector(CommandName.CursorRightEventDown, CommandName.CursorRightEventUp),
             new OutofOrderCommandDetector(CommandName.CursorLeftEventDown, CommandName.CursorLeftEventUp),
         };
+
+        private CancellationTokenSource cursorCancelLoopSource;
     }
 }

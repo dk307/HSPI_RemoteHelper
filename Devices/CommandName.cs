@@ -103,5 +103,6 @@
         public const string Backspace = "Backspace";
         public const string BackspaceEventUp = "Backspace - Event Up";
         public const string BackspaceEventDown = "Backspace - Event Down";
+        public const string PopupMenu = "Pop up Menu";
     }
 }

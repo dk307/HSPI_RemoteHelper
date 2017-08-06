@@ -133,7 +133,7 @@ namespace Hspi.Devices
             try
             {
                 CancellationTokenSource timeoutTokenSource = new CancellationTokenSource();
-                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(20));
+                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
                 var timeoutToken = timeoutTokenSource.Token;
                 switch (command.Id)
                 {

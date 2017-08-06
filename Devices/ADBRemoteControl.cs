@@ -114,6 +114,7 @@ namespace Hspi.Devices
         {
             if (disposing)
             {
+                cursorCancelLoopSource?.Cancel();
                 DisposeConnection();
             }
             base.Dispose(disposing);
@@ -494,6 +495,14 @@ namespace Hspi.Devices
         private CancellationTokenSource queryRunningApplicationTokenSource;
     }
 
+    internal class ADBShellCharCommand : DeviceCommand
+    {
+        public ADBShellCharCommand(string id, char key, int? fixedValue = null)
+            : base(id, Invariant($"input text \"{key}\""), fixedValue: fixedValue)
+        {
+        }
+    }
+
     internal class ADBShellDDCommand : DeviceCommand
     {
         public ADBShellDDCommand(string id, DirectInputKeys key, int eventDeviceId, int? fixedValue = null, DirectInputKeys? modifier = null)
@@ -595,14 +604,6 @@ namespace Hspi.Devices
 
         public ADBShellLaunchPackageCommand(string id, string packageName)
             : base(id, Invariant($@"monkey -p {packageName} -c android.intent.category.LAUNCHER 1"))
-        {
-        }
-    }
-
-    internal class ADBShellCharCommand : DeviceCommand
-    {
-        public ADBShellCharCommand(string id, char key, int? fixedValue = null)
-            : base(id, Invariant($"input text \"{key}\""), fixedValue: fixedValue)
         {
         }
     }

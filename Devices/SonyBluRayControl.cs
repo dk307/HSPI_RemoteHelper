@@ -51,6 +51,7 @@ namespace Hspi.Devices
             AddCommand(new SonyBluRayCommand(CommandName.MediaSkipForward, "AAAAAwAAHFoAAAB1Aw==", -177));
             AddCommand(new SonyBluRayCommand(CommandName.Menu, "AAAAAwAAHFoAAAApAw==", -176));
             AddCommand(new SonyBluRayCommand(CommandName.MediaPause, "AAAAAwAAHFoAAAAZAw==", -175));
+            AddCommand(new SonyBluRayCommand(CommandName.PopupMenu, "AAAAAwAAHFoAAAApAw==", -174));
 
             var digitCommands = new string[10]
             {
@@ -93,6 +94,16 @@ namespace Hspi.Devices
         public override bool InvalidState => false;
 
         public PhysicalAddress MacAddress { get; }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                cursorCancelLoopSource?.Cancel();
+                client.Dispose();
+            }
+            base.Dispose(disposing);
+        }
 
         protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
@@ -200,9 +211,6 @@ namespace Hspi.Devices
         }
 
         private const int Port = 50001;
-        private readonly HttpClient client = new HttpClient();
-        private readonly AsyncLock connectionLock = new AsyncLock();
-        private CancellationTokenSource cursorCancelLoopSource;
 
         private static readonly List<OutofOrderCommandDetector> outofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
@@ -211,6 +219,10 @@ namespace Hspi.Devices
             new OutofOrderCommandDetector(CommandName.CursorRightEventDown, CommandName.CursorRightEventUp),
             new OutofOrderCommandDetector(CommandName.CursorLeftEventDown, CommandName.CursorLeftEventUp),
         };
+
+        private readonly HttpClient client = new HttpClient();
+        private readonly AsyncLock connectionLock = new AsyncLock();
+        private CancellationTokenSource cursorCancelLoopSource;
 
         private class SonyBluRayCommand : DeviceCommand
         {
