@@ -53,7 +53,7 @@ namespace Hspi.Devices
             AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
             AddCommand(new DeviceCommand(CommandName.PowerQuery));
             AddCommand(new ADBShellDDCommand(CommandName.Return, DirectInputKeys.KEY_BACK, MediaKeyboardDevice));
-            AddCommand(new ADBShellDDCommand(CommandName.Subtitle, DirectInputKeys.KEY_F2, DefaultKeyboardDevice));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS));
 
             AddCommand(new DeviceCommand(CommandName.ScreenQuery));
             AddCommand(new DeviceCommand(CommandName.ScreenSaveRunningQuery));
