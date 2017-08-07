@@ -411,6 +411,7 @@ namespace Hspi.Devices
                 case CommandName.LaunchPBSKids:
                 case CommandName.LaunchPlex:
                 case CommandName.LaunchYoutube:
+                case CommandName.LaunchKodi:
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
 
                     // set a loop to update current application
