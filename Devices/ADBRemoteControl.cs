@@ -379,7 +379,7 @@ namespace Hspi.Devices
                 case CommandName.CursorRightEventUp:
                 case CommandName.CursorUpEventUp:
                 case CommandName.CursorDownEventUp:
-                case CommandName.Backspace:
+                case CommandName.BackspaceEventUp:
                     MacroStopCommandLoop(ref cursorCancelLoopSource);
                     break;
 

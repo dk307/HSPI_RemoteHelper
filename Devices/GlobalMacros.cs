@@ -337,7 +337,7 @@ namespace Hspi.Devices
             {
                 if (GetFeedbackAsBoolean(shutdownDevice, FeedbackName.Power) ?? true)
                 {
-                    shutdownTasks.Add(shutdownDevice.HandleCommand(CommandName.PowerOff, timeoutToken));
+                    shutdownTasks.Add(IgnoreException(shutdownDevice.HandleCommand(CommandName.PowerOff, timeoutToken)));
                 }
             }
 
