@@ -92,7 +92,7 @@ namespace Hspi.Devices
 
         private async Task<bool> EnsureAVRState(IDeviceCommandHandler avr, object expectedValue,
                                                 string valueQueryCommand, string valueChangeCommand,
-                                                string feedbackName, CancellationToken token)
+                                                string feedbackName, int maxRetries, CancellationToken token)
         {
             bool changed = false;
             await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
@@ -114,7 +114,8 @@ namespace Hspi.Devices
                 }
 
                 await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
-            } while (!token.IsCancellationRequested);
+                maxRetries--;
+            } while (!token.IsCancellationRequested && (maxRetries > 0));
 
             return changed;
         }
@@ -314,11 +315,11 @@ namespace Hspi.Devices
             await Task.Delay(avr.DefaultCommandDelay, timeoutToken).ConfigureAwait(false);
 
             await EnsureAVRState(avr, false, CommandName.DialogEnhancerModeQuery,
-                 CommandName.DialogEnhancerModeOff, FeedbackName.DialogEnhancementMode, timeoutToken).ConfigureAwait(false);
+                 CommandName.DialogEnhancerModeOff, FeedbackName.DialogEnhancementMode, 20, timeoutToken).ConfigureAwait(false);
             await EnsureAVRState(avr, false, CommandName.SubWooferLevelAdjustQuery,
-                 CommandName.SubWooferLevelAdjustOff, FeedbackName.SubwooferAdjustMode, timeoutToken).ConfigureAwait(false);
+                 CommandName.SubWooferLevelAdjustOff, FeedbackName.SubwooferAdjustMode, 20, timeoutToken).ConfigureAwait(false);
             await EnsureAVRState(avr, "Off", CommandName.DynamicVolumeQuery,
-                 CommandName.DynamicVolumeOff, FeedbackName.DynamicVolume, timeoutToken).ConfigureAwait(false);
+                 CommandName.DynamicVolumeOff, FeedbackName.DynamicVolume, 5, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task ShutdownDevices(IEnumerable<IDeviceCommandHandler> shutdownDevices,
@@ -400,7 +401,7 @@ namespace Hspi.Devices
             // switch to input
             UpdateStatus($"Switching {avr.Name} to {input}");
             bool inputChanged = await EnsureAVRState(avr, input, CommandName.InputStatusQuery,
-                                 inputSwitchCommand, FeedbackName.Input, timeoutToken).ConfigureAwait(false);
+                                 inputSwitchCommand, FeedbackName.Input, int.MaxValue, timeoutToken).ConfigureAwait(false);
 
             UpdateStatus($"Turning on {device.Name}");
 
