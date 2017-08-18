@@ -98,6 +98,10 @@ namespace Hspi.Devices
             var packet = GetWolPacket(macAddress.GetAddressBytes());
             using (var cl = new UdpClient())
             {
+                //Uses the Socket returned by Client to set an option that is not available using UdpClient.
+                cl.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+                cl.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontRoute, 1);
+
                 var sendTask = cl.SendAsync(packet, packet.Length, target);
                 await sendTask.WaitAsync(token).ConfigureAwait(false);
             }

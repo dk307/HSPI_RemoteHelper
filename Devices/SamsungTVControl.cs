@@ -21,6 +21,7 @@ namespace Hspi.Devices
     {
         public SamsungTVControl(string name, IPAddress deviceIP,
                                 PhysicalAddress macAddress,
+                                IPAddress wolBroadCastAddress,
                                 TimeSpan defaultCommandDelay,
                                 IConnectionProvider connectionProvider) :
             base(name, deviceIP, defaultCommandDelay, connectionProvider)
@@ -32,6 +33,7 @@ namespace Hspi.Devices
             //"KEY_RED", "KEY_RETURN", "KEY_REWIND", "KEY_RIGHT", "KEY_SOURCE", "KEY_STOP", "KEY_TOOLS",
             //"KEY_UP", "KEY_VOLDOWN", "KEY_VOLUP", "KEY_YELLOW"
 
+            this.wolBroadCastAddress = wolBroadCastAddress;
             MacAddress = macAddress;
             AddCommand(new DeviceCommand(CommandName.PowerOn));
             AddCommand(new DeviceCommand(CommandName.PowerOff));
@@ -70,41 +72,6 @@ namespace Hspi.Devices
 
         public PhysicalAddress MacAddress { get; }
 
-        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
-        {
-            return ExecuteCommandCore2(command, token);
-        }
-
-        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
-        {
-            Trace.WriteLine(Invariant($"Sending {command.Id} to Samsung TV {Name} on {DeviceIP}"));
-
-            switch (command.Id)
-            {
-                case CommandName.PowerOn:
-                    await NetworkHelper.SendWolAsync(new IPEndPoint(IPAddress.Broadcast, 9), MacAddress, token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.PowerOff:
-                    // this is actually a toggle but only works when tv is on
-                    await SendCommandCore("KEY_POWER", token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.PowerQuery:
-                    await UpdatePowerFeedbackState(token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.TVAVRInput:
-                    var connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
-                    await connector.HandleCommand("Samsung TV - INPUT HDMI 4", token).ConfigureAwait(false);
-                    break;
-
-                default:
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    break;
-            }
-        }
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -112,6 +79,11 @@ namespace Hspi.Devices
                 DisposeWebSocket();
             }
             base.Dispose(disposing);
+        }
+
+        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        {
+            return ExecuteCommandCore2(command, token);
         }
 
         private static T DeserializeJson<T>(string result) where T : class
@@ -159,6 +131,36 @@ namespace Hspi.Devices
                 webSocket.Error -= WebSocket_Error;
                 webSocket.Closed -= WebSocket_Closed;
                 webSocket.Dispose();
+            }
+        }
+
+        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        {
+            Trace.WriteLine(Invariant($"Sending {command.Id} to Samsung TV {Name} on {DeviceIP}"));
+
+            switch (command.Id)
+            {
+                case CommandName.PowerOn:
+                    await NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.PowerOff:
+                    // this is actually a toggle but only works when tv is on
+                    await SendCommandCore("KEY_POWER", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.PowerQuery:
+                    await UpdatePowerFeedbackState(token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.TVAVRInput:
+                    var connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
+                    await connector.HandleCommand("Samsung TV - INPUT HDMI 4", token).ConfigureAwait(false);
+                    break;
+
+                default:
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
             }
         }
 
@@ -235,9 +237,10 @@ namespace Hspi.Devices
 
         private const int TVPort = 8001;
         private readonly TaskCompletionSource<bool> connectedSource = new TaskCompletionSource<bool>();
+        private readonly AsyncLock connectionLock = new AsyncLock();
+        private readonly IPAddress wolBroadCastAddress;
         private string AppName = "HomeSeer";
         private WebSocket webSocket;
-        private readonly AsyncLock connectionLock = new AsyncLock();
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
         [DataContract]

@@ -69,7 +69,7 @@ namespace Hspi
             switch (deviceType)
             {
                 case DeviceType.SamsungTV:
-                    return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId };
+                    return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId, WolBroadCastAddressId };
 
                 case DeviceType.ADBRemoteControl:
                     return new string[] { ADBPathId, DefaultCommandDelayId, DefaultPowerOnDelayId };
@@ -87,7 +87,7 @@ namespace Hspi
                     return new string[] { DefaultCommandDelayId, DefaultPowerOnDelayId };
 
                 case DeviceType.SonyBluRay:
-                    return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId };
+                    return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId, WolBroadCastAddressId };
 
                 case DeviceType.PS3:
                     return new string[] { };
@@ -103,6 +103,7 @@ namespace Hspi
                 case DeviceType.SamsungTV:
                     return new SamsungTVControl(Name, DeviceIP,
                                                 PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
+                                                IPAddress.Parse(AdditionalValues[WolBroadCastAddressId]),
                                                 DefaultCommandDelay,
                                                 connectionProvider);
 
@@ -129,6 +130,7 @@ namespace Hspi
                 case DeviceType.SonyBluRay:
                     return new SonyBluRayControl(Name, DeviceIP,
                                                 PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
+                                                IPAddress.Parse(AdditionalValues[WolBroadCastAddressId]),
                                                 DefaultCommandDelay,
                                                 connectionProvider);
 
@@ -160,6 +162,7 @@ namespace Hspi
         public const string DefaultPowerOnDelayId = "PowerOnDelay(ms)";
         public const string IP2IRFileNameId = "IP2IRFileName";
         public const string PhysicalAddressId = "PhysicalAddress";
+        public const string WolBroadCastAddressId = "WolBroadCastAddress";
         public IReadOnlyDictionary<string, string> AdditionalValues;
         private Lazy<TimeSpan> defaultCommandDelay;
         private Lazy<TimeSpan> powerOnDelay;

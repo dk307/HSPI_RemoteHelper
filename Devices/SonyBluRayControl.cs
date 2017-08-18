@@ -20,10 +20,12 @@ namespace Hspi.Devices
     {
         public SonyBluRayControl(string name, IPAddress deviceIP,
                                 PhysicalAddress macAddress,
-                                TimeSpan defaultCommandDelay,
+                                IPAddress wolBroadCastAddress,
+                                 TimeSpan defaultCommandDelay,
                                 IConnectionProvider connectionProvider) :
             base(name, deviceIP, defaultCommandDelay, connectionProvider, outofCommandDetectors)
         {
+            this.wolBroadCastAddress = wolBroadCastAddress;
             MacAddress = macAddress;
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));
             AddCommand(new SonyBluRayCommand(CommandName.PowerOff, "AAAAAwAAHFoAAAAVAw==", -199));
@@ -92,7 +94,6 @@ namespace Hspi.Devices
         }
 
         public override bool InvalidState => false;
-
         public PhysicalAddress MacAddress { get; }
 
         protected override void Dispose(bool disposing)
@@ -129,7 +130,7 @@ namespace Hspi.Devices
             switch (command.Id)
             {
                 case CommandName.PowerOn:
-                    await NetworkHelper.SendWolAsync(new IPEndPoint(IPAddress.Broadcast, 9), MacAddress, token).ConfigureAwait(false);
+                    await NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token).ConfigureAwait(false);
                     break;
 
                 case CommandName.PowerQuery:
@@ -222,6 +223,7 @@ namespace Hspi.Devices
 
         private readonly HttpClient client = new HttpClient();
         private readonly AsyncLock connectionLock = new AsyncLock();
+        private readonly IPAddress wolBroadCastAddress;
         private CancellationTokenSource cursorCancelLoopSource;
 
         private class SonyBluRayCommand : DeviceCommand
