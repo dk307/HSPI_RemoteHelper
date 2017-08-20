@@ -87,7 +87,7 @@ namespace Hspi.Devices
 
         private void ClearStatus()
         {
-            UpdateFeedback(FeedbackName.MacroStatus, string.Empty);
+            UpdateFeedback(FeedbackName.MacroStatus, "Working...");
         }
 
         private async Task<bool> EnsureAVRState(IDeviceCommandHandler avr, object expectedValue,
