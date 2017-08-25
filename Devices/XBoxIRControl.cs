@@ -36,6 +36,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.CursorRightEventUp));
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown));
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp));
+            AddCommand(new DeviceCommand(CommandName.MediaPlayPause));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.String));
         }
@@ -111,6 +112,10 @@ namespace Hspi.Devices
 
                 case CommandName.PowerQuery:
                     UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
+                    break;
+
+                case CommandName.MediaPlayPause:
+                    await SendCommandCore("XBox One - PLAY PAUSE TOGGLE", token).ConfigureAwait(false);
                     break;
 
                 default:

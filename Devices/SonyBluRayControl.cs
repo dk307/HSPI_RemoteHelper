@@ -54,6 +54,7 @@ namespace Hspi.Devices
             AddCommand(new SonyBluRayCommand(CommandName.Menu, "AAAAAwAAHFoAAAApAw==", -176));
             AddCommand(new SonyBluRayCommand(CommandName.MediaPause, "AAAAAwAAHFoAAAAZAw==", -175));
             AddCommand(new SonyBluRayCommand(CommandName.PopupMenu, "AAAAAwAAHFoAAAApAw==", -174));
+            AddCommand(new SonyBluRayCommand(CommandName.MediaPlayPause, "AAAAAwAAHFoAAAAZAw==", -173));  // same as pause
 
             var digitCommands = new string[10]
             {

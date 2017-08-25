@@ -27,6 +27,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnXBoxOne, type: DeviceCommandType.Both, fixedValue: -95));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnSonyBluRay, type: DeviceCommandType.Both, fixedValue: -94));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnPS3, type: DeviceCommandType.Both, fixedValue: -93));
+            AddCommand(new DeviceCommand(CommandName.MediaPlayPause, type: DeviceCommandType.Both, fixedValue: -92));
 
             AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
@@ -168,6 +169,10 @@ namespace Hspi.Devices
 
                     case CommandName.MacroToggleMute:
                         await MacroToggleMute(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MediaPlayPause:
+                        await TVPlayPause(token).ConfigureAwait(false);
                         break;
                 }
                 Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
@@ -428,6 +433,38 @@ namespace Hspi.Devices
 
             await tasks.WhenAll().ConfigureAwait(false);
             tasks.Clear();
+        }
+
+        private async Task TVPlayPause(CancellationToken token)
+        {
+            var avr = GetConnection(DeviceType.DenonAVR);
+
+            await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
+            var feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
+            await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+
+            var currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+
+            DeviceType? deviceType = null;
+            switch (currentValue)
+            {
+                case DenonAVRControl.NvidiaShieldInput:
+                    deviceType = DeviceType.ADBRemoteControl; break;
+                case DenonAVRControl.XBoxOneInput:
+                    deviceType = DeviceType.XboxOne; break;
+                case DenonAVRControl.BlueRayPlayerInput:
+                    deviceType = DeviceType.SonyBluRay; break;
+            }
+
+            if (deviceType.HasValue)
+            {
+                var device = GetConnection(deviceType.Value);
+                await device.HandleCommand(CommandName.MediaPlayPause, token).ConfigureAwait(false);
+            }
+            else
+            {
+                Debug.Print(Invariant($"There is no Play/Pause for Input:{currentValue}"));
+            }
         }
 
         private void UpdateStatus(System.FormattableString formatableString)
