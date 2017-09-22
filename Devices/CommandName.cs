@@ -37,6 +37,7 @@
         public const string LaunchYoutube = "Launch Youtube";
         public const string LaunchSling = "Launch Sling";
         public const string LaunchKodi = "Launch Kodi";
+        public const string LaunchYouTubeKids = "Launch You Tube Kids";
         public const string MacroGameModeOff = "Macro - Game Mode Off";
         public const string MacroGameModeOn = "Macro - Game Mode On";
         public const string MacroStartDialogEnhancerDownLoop = "Macro - Start Dialog Enhancer Down Loop";

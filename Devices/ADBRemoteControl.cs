@@ -88,6 +88,7 @@ namespace Hspi.Devices
             AddFeedback(new DeviceFeedback(FeedbackName.ScreenSaverRunning, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.CurrentApplication, TypeCode.String));
 
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchYouTubeKids, @"com.google.android.youtube.tvkids"));
             StartServer();
         }
 
@@ -392,6 +393,16 @@ namespace Hspi.Devices
                     UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token).ConfigureAwait(false));
                     break;
 
+                case CommandName.PowerOff:
+                    // some apps keep streaming when sleep, so try back and home screen
+                    await SendCommandCore(GetCommand(CommandName.Return).Data, token).ConfigureAwait(false);
+                    await Task.Delay(DefaultCommandDelay).ConfigureAwait(false);
+                    await SendCommandCore(GetCommand(CommandName.Home).Data, token).ConfigureAwait(false);
+                    await Task.Delay(DefaultCommandDelay).ConfigureAwait(false);
+
+                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    break;
+
                 case CommandName.ScreenQuery:
                     UpdateFeedback(FeedbackName.Screen, await CheckScreenOn(token).ConfigureAwait(false));
                     break;
@@ -412,6 +423,7 @@ namespace Hspi.Devices
                 case CommandName.LaunchPlex:
                 case CommandName.LaunchYoutube:
                 case CommandName.LaunchKodi:
+                case CommandName.LaunchYouTubeKids:
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
 
                     // set a loop to update current application

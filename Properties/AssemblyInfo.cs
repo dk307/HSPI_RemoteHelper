@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: AssemblyTitle("HSPI WU Weather PlugIn")]
-[assembly: AssemblyDescription("HomeSeer Weather Underground PlugIn")]
+[assembly: AssemblyTitle("HSPI RemoteHelper")]
+[assembly: AssemblyDescription("HomeSeer Remote Helper")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("HSPI WU Weather PlugIn")]
+[assembly: AssemblyProduct("HSPI Remote Helper PlugIn")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
