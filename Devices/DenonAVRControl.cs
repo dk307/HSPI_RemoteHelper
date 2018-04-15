@@ -131,7 +131,6 @@ namespace Hspi.Devices
 
                 case CommandName.MacroStartVolumeUpLoop:
                     MacroStartCommandLoop(CommandName.VolumeUp, ref volumeCancelSource);
-
                     break;
 
                 case CommandName.MacroStartVolumeDownLoop:

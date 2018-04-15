@@ -76,7 +76,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp));
 
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchSling, @"com.sling"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchKodi, @"com.semperpax.spmc16"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchKodi, @"org.xbmc.kodi"));
 
             AddCommand(new DeviceCommand(CommandName.BackspaceEventUp));
             AddCommand(new DeviceCommand(CommandName.BackspaceEventDown));
