@@ -481,8 +481,8 @@ namespace Hspi.Devices
             if (!status.IsRunning)
             {
                 Trace.WriteLine(Invariant($"Starting local adb server"));
-                AdbServer.Instance.StartServer(adbPath, false);
-                Trace.WriteLine(Invariant($"Started local adb server"));
+                var result = AdbServer.Instance.StartServer(adbPath, true);
+                Trace.WriteLine(Invariant($"Started local adb server with result: {result}"));
             }
         }
 

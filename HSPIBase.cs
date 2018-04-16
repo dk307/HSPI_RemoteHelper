@@ -117,16 +117,17 @@ namespace Hspi
 
         private void HsClient_Disconnected(object sender, EventArgs e)
         {
-            cancellationTokenSource.Cancel();
+            DisconnectHspiConnection();
         }
 
         public void WaitforShutDownOrDisconnect()
         {
-            cancellationTokenSource.Token.WaitHandle.WaitOne();
+            this.shutdownWaitEvent.WaitOne();
         }
 
         public void Dispose()
         {
+            DisconnectHspiConnection();
             Dispose(true);
         }
 
@@ -204,15 +205,7 @@ namespace Hspi
 
         public override void ShutdownIO()
         {
-            cancellationTokenSource.Cancel();
-
-            if (HsClient != null)
-            {
-                HsClient.Disconnected -= HsClient_Disconnected;
-            }
-
-            this.HsClient.Disconnect();
-            this.CallbackClient.Disconnect();
+            DisconnectHspiConnection();
         }
 
         public override void SpeakIn(int deviceId, [AllowNull]string text, bool wait, [AllowNull]string host)
@@ -259,6 +252,7 @@ namespace Hspi
                     hsTraceListener?.Dispose();
                     CallbackClient?.Dispose();
                     cancellationTokenSource.Dispose();
+                    shutdownWaitEvent.Dispose();
                 }
                 disposedValue = true;
             }
@@ -290,9 +284,24 @@ namespace Hspi
             HS.WriteLogEx(Name, Invariant($"Warning:{message}"), "#D58000");
         }
 
+        private void DisconnectHspiConnection()
+        {
+            cancellationTokenSource.Cancel();
+
+            if (HsClient != null)
+            {
+                HsClient.Disconnected -= HsClient_Disconnected;
+            }
+
+            this.HsClient?.Disconnect();
+            this.CallbackClient?.Disconnect();
+            this.shutdownWaitEvent.Set();
+        }
+
         private HSTraceListener hsTraceListener;
         private readonly int accessLevel;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private readonly EventWaitHandle shutdownWaitEvent = new EventWaitHandle(false, EventResetMode.ManualReset);
         private readonly int capabilities;
         private readonly bool hsComPort;
         private readonly string instanceFriendlyName;
