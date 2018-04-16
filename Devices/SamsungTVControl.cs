@@ -147,6 +147,7 @@ namespace Hspi.Devices
                 case CommandName.PowerOff:
                     // this is actually a toggle but only works when tv is on
                     await SendCommandCore("KEY_POWER", token).ConfigureAwait(false);
+                    shutdownTime = DateTimeOffset.Now;
                     break;
 
                 case CommandName.PowerQuery:
@@ -167,6 +168,14 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             // TV keeps reponding to Pings for 7s after it has been turned off
+            if (shutdownTime.HasValue)
+            {
+                TimeSpan wait = DateTimeOffset.Now - shutdownTime.Value;
+                if (wait <= TimeSpan.FromSeconds(7))
+                {
+                    await Task.Delay(wait).ConfigureAwait(false);
+                }
+            }
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
         }
@@ -241,6 +250,7 @@ namespace Hspi.Devices
         private readonly IPAddress wolBroadCastAddress;
         private string AppName = "HomeSeer";
         private WebSocket webSocket;
+        private DateTimeOffset? shutdownTime;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
         [DataContract]
