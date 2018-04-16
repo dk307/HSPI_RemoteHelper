@@ -1,4 +1,6 @@
-﻿namespace Hspi
+﻿using System.Diagnostics;
+
+namespace Hspi
 {
     /// <summary>
     /// Class for the main program.
@@ -12,12 +14,17 @@
 
         private const int serverPort = 10400;
 
+        private static ConsoleTraceListener consoleTracer = new ConsoleTraceListener();
+
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
         /// <param name="args">Command line arguments</param>
         private static void Main(string[] args)
         {
+            Trace.Listeners.Add(consoleTracer);
+            Trace.WriteLine("Starting...");
+
             // parse command line arguments
             foreach (string sCmd in args)
             {
@@ -35,6 +42,8 @@
                 plugin.Connect(serverAddress, serverPort);
                 plugin.WaitforShutDownOrDisconnect();
             }
+
+            Trace.WriteLine("Bye!!!");
         }
     }
 }

@@ -15,8 +15,8 @@ namespace Hspi.Devices
     internal sealed class XBoxIRControl : IPAddressableDeviceControl
     {
         public XBoxIRControl(string name, IPAddress deviceIP,
-                                  TimeSpan defaultCommandDelay,
-                                   IConnectionProvider connectionProvider) :
+                             TimeSpan defaultCommandDelay,
+                             IConnectionProvider connectionProvider) :
             base(name, deviceIP, defaultCommandDelay, connectionProvider, xboxOneOutofCommandDetectors)
         {
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));

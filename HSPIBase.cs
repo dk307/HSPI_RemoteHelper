@@ -73,6 +73,7 @@ namespace Hspi
         [SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "apiVersion")]
         public void Connect(string serverAddress, int serverPort)
         {
+            Trace.WriteLine(Invariant($"Connecting to {serverAddress} on {serverPort}"));
             try
             {
                 HsClient = ScsServiceClientBuilder.CreateClient<IHSApplication>(new ScsTcpEndPoint(serverAddress, serverPort), this);
@@ -113,6 +114,7 @@ namespace Hspi
             }
 
             HsClient.Disconnected += HsClient_Disconnected;
+            Trace.WriteLine(Invariant($"Connected to {serverAddress} on {serverPort}"));
         }
 
         private void HsClient_Disconnected(object sender, EventArgs e)
@@ -266,26 +268,27 @@ namespace Hspi
 
         public virtual void LogDebug(string message)
         {
-            HS.WriteLog(Name, Invariant($"Debug:{message}"));
+            HS?.WriteLog(Name, Invariant($"Debug:{message}"));
         }
 
         public void LogError(string message)
         {
-            HS.WriteLogEx(Name, Invariant($"Error:{message}"), "#FF0000");
+            HS?.WriteLogEx(Name, Invariant($"Error:{message}"), "#FF0000");
         }
 
         public void LogInfo(string message)
         {
-            HS.WriteLog(Name, message);
+            HS?.WriteLog(Name, message);
         }
 
         public void LogWarning(string message)
         {
-            HS.WriteLogEx(Name, Invariant($"Warning:{message}"), "#D58000");
+            HS?.WriteLogEx(Name, Invariant($"Warning:{message}"), "#D58000");
         }
 
         private void DisconnectHspiConnection()
         {
+            Trace.WriteLine("Disconnecting Hspi Connection");
             cancellationTokenSource.Cancel();
 
             if (HsClient != null)
@@ -293,9 +296,15 @@ namespace Hspi
                 HsClient.Disconnected -= HsClient_Disconnected;
             }
 
+            if (hsTraceListener != null)
+            {
+                Debug.Listeners.Remove(hsTraceListener);
+            }
+
             this.HsClient?.Disconnect();
             this.CallbackClient?.Disconnect();
             this.shutdownWaitEvent.Set();
+            Trace.WriteLine("Disconnected Hspi Connection");
         }
 
         private HSTraceListener hsTraceListener;

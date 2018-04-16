@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Hspi
 {
@@ -35,6 +36,7 @@ namespace Hspi
 
         public override string InitIO(string port)
         {
+            Trace.WriteLine(Invariant($"Starting InitIO on Port {port}"));
             string result = string.Empty;
             try
             {
@@ -52,6 +54,7 @@ namespace Hspi
                 RestartConnections();
 
                 LogDebug("Plugin Started");
+                Trace.WriteLine(Invariant($"Finished InitIO on Port {port}"));
             }
             catch (Exception ex)
             {
@@ -69,7 +72,7 @@ namespace Hspi
 
         public override void LogDebug(string message)
         {
-            if (pluginConfig.DebugLogging)
+            if ((pluginConfig != null) && pluginConfig.DebugLogging)
             {
                 base.LogDebug(message);
             }
@@ -156,10 +159,16 @@ namespace Hspi
         {
             if (!disposedValue)
             {
+                foreach( var connection in connectorManagers)
+                {
+                    connection.Value.Dispose();
+                }
+
                 if (pluginConfig != null)
                 {
                     pluginConfig.ConfigChanged -= PluginConfig_ConfigChanged;
                 }
+
                 cancellationTokenSourceForUpdateDevice.Dispose();
                 if (configPage != null)
                 {
