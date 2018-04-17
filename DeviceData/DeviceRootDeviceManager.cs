@@ -13,15 +13,15 @@ using System.Threading.Tasks;
 
 namespace Hspi.DeviceData
 {
+    using System.Diagnostics;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class DeviceRootDeviceManager
     {
-        public DeviceRootDeviceManager(string deviceName, DeviceType deviceType, IHSApplication HS, ILogger logger)
+        public DeviceRootDeviceManager(string deviceName, DeviceType deviceType, IHSApplication HS)
         {
             this.deviceName = deviceName;
-            this.logger = logger;
             this.HS = HS;
             this.deviceType = deviceType;
             GetCurrentDevices();
@@ -135,7 +135,7 @@ namespace Hspi.DeviceData
         /// </returns>
         private DeviceClass CreateDevice(int? optionalParentRefId, string name, string deviceAddress, DeviceDataBase deviceData)
         {
-            logger.LogDebug(Invariant($"Creating Device with Address:{deviceAddress}"));
+            Trace.TraceInformation(Invariant($"Creating Device with Address:{deviceAddress}"));
 
             DeviceClass device = null;
             int refId = HS.NewDeviceRef(name);
@@ -291,7 +291,6 @@ namespace Hspi.DeviceData
         private readonly IDictionary<string, FeedbackDeviceData> currentChildDevices = new Dictionary<string, FeedbackDeviceData>();
         private readonly string deviceName;
         private readonly IHSApplication HS;
-        private readonly ILogger logger;
         private readonly DeviceType deviceType;
         private RootDeviceData parentDeviceData;
     };

@@ -11,10 +11,9 @@ namespace Hspi.Connector
     {
         public DeviceControlManager(IHSApplication HS,
                                     DeviceControlConfig deviceConfig,
-                                    ILogger logger,
                                     IConnectionProvider connectionProvider,
                                     CancellationToken shutdownToken) :
-            base(HS, logger, deviceConfig.Name, deviceConfig.DeviceType, shutdownToken)
+            base(HS, deviceConfig.Name, deviceConfig.DeviceType, shutdownToken)
         {
             this.connectionProvider = connectionProvider;
             DeviceConfig = deviceConfig;

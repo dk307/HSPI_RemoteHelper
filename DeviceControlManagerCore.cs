@@ -10,19 +10,19 @@ using System.Threading.Tasks;
 
 namespace Hspi.Connector
 {
+    using System.Diagnostics;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControlManagerCore : IDisposable, IDeviceFeedbackProvider
     {
-        public DeviceControlManagerCore(IHSApplication HS, ILogger logger, string name,
+        public DeviceControlManagerCore(IHSApplication HS, string name,
                                         DeviceType deviceType, CancellationToken shutdownToken)
         {
             Name = name;
             DeviceType = deviceType;
             this.HS = HS;
-            this.logger = logger;
-            rootDeviceData = new DeviceRootDeviceManager(name, deviceType, this.HS, logger);
+            rootDeviceData = new DeviceRootDeviceManager(name, deviceType, this.HS);
             combinedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken, instanceCancellationSource.Token);
         }
 
@@ -170,7 +170,7 @@ namespace Hspi.Connector
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(Invariant($"Failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                    Trace.TraceWarning(Invariant($"Failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
                 }
             }
         }
@@ -187,7 +187,7 @@ namespace Hspi.Connector
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(Invariant($"Failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                    Trace.TraceWarning(Invariant($"Failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
                 }
             }
         }
@@ -218,7 +218,6 @@ namespace Hspi.Connector
         private readonly ConcurrentDictionary<string, object> feedbackValues = new ConcurrentDictionary<string, object>();
         private readonly IHSApplication HS;
         private readonly CancellationTokenSource instanceCancellationSource = new CancellationTokenSource();
-        private readonly ILogger logger;
         private readonly DeviceRootDeviceManager rootDeviceData;
         private DeviceControl connector;
         private bool disposedValue = false; // To detect redundant calls

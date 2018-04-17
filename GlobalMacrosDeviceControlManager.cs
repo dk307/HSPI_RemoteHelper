@@ -8,9 +8,9 @@ namespace Hspi.Connector
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class GlobalMacrosDeviceControlManager : DeviceControlManagerCore
     {
-        public GlobalMacrosDeviceControlManager(IHSApplication HS, ILogger logger,
+        public GlobalMacrosDeviceControlManager(IHSApplication HS,
                     IConnectionProvider connectionProvider, CancellationToken shutdownToken) :
-            base(HS, logger, "Global Macros", DeviceType.GlobalMacros, shutdownToken)
+            base(HS, "Global Macros", DeviceType.GlobalMacros, shutdownToken)
         {
             this.connectionProvider = connectionProvider;
         }

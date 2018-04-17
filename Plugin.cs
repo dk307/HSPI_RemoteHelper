@@ -36,13 +36,12 @@ namespace Hspi
 
         public override string InitIO(string port)
         {
-            Trace.WriteLine(Invariant($"Starting InitIO on Port {port}"));
+            Trace.TraceInformation(Invariant($"Starting InitIO on Port {port}"));
             string result = string.Empty;
             try
             {
                 pluginConfig = new PluginConfig(HS);
                 configPage = new ConfigPage(HS, pluginConfig);
-                LogInfo("Starting Plugin");
 #if DEBUG
                 pluginConfig.DebugLogging = true;
 #endif
@@ -53,13 +52,12 @@ namespace Hspi
 
                 RestartConnections();
 
-                LogDebug("Plugin Started");
-                Trace.WriteLine(Invariant($"Finished InitIO on Port {port}"));
+                Trace.TraceInformation(Invariant($"Finished InitIO on Port {port}"));
             }
             catch (Exception ex)
             {
                 result = Invariant($"Failed to initialize PlugIn With {ex.GetFullMessage()}");
-                LogError(result);
+                Trace.TraceError(result);
             }
 
             return result;
@@ -211,7 +209,6 @@ namespace Hspi
                             {
                                 var connection = new DeviceControlManager(HS,
                                                                           device.Value,
-                                                                          this as ILogger,
                                                                           this as IConnectionProvider,
                                                                           ShutdownCancellationToken);
                                 connectorManagers[device.Key] = connection;
@@ -226,7 +223,6 @@ namespace Hspi
                             changed = true;
                             var connection = new DeviceControlManager(HS,
                                                                       device.Value,
-                                                                      this as ILogger,
                                                                       this as IConnectionProvider,
                                                                       ShutdownCancellationToken);
                             connectorManagers[device.Key] = connection;
@@ -239,7 +235,6 @@ namespace Hspi
                 {
                     var connection =
                         new GlobalMacrosDeviceControlManager(HS,
-                                                             this as ILogger,
                                                              this as IConnectionProvider,
                                                              ShutdownCancellationToken);
                     connectorManagers[DeviceType.GlobalMacros] = connection;
