@@ -118,6 +118,7 @@ namespace Hspi.Devices
                 cursorCancelLoopSource?.Cancel();
                 DisposeConnection();
             }
+
             base.Dispose(disposing);
         }
 

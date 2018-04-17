@@ -2,6 +2,9 @@
 
 namespace Hspi
 {
+
+    using static System.FormattableString;
+
     /// <summary>
     /// Class for the main program.
     /// </summary>
@@ -37,13 +40,29 @@ namespace Hspi
                 }
             }
 
-            using (var plugin = new HSPI_RemoteHelper.HSPI())
+            try
             {
-                plugin.Connect(serverAddress, serverPort);
-                plugin.WaitforShutDownOrDisconnect();
+                using (var plugin = new HSPI_RemoteHelper.HSPI())
+                {
+                    plugin.Connect(serverAddress, serverPort);
+                    plugin.WaitforShutDownOrDisconnect();
+                    KillAdbProcesses();
+                }
             }
+            finally
+            {
+                Trace.WriteLine("Bye!!!");
+                KillAdbProcesses();
+            }
+        }
 
-            Trace.WriteLine("Bye!!!");
+        private static void KillAdbProcesses()
+        {
+            foreach (var process in Process.GetProcessesByName("adb"))
+            {
+                Trace.WriteLine(Invariant($"Killing adb process {process.Id}"));
+                process.Kill();
+            }
         }
     }
 }

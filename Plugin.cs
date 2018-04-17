@@ -159,7 +159,7 @@ namespace Hspi
         {
             if (!disposedValue)
             {
-                foreach( var connection in connectorManagers)
+                foreach(var connection in connectorManagers)
                 {
                     connection.Value.Dispose();
                 }

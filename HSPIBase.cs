@@ -73,7 +73,7 @@ namespace Hspi
         [SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "apiVersion")]
         public void Connect(string serverAddress, int serverPort)
         {
-            Trace.WriteLine(Invariant($"Connecting to {serverAddress} on {serverPort}"));
+            Trace.WriteLine(Invariant($"Connecting to {serverAddress}"));
             try
             {
                 HsClient = ScsServiceClientBuilder.CreateClient<IHSApplication>(new ScsTcpEndPoint(serverAddress, serverPort), this);
@@ -114,11 +114,12 @@ namespace Hspi
             }
 
             HsClient.Disconnected += HsClient_Disconnected;
-            Trace.WriteLine(Invariant($"Connected to {serverAddress} on {serverPort}"));
+            Trace.WriteLine(Invariant($"Connected to {serverAddress}"));
         }
 
         private void HsClient_Disconnected(object sender, EventArgs e)
         {
+            Trace.WriteLine(Invariant($"Disconnected from HS3"));
             DisconnectHspiConnection();
         }
 
@@ -301,8 +302,20 @@ namespace Hspi
                 Debug.Listeners.Remove(hsTraceListener);
             }
 
-            this.HsClient?.Disconnect();
-            this.CallbackClient?.Disconnect();
+            if ((this.CallbackClient != null)  && 
+                (this.CallbackClient.CommunicationState == CommunicationStates.Connected))
+            {
+                this.CallbackClient.Disconnect();
+                this.CallbackClient = null;
+            }
+
+            if ((this.HsClient != null) &&
+                (this.HsClient.CommunicationState == CommunicationStates.Connected))
+            { 
+                this.HsClient.Disconnect();
+                this.HsClient = null;
+            }
+
             this.shutdownWaitEvent.Set();
             Trace.WriteLine("Disconnected Hspi Connection");
         }
