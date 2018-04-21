@@ -13,6 +13,22 @@ namespace Hspi.Devices
 {
     using static System.FormattableString;
 
+    internal static class IDeviceCommandHandlerExtension
+    {
+        public static async Task HandleCommandIgnoreException(this IDeviceCommandHandler handler, string commandId, CancellationToken token)
+        {
+            try 
+            {
+                await handler.HandleCommand(commandId, token).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning(Invariant($"Command for {handler.DeviceType} to {commandId} failed with {ex.GetFullMessage()}"));
+            }
+        }
+    };
+
+
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class GlobalMacros : DeviceControl
     {
@@ -96,7 +112,7 @@ namespace Hspi.Devices
                                                 string feedbackName, int maxRetries, CancellationToken token)
         {
             bool changed = false;
-            await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
+            await avr.HandleCommandIgnoreException(valueQueryCommand, token).ConfigureAwait(false);
             var feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
             do
             {
@@ -110,11 +126,11 @@ namespace Hspi.Devices
                 else
                 {
                     changed = true;
-                    await avr.HandleCommand(valueChangeCommand, token).ConfigureAwait(false);
+                    await avr.HandleCommandIgnoreException(valueChangeCommand, token).ConfigureAwait(false);
                     await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
                 }
 
-                await avr.HandleCommand(valueQueryCommand, token).ConfigureAwait(false);
+                await avr.HandleCommandIgnoreException(valueQueryCommand, token).ConfigureAwait(false);
                 maxRetries--;
             } while (!token.IsCancellationRequested && (maxRetries > 0));
 
@@ -272,8 +288,8 @@ namespace Hspi.Devices
             var shutdownDevices = GetAllDevices();
 
             await ShutdownDevices(shutdownDevices, timeoutToken).ConfigureAwait(false);
-            await IgnoreException(tv.HandleCommand(CommandName.PowerOff, timeoutToken)).ConfigureAwait(false);
-            await IgnoreException(avr.HandleCommand(CommandName.PowerOff, timeoutToken)).ConfigureAwait(false);
+            await tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
+            await avr.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnNvidiaShield(CancellationToken timeoutToken)
@@ -333,17 +349,19 @@ namespace Hspi.Devices
             var shutdownTasks = new List<Task>();
             foreach (var shutdownDevice in shutdownDevices)
             {
-                shutdownTasks.Add(IgnoreException(shutdownDevice.HandleCommand(CommandName.PowerQuery, timeoutToken)));
+                shutdownTasks.Add(shutdownDevice.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
             }
 
             await shutdownTasks.WhenAll().ConfigureAwait(false);
             shutdownTasks.Clear();
 
+            await DelayDefaultCommandTime(timeoutToken, shutdownDevices.ToArray()).ConfigureAwait(false);
+ 
             foreach (var shutdownDevice in shutdownDevices)
             {
                 if (GetFeedbackAsBoolean(shutdownDevice, FeedbackName.Power) ?? true)
                 {
-                    shutdownTasks.Add(IgnoreException(shutdownDevice.HandleCommand(CommandName.PowerOff, timeoutToken)));
+                    shutdownTasks.Add(shutdownDevice.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken));
                 }
             }
 
@@ -356,23 +374,23 @@ namespace Hspi.Devices
             do
             {
                 var isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
-                if (isOn ?? true)
+                if ((isOn.HasValue && !isOn.Value) || (!isOn.HasValue))
                 {
                     break;
                 }
                 else
                 {
                     turnedOn = true;
-                    await connection.HandleCommand(CommandName.PowerOn, token).ConfigureAwait(false);
+                    await connection.HandleCommandIgnoreException(CommandName.PowerOn, token).ConfigureAwait(false);
                     await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
                 }
 
-                await connection.HandleCommand(CommandName.PowerQuery, token).ConfigureAwait(false);
+                await connection.HandleCommandIgnoreException(CommandName.PowerQuery, token).ConfigureAwait(false);
                 await Task.Delay(connection.DefaultCommandDelay, token).ConfigureAwait(false);
             } while (!token.IsCancellationRequested);
 
             return turnedOn;
-        }
+        }        
 
         private async Task TurnOnDevice(string input, string inputSwitchCommand,
                                         IDeviceCommandHandler device,
@@ -386,9 +404,9 @@ namespace Hspi.Devices
             UpdateStatus($"Detecting Device Power State");
 
             List<Task> tasks = new List<Task>();
-            tasks.Add(tv.HandleCommand(CommandName.PowerQuery, timeoutToken));
-            tasks.Add(avr.HandleCommand(CommandName.PowerQuery, timeoutToken));
-            tasks.Add(device.HandleCommand(CommandName.PowerQuery, timeoutToken));
+            tasks.Add(tv.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
+            tasks.Add(avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
+            tasks.Add(device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
             tasks.Clear();
 
@@ -400,7 +418,7 @@ namespace Hspi.Devices
             bool turnedOnAVR = await TurnDeviceOnIfOff(avr, timeoutToken).ConfigureAwait(false);
 
             UpdateStatus($"Switching {tv.Name} Input");
-            await tv.HandleCommand(CommandName.TVAVRInput, timeoutToken).ConfigureAwait(false);
+            await tv.HandleCommandIgnoreException(CommandName.TVAVRInput, timeoutToken).ConfigureAwait(false);
             await DelayDefaultCommandTime(timeoutToken, tv).ConfigureAwait(false);
 
             // switch to input
@@ -420,12 +438,12 @@ namespace Hspi.Devices
 
             if (!currentGameMode.HasValue || (currentGameMode.Value != gameMode))
             {
-                tasks.Add(MacroTurnGameModeCore(gameMode, timeoutToken));
+                tasks.Add(IgnoreException(MacroTurnGameModeCore(gameMode, timeoutToken)));
             }
 
             if (turnedOnAVR || inputChanged || deviceOn)
             {
-                tasks.Add(SetAVRDefaultState(avr, timeoutToken));
+                tasks.Add(IgnoreException(SetAVRDefaultState(avr, timeoutToken)));
             }
 
             //shutdown Devices
