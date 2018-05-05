@@ -374,7 +374,7 @@ namespace Hspi.Devices
             do
             {
                 var isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
-                if ((isOn.HasValue && !isOn.Value) || (!isOn.HasValue))
+                if (isOn ?? true)
                 {
                     break;
                 }

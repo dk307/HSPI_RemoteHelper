@@ -89,6 +89,7 @@ namespace Hspi.Devices
             AddFeedback(new DeviceFeedback(FeedbackName.CurrentApplication, TypeCode.String));
 
             AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchYouTubeKids, @"com.google.android.youtube.tvkids"));
+            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchHulu, @"com.hulu.livingroomplus"));
             StartServer();
         }
 
