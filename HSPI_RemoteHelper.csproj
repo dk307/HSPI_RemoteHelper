@@ -59,6 +59,7 @@
     <CodeAnalysisRuleSet>HSPI_RemoteHelper.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Hspi.Program</StartupObject>
@@ -354,7 +355,7 @@
       <!-- Must be a fully qualified name -->
       <!--<DoNotInternalizeAssemblies Include="ExampleAssemblyToMerge3" />-->
     </ItemGroup>
-    <ILRepack Parallel="true" Internalize="true" InternalizeExclude="@(DoNotInternalizeAssemblies)" InputAssemblies="@(InputAssemblies)" TargetKind="SameAsPrimaryAssembly" OutputFile="$(OutputPath)\$(AssemblyName).exe" />
+    <ILRepack Parallel="true" Internalize="true" Verbose="true" InternalizeExclude="@(DoNotInternalizeAssemblies)" InputAssemblies="@(InputAssemblies)" TargetKind="SameAsPrimaryAssembly" OutputFile="$(OutputPath)\$(AssemblyName).exe" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
