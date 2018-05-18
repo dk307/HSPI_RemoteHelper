@@ -467,7 +467,6 @@ namespace Hspi.Devices
                 }
 
                 using (CancellationTokenSource timedCancel = new CancellationTokenSource())
-                using (CancellationTokenSource timedCancel = new CancellationTokenSource())
                 {
                     timedCancel.CancelAfter(TimeSpan.FromSeconds(30));
                     await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, timedCancel.Token, 1000).ConfigureAwait(false);
