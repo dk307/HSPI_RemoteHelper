@@ -466,7 +466,7 @@ namespace Hspi.Devices
                     throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
                 }
 
-                // the reason we do not send cancellation token is to not break commands in between
+                using (CancellationTokenSource timedCancel = new CancellationTokenSource())
                 using (CancellationTokenSource timedCancel = new CancellationTokenSource())
                 {
                     timedCancel.CancelAfter(TimeSpan.FromSeconds(30));
