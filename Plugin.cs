@@ -118,7 +118,7 @@ namespace Hspi
                     {
                         if (connectorManagers.TryGetValue(deviceId.Value, out var connector))
                         {
-                            connector.HandleCommand(deviceIdentifier, control.ControlValue).Wait();
+                            connector.HandleCommand(deviceIdentifier, control.ControlValue).Wait((int)TimeSpan.FromMinutes(2).TotalMilliseconds, ShutdownCancellationToken);
                         }
                         else
                         {

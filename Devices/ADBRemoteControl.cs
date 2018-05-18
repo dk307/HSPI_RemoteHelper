@@ -467,7 +467,11 @@ namespace Hspi.Devices
                 }
 
                 // the reason we do not send cancellation token is to not break commands in between
-                await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, default(CancellationToken), 1000).ConfigureAwait(false);
+                using (CancellationTokenSource timedCancel = new CancellationTokenSource())
+                {
+                    timedCancel.CancelAfter(TimeSpan.FromSeconds(30));
+                    await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, timedCancel.Token, 1000).ConfigureAwait(false);
+                }
                 token.ThrowIfCancellationRequested();
                 string output = receiver.ToString();
                 Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
