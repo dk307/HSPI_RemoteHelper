@@ -72,7 +72,7 @@ namespace Hspi
                     return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId, WolBroadCastAddressId };
 
                 case DeviceType.ADBRemoteControl:
-                    return new string[] { ADBPathId, DefaultCommandDelayId, DefaultPowerOnDelayId };
+                    return new string[] { ADBPathId, DefaultCommandDelayId, DefaultPowerOnDelayId, ADBMediaKeyboardDeviceDeviceId, ADBDefaultKeyboardDeviceId };
 
                 case DeviceType.DenonAVR:
                     return new string[] { DefaultCommandDelayId, DefaultPowerOnDelayId };
@@ -111,6 +111,8 @@ namespace Hspi
                     return new ADBRemoteControl(Name, DeviceIP,
                                                 AdditionalValues[ADBPathId],
                                                 DefaultCommandDelay,
+                                                Convert.ToInt32(AdditionalValues[ADBMediaKeyboardDeviceDeviceId], CultureInfo.InvariantCulture),
+                                                Convert.ToInt32(AdditionalValues[ADBDefaultKeyboardDeviceId], CultureInfo.InvariantCulture),
                                                 connectionProvider);
 
                 case DeviceType.DenonAVR:
@@ -158,6 +160,8 @@ namespace Hspi
         }
 
         public const string ADBPathId = "ADBPath";
+        public const string ADBDefaultKeyboardDeviceId = "ADBDefaultKeyboardDeviceId";
+        public const string ADBMediaKeyboardDeviceDeviceId = "ADBMediaKeyboardDeviceId";
         public const string DefaultCommandDelayId = "CommandDelay(ms)";
         public const string DefaultPowerOnDelayId = "PowerOnDelay(ms)";
         public const string IP2IRFileNameId = "IP2IRFileName";

@@ -10,11 +10,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Web;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Helper class to generate configuration page for plugin
     /// </summary>
@@ -37,6 +36,25 @@ namespace Hspi
         /// Gets the name of the web page.
         /// </summary>
         public static string Name => pageName;
+
+        public static string HtmlEncode<T>([AllowNull]T value)
+        {
+            if (value == null)
+            {
+                return string.Empty;
+            }
+            return HttpUtility.HtmlEncode(value);
+        }
+
+        IDeviceCommandHandler IConnectionProvider.GetCommandHandler(DeviceType deviceType)
+        {
+            throw new NotImplementedException();
+        }
+
+        IDeviceFeedbackProvider IConnectionProvider.GetFeedbackProvider(DeviceType deviceType)
+        {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Get the web page string for the configuration page.
@@ -166,14 +184,9 @@ namespace Hspi
             return base.postBackProc(Name, data, user, userRights);
         }
 
-        private static DeviceType GetDeviceId(NameValueCollection parts)
-        {
-            return (DeviceType)Enum.Parse(typeof(DeviceType), parts[DeviceIdId]);
-        }
-
         protected static string HtmlTextBox(string name, string defaultText, int size = 25, string type = "text", bool @readonly = false)
         {
-            return Invariant($"<input type=\'{type}\' id=\'{NameToIdWithPrefix(name)}\' size=\'{size}\' name=\'{name}\' value=\'{defaultText}\' {(@readonly ? "readonly" : string.Empty)}>");
+            return Invariant($"<input type=\'{type}\' id=\'{NameToIdWithPrefix(name)}\' size=\'{size}\' name=\'{name}\' value=\'{HtmlEncode(defaultText)}\' {(@readonly ? "readonly" : string.Empty)}>");
         }
 
         protected string FormCheckBox(string name, string label, bool @checked, bool autoPostBack = false)
@@ -206,6 +219,11 @@ namespace Hspi
             };
 
             return b.Build();
+        }
+
+        private static DeviceType GetDeviceId(NameValueCollection parts)
+        {
+            return (DeviceType)Enum.Parse(typeof(DeviceType), parts[DeviceIdId]);
         }
 
         private static string NameToId(string name)
@@ -297,22 +315,12 @@ namespace Hspi
             return stb.ToString();
         }
 
-        IDeviceCommandHandler IConnectionProvider.GetCommandHandler(DeviceType deviceType)
-        {
-            throw new NotImplementedException();
-        }
-
-        IDeviceFeedbackProvider IConnectionProvider.GetFeedbackProvider(DeviceType deviceType)
-        {
-            throw new NotImplementedException();
-        }
-
-        private const string EnabledId = "EnabledId";
         private const string CancelDeviceName = "CancelDeviceName";
         private const string DebugLoggingId = "DebugLoggingId";
         private const string DeviceIdId = "DeviceIdId";
         private const string DeviceIPId = "DeviceIPId";
         private const string EditDevicePageType = "addNew";
+        private const string EnabledId = "EnabledId";
         private const string IdPrefix = "id_";
         private const string NameId = "NameId";
         private const string PageTypeId = "type";

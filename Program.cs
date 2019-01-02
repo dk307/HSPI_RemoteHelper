@@ -1,10 +1,8 @@
 ﻿using System.Diagnostics;
+using static System.FormattableString;
 
 namespace Hspi
 {
-
-    using static System.FormattableString;
-
     /// <summary>
     /// Class for the main program.
     /// </summary>

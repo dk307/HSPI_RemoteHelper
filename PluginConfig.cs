@@ -5,11 +5,10 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Threading;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Class to store PlugIn Configuration
     /// </summary>
