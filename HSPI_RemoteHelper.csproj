@@ -93,10 +93,6 @@
     <Reference Include="Nito.Cancellation, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Nito.Cancellation.1.0.5\lib\netstandard2.0\Nito.Cancellation.dll</HintPath>
     </Reference>
-    <Reference Include="NullGuard, Version=1.5.2.0, Culture=neutral, PublicKeyToken=1958ac8092168428, processorArchitecture=MSIL">
-      <HintPath>packages\NullGuard.Fody.1.5.2\lib\dotnet\NullGuard.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="SharpAdbClient, Version=2.2.0.0, Culture=neutral, PublicKeyToken=d728076f5d82a2e8, processorArchitecture=MSIL">
       <HintPath>packages\SharpAdbClient.2.2.24\lib\net451\SharpAdbClient.dll</HintPath>
     </Reference>
@@ -193,7 +189,7 @@
     <Compile Include="Devices\IPAddressableDeviceControl.cs" />
     <Compile Include="Devices\SamsungTVControl.cs" />
     <Compile Include="Devices\SettableRangedDeviceFeedback.cs" />
-    <Compile Include="EnumHelper.cs" />
+    <Compile Include="Utils\EnumHelper.cs" />
     <Compile Include="ExceptionHelper.cs" />
     <Compile Include="GlobalMacrosDeviceControlManager.cs" />
     <Compile Include="GlobalSuppressions.cs" />
@@ -302,7 +298,6 @@
     </ItemGroup>
     <ILRepack Parallel="true" Internalize="true" Verbose="true" InternalizeExclude="@(DoNotInternalizeAssemblies)" InputAssemblies="@(InputAssemblies)" TargetKind="SameAsPrimaryAssembly" OutputFile="$(OutputPath)\$(AssemblyName).exe" />
   </Target>
-  <Import Project="packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
