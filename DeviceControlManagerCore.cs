@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Hspi.Connector
 {
+    using Hspi.Utils;
     using System.Diagnostics;
     using static System.FormattableString;
 
@@ -88,7 +89,7 @@ namespace Hspi.Connector
 
         public void Start()
         {
-            Task.Factory.StartNew(UpdateDevices, ShutdownToken, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+            TaskHelper.StartAsync(UpdateDevices, ShutdownToken);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -205,10 +206,8 @@ namespace Hspi.Connector
                 await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
             }
 
-            var task1 = Task.Factory.StartNew(ProcessFeedbacks, ShutdownToken,
-                                  TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
-            var task2 = Task.Factory.StartNew(ProcessCommands, ShutdownToken,
-                                  TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current);
+            var task1 = TaskHelper.StartAsync(ProcessFeedbacks, ShutdownToken);
+            var task2 = TaskHelper.StartAsync(ProcessCommands, ShutdownToken);
         }
 
         private readonly AsyncProducerConsumerQueue<DeviceCommand> changedCommands = new AsyncProducerConsumerQueue<DeviceCommand>();

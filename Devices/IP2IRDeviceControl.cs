@@ -16,6 +16,7 @@ using System.Xml.Linq;
 
 namespace Hspi.Devices
 {
+    using Hspi.Utils;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -119,10 +120,7 @@ namespace Hspi.Devices
             UpdateConnectedState(true);
 
             stream = client.GetStream();
-            Task readTask = Task.Factory.StartNew(() => ProcessRead(combinedToken),
-                                 combinedToken,
-                                 TaskCreationOptions.RunContinuationsAsynchronously,
-                                 TaskScheduler.Current);
+            Task readTask = TaskHelper.StartAsync(() => ProcessRead(combinedToken), combinedToken);
         }
 
         private void DisposeConnection()

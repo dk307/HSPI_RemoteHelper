@@ -35,7 +35,7 @@ namespace Hspi.Devices
                     break;
             }
 
-            return Task.Delay(0);
+            return Task.CompletedTask;
         }
     }
 }

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using Hspi.Utils;
     using static System.FormattableString;
 
     internal sealed class DenonAVRControl : IPAddressableDeviceControl
@@ -360,10 +361,7 @@ namespace Hspi.Devices
             client.SetSocketKeepAliveValues(10 * 1000, 1000);
 
             stream = client.GetStream();
-            Task readTask = Task.Factory.StartNew(() => ProcessRead(combinedToken),
-                                 combinedToken,
-                                 TaskCreationOptions.RunContinuationsAsynchronously,
-                                 TaskScheduler.Current);
+            Task readTask = TaskHelper.StartAsync(() => ProcessRead(combinedToken), combinedToken);
         }
 
         private void DisposeConnection()
