@@ -210,12 +210,8 @@
   <Target Name="AfterBuild" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)\HSPI_RemoteHelper.exe" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Context.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Interop.WaitHandles.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Oop.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.Cancellation.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
       <InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
       <InputAssemblies Include="$(OutputPath)\SharpAdbClient.dll" />
