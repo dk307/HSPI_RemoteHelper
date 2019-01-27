@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Reflection;
 
-namespace Hspi
+namespace Hspi.Utils
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     public static class EnumHelper
