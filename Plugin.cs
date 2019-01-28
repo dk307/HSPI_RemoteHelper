@@ -13,6 +13,7 @@ using System.Diagnostics;
 
 namespace Hspi
 {
+    using Hspi.Utils;
     using static System.FormattableString;
 
     internal interface IConnectionProvider
@@ -118,7 +119,9 @@ namespace Hspi
                     {
                         if (connectorManagers.TryGetValue(deviceId.Value, out var connector))
                         {
-                            connector.HandleCommand(deviceIdentifier, control.ControlValue).Wait((int)TimeSpan.FromMinutes(2).TotalMilliseconds, ShutdownCancellationToken);
+                            var combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
+                            combinedCancel.CancelAfter(TimeSpan.FromMinutes(2));
+                            connector.HandleCommand(deviceIdentifier, control.ControlValue, combinedCancel.Token).ResultForSync();
                         }
                         else
                         {
@@ -157,7 +160,7 @@ namespace Hspi
         {
             if (!disposedValue)
             {
-                foreach(var connection in connectorManagers)
+                foreach (var connection in connectorManagers)
                 {
                     connection.Value.Dispose();
                 }

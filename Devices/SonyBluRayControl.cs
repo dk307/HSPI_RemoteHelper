@@ -9,12 +9,11 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using System.Collections.Generic;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class SonyBluRayControl : IPAddressableDeviceControl
     {

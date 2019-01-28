@@ -53,12 +53,12 @@ namespace Hspi.Connector
             return null;
         }
 
-        public async Task HandleCommand([AllowNull]DeviceIdentifier deviceIdentifier, double value)
+        public async Task HandleCommand([AllowNull]DeviceIdentifier deviceIdentifier, double value, CancellationToken token)
         {
-            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
+            using (await deviceActionLock.LockAsync(token).ConfigureAwait(false))
             {
                 CheckConnection();
-                await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, ShutdownToken).ConfigureAwait(false);
+                await rootDeviceData.HandleCommand(deviceIdentifier, connector, value, token).ConfigureAwait(false);
             }
         }
 
@@ -66,7 +66,7 @@ namespace Hspi.Connector
         {
             var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
-            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
+            using (await deviceActionLock.LockAsync(finalToken).ConfigureAwait(false))
             {
                 CheckConnection();
 
@@ -79,7 +79,7 @@ namespace Hspi.Connector
         {
             var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
-            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
+            using (await deviceActionLock.LockAsync(finalToken).ConfigureAwait(false))
             {
                 CheckConnection();
                 var feedback = connector.GetFeedback(feedbackName);
@@ -206,8 +206,8 @@ namespace Hspi.Connector
                 await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
             }
 
-            var task1 = TaskHelper.StartAsync(ProcessFeedbacks, ShutdownToken);
-            var task2 = TaskHelper.StartAsync(ProcessCommands, ShutdownToken);
+            TaskHelper.StartAsync(ProcessFeedbacks, ShutdownToken);
+            TaskHelper.StartAsync(ProcessCommands, ShutdownToken);
         }
 
         private readonly AsyncProducerConsumerQueue<DeviceCommand> changedCommands = new AsyncProducerConsumerQueue<DeviceCommand>();

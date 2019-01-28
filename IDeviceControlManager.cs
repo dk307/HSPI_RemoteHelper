@@ -12,7 +12,7 @@ namespace Hspi.Connector
         TimeSpan PowerOnDelay { get; }
         DeviceType DeviceType { get; }
 
-        Task HandleCommand(DeviceIdentifier deviceIdentifier, double value);
+        Task HandleCommand(DeviceIdentifier deviceIdentifier, double value, CancellationToken token);
 
         Task HandleCommand(string commandId, CancellationToken token);
 

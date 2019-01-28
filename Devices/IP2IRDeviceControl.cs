@@ -113,14 +113,12 @@ namespace Hspi.Devices
             };
 
             stopTokenSource = new CancellationTokenSource();
-            combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
-            CancellationToken combinedToken = combinedStopTokenSource.Token;
 
             await client.ConnectAsync(DeviceIP.ToString(), Port).ConfigureAwait(false);
             UpdateConnectedState(true);
 
             stream = client.GetStream();
-            Task readTask = TaskHelper.StartAsync(() => ProcessRead(combinedToken), combinedToken);
+            TaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
         }
 
         private void DisposeConnection()
@@ -341,8 +339,6 @@ namespace Hspi.Devices
         private readonly Encoding encoding = Encoding.GetEncoding("ISO-8859-1");
 
         private TcpClient client;
-
-        private CancellationTokenSource combinedStopTokenSource;
 
         private CancellationTokenSource stopTokenSource;
 

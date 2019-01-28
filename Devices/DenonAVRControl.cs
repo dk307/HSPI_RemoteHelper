@@ -181,7 +181,6 @@ namespace Hspi.Devices
             stopTokenSource?.Cancel();
             if (disposing)
             {
-                volumeCancelSource?.Dispose();
                 DisposeConnection();
             }
 
@@ -352,8 +351,6 @@ namespace Hspi.Devices
             };
 
             stopTokenSource = new CancellationTokenSource();
-            combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
-            CancellationToken combinedToken = combinedStopTokenSource.Token;
 
             await client.ConnectAsync(DeviceIP.ToString(), AVRPort).ConfigureAwait(false);
             UpdateConnectedState(true);
@@ -361,7 +358,7 @@ namespace Hspi.Devices
             client.SetSocketKeepAliveValues(10 * 1000, 1000);
 
             stream = client.GetStream();
-            Task readTask = TaskHelper.StartAsync(() => ProcessRead(combinedToken), combinedToken);
+            TaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
         }
 
         private void DisposeConnection()
@@ -471,13 +468,13 @@ namespace Hspi.Devices
             }
         }
 
-        private async Task ProcessRead(CancellationToken combinedToken)
+        private async Task ProcessRead(CancellationToken token)
         {
             try
             {
                 using (StreamReader reader = new StreamReader(stream, encoding))
                 {
-                    while (!combinedToken.IsCancellationRequested)
+                    while (!token.IsCancellationRequested)
                     {
                         string feedback = await ReadLineAsync(reader).ConfigureAwait(false);
                         ProcessFeedback(feedback);
@@ -548,7 +545,6 @@ namespace Hspi.Devices
         };
 
         private TcpClient client;
-        private CancellationTokenSource combinedStopTokenSource;
         private CancellationTokenSource stopTokenSource;
         private NetworkStream stream;
         private CancellationTokenSource volumeCancelSource;

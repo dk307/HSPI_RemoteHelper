@@ -10,11 +10,10 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Basic Functionality of HSPI
     /// </summary>
@@ -302,7 +301,7 @@ namespace Hspi
                 Debug.Listeners.Remove(hsTraceListener);
             }
 
-            if ((this.CallbackClient != null)  && 
+            if ((this.CallbackClient != null) &&
                 (this.CallbackClient.CommunicationState == CommunicationStates.Connected))
             {
                 this.CallbackClient.Disconnect();
@@ -311,7 +310,7 @@ namespace Hspi
 
             if ((this.HsClient != null) &&
                 (this.HsClient.CommunicationState == CommunicationStates.Connected))
-            { 
+            {
                 this.HsClient.Disconnect();
                 this.HsClient = null;
             }

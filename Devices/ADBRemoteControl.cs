@@ -42,7 +42,7 @@ namespace Hspi.Devices
             AddCommand(new ADBShellDDCommand(CommandName.CursorRight, DirectInputKeys.KEY_RIGHT, defaultKeyboardDevice));
             AddCommand(new ADBShellDDCommand(CommandName.CursorUp, DirectInputKeys.KEY_UP, defaultKeyboardDevice));
             AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, defaultKeyboardDevice));
-            AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE, mediaKeyboardDevice));
+            AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE, this.mediaKeyboardDevice));
             AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO));
             AddCommand(new ADBShellDDCommand(CommandName.MediaFastForward, DirectInputKeys.KEY_FASTFORWARD, mediaKeyboardDevice));
             AddCommand(new ADBShellKeyEventCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT));

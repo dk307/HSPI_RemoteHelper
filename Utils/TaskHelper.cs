@@ -7,6 +7,7 @@ namespace Hspi.Utils
 {
     internal static class TaskHelper
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public static T ResultForSync<T>(this Task<T> @this)
         {
             // https://blogs.msdn.microsoft.com/pfxteam/2012/04/13/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
@@ -19,20 +20,21 @@ namespace Hspi.Utils
             Task.Run(() => @this).Wait();
         }
 
-        public static Task StartAsync(Func<Task> taskAction, CancellationToken token)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "task")]
+        public static void StartAsync(Func<Task> taskAction, CancellationToken token)
         {
             var task = Task.Factory.StartNew(() => taskAction(), token,
                                           TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
-                                          TaskScheduler.Current).WaitAndUnwrapException(token);
-            return task;
+                                          TaskScheduler.Current);
         }
 
-        public static Task StartAsync(Action action, CancellationToken token)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "task")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        public static void StartAsync(Action action, CancellationToken token)
         {
             var task = Task.Factory.StartNew(action, token,
                                           TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
                                           TaskScheduler.Current);
-            return task;
         }
     }
 }
