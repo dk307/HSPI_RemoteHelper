@@ -72,6 +72,16 @@ namespace Hspi.Devices
 
         public PhysicalAddress MacAddress { get; }
 
+        public override Task Refresh(CancellationToken token)
+        {
+            return RefreshImpl(token);
+        }
+
+        public async Task RefreshImpl(CancellationToken token)
+        {
+            await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -105,11 +115,13 @@ namespace Hspi.Devices
             UpdateFeedback(FeedbackName.Power, true);
 
             string nameBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(AppName));
-            var socketsUrl = Invariant($"ws://{DeviceIP}:{TVPort}/api/v2/channels/samsung.remote.control?Name={nameBase64}");
-            webSocket = new WebSocket(socketsUrl, "basic");
-            webSocket.NoDelay = true;
-            webSocket.EnableAutoSendPing = true;
-            webSocket.AutoSendPingInterval = 1;
+            string socketsUrl = Invariant($"ws://{DeviceIP}:{TVPort}/api/v2/channels/samsung.remote.control?Name={nameBase64}");
+            webSocket = new WebSocket(socketsUrl, "basic")
+            {
+                NoDelay = true,
+                EnableAutoSendPing = true,
+                AutoSendPingInterval = 1
+            };
             webSocket.Opened += WebSocket_Opened;
             webSocket.MessageReceived += WebSocket_MessageReceived;
             webSocket.Error += WebSocket_Error;
@@ -155,7 +167,7 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.TVAVRInput:
-                    var connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
+                    Connector.IDeviceCommandHandler connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
                     await connector.HandleCommand("Samsung TV - INPUT HDMI 4", token).ConfigureAwait(false);
                     break;
 
@@ -215,8 +227,8 @@ namespace Hspi.Devices
 
         private void WebSocket_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            var message = e.Message;
-            var response = DeserializeJson<ConnectionResponse>(message);
+            string message = e.Message;
+            ConnectionResponse response = DeserializeJson<ConnectionResponse>(message);
 
             switch (response.Event)
             {
@@ -249,8 +261,8 @@ namespace Hspi.Devices
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly IPAddress wolBroadCastAddress;
         private string AppName = "HomeSeer";
-        private WebSocket webSocket;
         private DateTimeOffset? shutdownTime;
+        private WebSocket webSocket;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
         [DataContract]

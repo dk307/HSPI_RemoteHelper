@@ -13,11 +13,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using static System.FormattableString;
-
     // nvidia shield 2015
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class ADBRemoteControl : IPAddressableDeviceControl
@@ -100,7 +99,7 @@ namespace Hspi.Devices
         {
             get
             {
-                var status = AdbServer.Instance.GetStatus();
+                AdbServerStatus status = AdbServer.Instance.GetStatus();
                 if (!status.IsRunning)
                 {
                     return true;
@@ -113,6 +112,18 @@ namespace Hspi.Devices
 
                 return false;
             }
+        }
+
+        public override Task Refresh(CancellationToken token)
+        {
+            return RefreshImpl(token);
+        }
+
+        public async Task RefreshImpl(CancellationToken token)
+        {
+            await ExecuteCommand(GetCommand(CommandName.CurrentApplicationQuery), token).ConfigureAwait(false);
+            await ExecuteCommand(GetCommand(CommandName.ScreenSaveRunningQuery), token).ConfigureAwait(false);
+            await ExecuteCommand(GetCommand(CommandName.ScreenQuery), token).ConfigureAwait(false);
         }
 
         protected override void Dispose(bool disposing)
@@ -142,7 +153,7 @@ namespace Hspi.Devices
 
         private void AddKeyboardCommands(int start)
         {
-            var numberKeys = new DirectInputKeys[]
+            DirectInputKeys[] numberKeys = new DirectInputKeys[]
             {
                 DirectInputKeys.KEY_0,
                 DirectInputKeys.KEY_1,
@@ -161,7 +172,7 @@ namespace Hspi.Devices
                 AddCommand(new ADBShellDDCommand(c.ToString(), numberKeys[c - '0'], defaultKeyboardDevice, start++));
             }
 
-            var charKeys = new DirectInputKeys[]
+            DirectInputKeys[] charKeys = new DirectInputKeys[]
            {
                 DirectInputKeys.KEY_A,
                 DirectInputKeys.KEY_B,
@@ -298,7 +309,7 @@ namespace Hspi.Devices
 
         private SharpAdbClient.DeviceData GetOnlineDevice()
         {
-            var device = adbClient?.GetDevices()?.Where((x) =>
+            SharpAdbClient.DeviceData device = adbClient?.GetDevices()?.Where((x) =>
                             x.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal)).SingleOrDefault();
 
             if (device != null)
@@ -337,10 +348,10 @@ namespace Hspi.Devices
             string output = await SendCommandCore("dumpsys window windows | grep mCurrentFocus", token).ConfigureAwait(false);
 
             bool found = false;
-            var matches = windowRegEx.Match(output);
+            Match matches = windowRegEx.Match(output);
             if (matches.Success)
             {
-                var packageGroup = matches.Groups["package"];
+                Group packageGroup = matches.Groups["package"];
                 if (packageGroup.Success)
                 {
                     found = true;
@@ -444,7 +455,7 @@ namespace Hspi.Devices
                     break;
             }
 
-            Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
+            Trace.TraceInformation(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
         }
 
         private async Task<string> SendCommandCore(string commandData, CancellationToken token)
@@ -456,12 +467,12 @@ namespace Hspi.Devices
                     await Connect(token).ConfigureAwait(false);
                 }
 
-                var receiver = new ConsoleOutputReceiver()
+                ConsoleOutputReceiver receiver = new ConsoleOutputReceiver()
                 {
                     TrimLines = true
                 };
 
-                var device = GetOnlineDevice();
+                SharpAdbClient.DeviceData device = GetOnlineDevice();
 
                 if (device == null)
                 {
@@ -485,11 +496,11 @@ namespace Hspi.Devices
 
         private void StartServer()
         {
-            var status = AdbServer.Instance.GetStatus();
+            AdbServerStatus status = AdbServer.Instance.GetStatus();
             if (!status.IsRunning)
             {
                 Trace.WriteLine(Invariant($"Starting local adb server"));
-                var result = AdbServer.Instance.StartServer(adbPath, true);
+                StartServerResult result = AdbServer.Instance.StartServer(adbPath, true);
                 Trace.WriteLine(Invariant($"Started local adb server with result: {result}"));
             }
         }
@@ -565,7 +576,7 @@ namespace Hspi.Devices
 
         private static byte[] GetBytes(InputEvent inputEvent)
         {
-            var size = Marshal.SizeOf(inputEvent);
+            int size = Marshal.SizeOf(inputEvent);
             byte[] arr = new byte[size];
 
             IntPtr ptr = Marshal.AllocHGlobal(size);
@@ -580,8 +591,8 @@ namespace Hspi.Devices
             InputEvent inputEvent = new InputEvent()
             {
                 Type = 1,
-                Code = (Int16)key,
-                Value = (Int32)eventValue,
+                Code = (short)key,
+                Value = (int)eventValue,
             };
 
             return GetBytes(inputEvent);
@@ -590,7 +601,7 @@ namespace Hspi.Devices
         private static string GetString(byte[] data)
         {
             StringBuilder stb = new StringBuilder();
-            foreach (var b in data)
+            foreach (byte b in data)
             {
                 stb.AppendFormat(CultureInfo.InvariantCulture, @"\x{0:x2}", b);
             }
@@ -601,9 +612,9 @@ namespace Hspi.Devices
         private unsafe struct InputEvent
         {
             public fixed byte Timestamp[16];
-            public Int16 Type;
-            public Int16 Code;
-            public Int32 Value;
+            public short Type;
+            public short Code;
+            public int Value;
         }
     }
 

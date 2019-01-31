@@ -43,6 +43,16 @@ namespace Hspi.Devices
 
         public override bool InvalidState => false;
 
+        public override Task Refresh(CancellationToken token)
+        {
+            return RefreshImpl(token);
+        }
+
+        public async Task RefreshImpl(CancellationToken token)
+        {
+            await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -137,7 +147,7 @@ namespace Hspi.Devices
 
         private async Task SendCommandCore(string commandId, CancellationToken token)
         {
-            var connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
+            Connector.IDeviceCommandHandler connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
             await connector.HandleCommand(commandId, token).ConfigureAwait(false);
         }
 

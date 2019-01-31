@@ -1,4 +1,5 @@
-﻿using Nito.AsyncEx;
+﻿using Hspi.Utils;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,12 +10,10 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using Hspi.Utils;
-    using static System.FormattableString;
-
     internal sealed class DenonAVRControl : IPAddressableDeviceControl
     {
         public DenonAVRControl(string name, IPAddress deviceIP,
@@ -92,9 +91,213 @@ namespace Hspi.Devices
             await SendCommandCore(commandData, token).ConfigureAwait(false);
         }
 
+        public override Task Refresh(CancellationToken token)
+        {
+            return RefreshImpl(token);
+        }
+
+        public async Task RefreshImpl(CancellationToken token)
+        {
+            await ExecuteCommand(GetCommand(CommandName.AllStatusQuery), token).ConfigureAwait(false);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            volumeCancelSource?.Cancel();
+            stopTokenSource?.Cancel();
+            if (disposing)
+            {
+                DisposeConnection();
+            }
+
+            base.Dispose(disposing);
+        }
+
         protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
             return ExecuteCommandCore2(command, token);
+        }
+
+        protected override string TranslateStringFeedback(string input)
+        {
+            switch (input)
+            {
+                case "LIT":
+                    return "Low";
+
+                case "MED":
+                    return "Medium";
+
+                case "HEV":
+                    return "Heavy";
+
+                case "NEURAL:X":
+                    return "DTS Neural:X";
+
+                case "MCH STEREO":
+                    return "All Channel Stereo";
+
+                case "MPLAY":
+                    return NvidiaShieldInput;
+
+                case "BD":
+                    return BlueRayPlayerInput;
+
+                case "AUX2":
+                    return XBoxOneInput;
+
+                case "CD":
+                    return PS3Input;
+            }
+            return base.TranslateStringFeedback(input);
+        }
+
+        private static string GetCommandForVolume(string commandData, FeedbackValue value)
+        {
+            double doubleValue = Convert.ToDouble(value.Value, CultureInfo.InvariantCulture);
+
+            // Round to 0.5
+            doubleValue = Math.Round(doubleValue * 2, MidpointRounding.ToEven) / 2;
+
+            if (Math.Truncate(doubleValue) == doubleValue)
+            {
+                return Invariant($"{commandData}{doubleValue:00}");
+            }
+            else
+            {
+                doubleValue *= 10;
+                return Invariant($"{commandData}{doubleValue:000}");
+            }
+        }
+
+        private static async Task<string> ReadLineAsync(StreamReader reader)
+        {
+            StringBuilder sb = new StringBuilder();
+            char[] buffer = new char[1];
+            while (!reader.EndOfStream)
+            {
+                await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
+
+                if (buffer[0] == Seperator)
+                {
+                    return sb.ToString();
+                }
+                else
+                {
+                    sb.Append(buffer[0]);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private void AddDialogEnhancerCommands(int commandstart)
+        {
+            AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOff, "PSDIL OFF", fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOn, "PSDIL ON", fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeQuery, "PSDIL ?", fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.DialogEnhancerLevelUp, "PSDIL UP", fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.DialogEnhancerLevelDown, "PSDIL DOWN", fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.MacroStartDialogEnhancerUpLoop, fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.MacroStartDialogEnhancerDownLoop, fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerUpLoop, fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerDownLoop, fixedValue: commandstart++));
+        }
+
+        private void AddDynamicVolumeCommands(int startLevel)
+        {
+            AddCommand(new DeviceCommand(CommandName.DynamicVolumeQuery, "PSDYNVOL ?", fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.DynamicVolumeOff, "PSDYNVOL OFF", fixedValue: startLevel++));
+
+            string[] levels = new string[]
+            {
+                 "LIT", "MED", "HEV"
+            };
+            AddMultipleDeviceCommands("Dynamic Volume - ", "PSDYNVOL ", startLevel, levels);
+        }
+
+        private void AddMultipleDeviceCommands(string namePrefix, string commandPrefix, int fixedValueStart, string[] values)
+        {
+            foreach (string value in values)
+            {
+                AddCommand(new DeviceCommand(namePrefix + value, commandPrefix + value, fixedValue: fixedValueStart++));
+            }
+        }
+
+        private void AddSubwooferLevelCommands(int startLevel)
+        {
+            AddCommand(new DeviceCommand(CommandName.SubWooferLevelAdjustOff, "PSSWL OFF", fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.SubWooferLevelAdjustOn, "PSSWL ON", fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.SubWooferLevelAdjustQuery, "PSSWL ?", fixedValue: startLevel++));
+
+            AddCommand(new DeviceCommand(CommandName.SubWooferLevelUp, "PSSWL UP", fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.SubWooferLevelDown, "PSSWL DOWN", fixedValue: startLevel++));
+
+            AddCommand(new DeviceCommand(CommandName.MacroStartSubwooferLevelUpLoop, fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.MacroStartSubwooferLevelDownLoop, fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelUpLoop, fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelDownLoop, fixedValue: startLevel++));
+        }
+
+        private void AddSurrondModeCommands(int fixedValueStart)
+        {
+            string namePrefix = "Surrond Mode - ";
+            string commandPrefix = "MS";
+
+            AddCommand(new DeviceCommand(CommandName.SoundModeQuery, "MS?", fixedValue: -93));
+
+            string[] values = new string[]
+            {
+                "DIRECT", "PURE DIRECT", "STEREO", "AUTO", "DOLBY DIGITAL", "DTS SURROUND", "MCH STEREO",
+                "ROCK ARENA", "JAZZ CLUB", "MONO MOVIE","MATRIX","VIDEO GAME", "VIRTUAL",
+            };
+
+            AddMultipleDeviceCommands(namePrefix, commandPrefix, fixedValueStart, values);
+        }
+
+        private void AddVolumeCommands()
+        {
+            AddCommand(new DeviceCommand(CommandName.VolumeDown, "MVDOWN", fixedValue: -89));
+            AddCommand(new DeviceCommand(CommandName.VolumeUp, "MVUP", fixedValue: -88));
+            AddCommand(new DeviceCommand(CommandName.VolumeQuery, "MV?", fixedValue: -87));
+            AddCommand(new DeviceCommand(CommandName.MuteOn, "MUON", fixedValue: -86));
+            AddCommand(new DeviceCommand(CommandName.MuteOff, "MUOFF", fixedValue: -85));
+            AddCommand(new DeviceCommand(CommandName.MuteQuery, "MU?", fixedValue: -84));
+            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeUpLoop, fixedValue: -81));
+            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeDownLoop, fixedValue: -80));
+            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeUpLoop, fixedValue: -79));
+            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeDownLoop, fixedValue: -78));
+        }
+
+        private async Task Connect(CancellationToken token)
+        {
+            if (!await IsNetworkOn(token).ConfigureAwait(false))
+            {
+                throw new DevicePoweredOffException($"Denon AVR {Name} on {DeviceIP} not powered On");
+            }
+
+            client = new TcpClient()
+            {
+                NoDelay = true,
+            };
+
+            stopTokenSource = new CancellationTokenSource();
+
+            await client.ConnectAsync(DeviceIP.ToString(), AVRPort).ConfigureAwait(false);
+            UpdateConnectedState(true);
+
+            client.SetSocketKeepAliveValues(10 * 1000, 1000);
+
+            stream = client.GetStream();
+            TaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
+        }
+
+        private void DisposeConnection()
+        {
+            if (client != null)
+            {
+                client.Dispose();
+            }
         }
 
         private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
@@ -172,200 +375,6 @@ namespace Hspi.Devices
                 default:
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            volumeCancelSource?.Cancel();
-            stopTokenSource?.Cancel();
-            if (disposing)
-            {
-                DisposeConnection();
-            }
-
-            base.Dispose(disposing);
-        }
-
-        protected override string TranslateStringFeedback(string input)
-        {
-            switch (input)
-            {
-                case "LIT":
-                    return "Low";
-
-                case "MED":
-                    return "Medium";
-
-                case "HEV":
-                    return "Heavy";
-
-                case "NEURAL:X":
-                    return "DTS Neural:X";
-
-                case "MCH STEREO":
-                    return "All Channel Stereo";
-
-                case "MPLAY":
-                    return NvidiaShieldInput;
-
-                case "BD":
-                    return BlueRayPlayerInput;
-
-                case "AUX2":
-                    return XBoxOneInput;
-
-                case "CD":
-                    return PS3Input;
-            }
-            return base.TranslateStringFeedback(input);
-        }
-
-        private static string GetCommandForVolume(string commandData, FeedbackValue value)
-        {
-            double doubleValue = Convert.ToDouble(value.Value, CultureInfo.InvariantCulture);
-
-            // Round to 0.5
-            doubleValue = Math.Round(doubleValue * 2, MidpointRounding.ToEven) / 2;
-
-            if (Math.Truncate(doubleValue) == doubleValue)
-            {
-                return Invariant($"{commandData}{doubleValue:00}");
-            }
-            else
-            {
-                doubleValue *= 10;
-                return Invariant($"{commandData}{doubleValue:000}");
-            }
-        }
-
-        private static async Task<string> ReadLineAsync(StreamReader reader)
-        {
-            var sb = new StringBuilder();
-            var buffer = new char[1];
-            while (!reader.EndOfStream)
-            {
-                await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
-
-                if (buffer[0] == Seperator)
-                {
-                    return sb.ToString();
-                }
-                else
-                {
-                    sb.Append(buffer[0]);
-                }
-            }
-
-            return sb.ToString();
-        }
-
-        private void AddDialogEnhancerCommands(int commandstart)
-        {
-            AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOff, "PSDIL OFF", fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeOn, "PSDIL ON", fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.DialogEnhancerModeQuery, "PSDIL ?", fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.DialogEnhancerLevelUp, "PSDIL UP", fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.DialogEnhancerLevelDown, "PSDIL DOWN", fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.MacroStartDialogEnhancerUpLoop, fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.MacroStartDialogEnhancerDownLoop, fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerUpLoop, fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerDownLoop, fixedValue: commandstart++));
-        }
-
-        private void AddDynamicVolumeCommands(int startLevel)
-        {
-            AddCommand(new DeviceCommand(CommandName.DynamicVolumeQuery, "PSDYNVOL ?", fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.DynamicVolumeOff, "PSDYNVOL OFF", fixedValue: startLevel++));
-
-            var levels = new string[]
-            {
-                 "LIT", "MED", "HEV"
-            };
-            AddMultipleDeviceCommands("Dynamic Volume - ", "PSDYNVOL ", startLevel, levels);
-        }
-
-        private void AddMultipleDeviceCommands(string namePrefix, string commandPrefix, int fixedValueStart, string[] values)
-        {
-            foreach (var value in values)
-            {
-                AddCommand(new DeviceCommand(namePrefix + value, commandPrefix + value, fixedValue: fixedValueStart++));
-            }
-        }
-
-        private void AddSubwooferLevelCommands(int startLevel)
-        {
-            AddCommand(new DeviceCommand(CommandName.SubWooferLevelAdjustOff, "PSSWL OFF", fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.SubWooferLevelAdjustOn, "PSSWL ON", fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.SubWooferLevelAdjustQuery, "PSSWL ?", fixedValue: startLevel++));
-
-            AddCommand(new DeviceCommand(CommandName.SubWooferLevelUp, "PSSWL UP", fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.SubWooferLevelDown, "PSSWL DOWN", fixedValue: startLevel++));
-
-            AddCommand(new DeviceCommand(CommandName.MacroStartSubwooferLevelUpLoop, fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.MacroStartSubwooferLevelDownLoop, fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelUpLoop, fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelDownLoop, fixedValue: startLevel++));
-        }
-
-        private void AddSurrondModeCommands(int fixedValueStart)
-        {
-            string namePrefix = "Surrond Mode - ";
-            string commandPrefix = "MS";
-
-            AddCommand(new DeviceCommand(CommandName.SoundModeQuery, "MS?", fixedValue: -93));
-
-            var values = new string[]
-            {
-                "DIRECT", "PURE DIRECT", "STEREO", "AUTO", "DOLBY DIGITAL", "DTS SURROUND", "MCH STEREO",
-                "ROCK ARENA", "JAZZ CLUB", "MONO MOVIE","MATRIX","VIDEO GAME", "VIRTUAL",
-            };
-
-            AddMultipleDeviceCommands(namePrefix, commandPrefix, fixedValueStart, values);
-        }
-
-        private void AddVolumeCommands()
-        {
-            AddCommand(new DeviceCommand(CommandName.VolumeDown, "MVDOWN", fixedValue: -89));
-            AddCommand(new DeviceCommand(CommandName.VolumeUp, "MVUP", fixedValue: -88));
-            AddCommand(new DeviceCommand(CommandName.VolumeQuery, "MV?", fixedValue: -87));
-            AddCommand(new DeviceCommand(CommandName.MuteOn, "MUON", fixedValue: -86));
-            AddCommand(new DeviceCommand(CommandName.MuteOff, "MUOFF", fixedValue: -85));
-            AddCommand(new DeviceCommand(CommandName.MuteQuery, "MU?", fixedValue: -84));
-            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeUpLoop, fixedValue: -81));
-            AddCommand(new DeviceCommand(CommandName.MacroStartVolumeDownLoop, fixedValue: -80));
-            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeUpLoop, fixedValue: -79));
-            AddCommand(new DeviceCommand(CommandName.MacroStopVolumeDownLoop, fixedValue: -78));
-        }
-
-        private async Task Connect(CancellationToken token)
-        {
-            if (!await IsNetworkOn(token).ConfigureAwait(false))
-            {
-                throw new DevicePoweredOffException($"Denon AVR {Name} on {DeviceIP} not powered On");
-            }
-
-            client = new TcpClient()
-            {
-                NoDelay = true,
-            };
-
-            stopTokenSource = new CancellationTokenSource();
-
-            await client.ConnectAsync(DeviceIP.ToString(), AVRPort).ConfigureAwait(false);
-            UpdateConnectedState(true);
-
-            client.SetSocketKeepAliveValues(10 * 1000, 1000);
-
-            stream = client.GetStream();
-            TaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
-        }
-
-        private void DisposeConnection()
-        {
-            if (client != null)
-            {
-                client.Dispose();
             }
         }
 
@@ -508,7 +517,7 @@ namespace Hspi.Devices
 
         private async Task SendCommandForId(string commandId, CancellationToken token)
         {
-            var command = GetCommand(commandId);
+            DeviceCommand command = GetCommand(commandId);
             await SendCommandCore(command.Data, token).ConfigureAwait(false);
         }
 
@@ -518,21 +527,19 @@ namespace Hspi.Devices
             {
                 volString += "0";
             }
-            if (double.TryParse(volString, NumberStyles.Any, CultureInfo.InvariantCulture, out var volume))
+            if (double.TryParse(volString, NumberStyles.Any, CultureInfo.InvariantCulture, out double volume))
             {
                 volume = volume / 10;
                 UpdateFeedback(feedbackName, volume);
             }
         }
 
-        private const int AVRPort = 23;
-        public const string NvidiaShieldInput = "Nvidia Shield";
         public const string BlueRayPlayerInput = "Blu Ray Player";
-        public const string XBoxOneInput = "XBox One";
+        public const string NvidiaShieldInput = "Nvidia Shield";
         public const string PS3Input = "PS3";
+        public const string XBoxOneInput = "XBox One";
+        private const int AVRPort = 23;
         private const char Seperator = '\r';
-        private readonly AsyncLock connectionLock = new AsyncLock();
-        private readonly Encoding encoding = Encoding.ASCII;
 
         private static readonly List<OutofOrderCommandDetector> avrOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
@@ -544,6 +551,8 @@ namespace Hspi.Devices
             new OutofOrderCommandDetector(CommandName.MacroStartSubwooferLevelUpLoop, CommandName.MacroStopDialogEnhancerUpLoop),
         };
 
+        private readonly AsyncLock connectionLock = new AsyncLock();
+        private readonly Encoding encoding = Encoding.ASCII;
         private TcpClient client;
         private CancellationTokenSource stopTokenSource;
         private NetworkStream stream;

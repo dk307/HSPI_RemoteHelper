@@ -32,7 +32,7 @@ namespace Hspi.Devices
             // <ir name="Samsung TV HDMI4",\  id="-100", port="1:2", pronto="0000 33 44 "/>
             // </commands>
 
-            var xml = XDocument.Load(fileName);
+            XDocument xml = XDocument.Load(fileName);
 
             var query = from c in xml.Root.Descendants("ir")
                         select new
@@ -45,7 +45,7 @@ namespace Hspi.Devices
 
             foreach (var element in query)
             {
-                var command = new SendIRCommand(element.Name, element.Port,
+                SendIRCommand command = new SendIRCommand(element.Name, element.Port,
                                                 element.Gc, element.FixedValue);
                 AddCommand(command);
             }
@@ -61,6 +61,16 @@ namespace Hspi.Devices
                 }
                 return false;
             }
+        }
+
+        public override Task Refresh(CancellationToken token)
+        {
+            return RefreshImpl(token);
+        }
+
+        public async Task RefreshImpl(CancellationToken token)
+        {
+            await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
         }
 
         protected override void Dispose(bool disposing)
@@ -81,8 +91,8 @@ namespace Hspi.Devices
 
         private static async Task<string> ReadLineAsync(StreamReader reader)
         {
-            var sb = new StringBuilder();
-            var buffer = new char[1];
+            StringBuilder sb = new StringBuilder();
+            char[] buffer = new char[1];
             while (!reader.EndOfStream)
             {
                 await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
@@ -143,8 +153,8 @@ namespace Hspi.Devices
                 int irCounter = Interlocked.Increment(ref counter);
                 string data = string.Format(CultureInfo.InvariantCulture, command.Data, irCounter) + Seperator;
 
-                var bytes = encoding.GetBytes(data);
-                var taskCompletionSource = new TaskCompletionSource<bool>();
+                byte[] bytes = encoding.GetBytes(data);
+                TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
                 commandResponseWaitQueue[irCounter] = taskCompletionSource;
                 await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
 
@@ -173,9 +183,9 @@ namespace Hspi.Devices
             switch (feedback)
             {
                 case var completeIR when feedback.StartsWith("completeir", StringComparison.Ordinal):
-                    if (int.TryParse(completeIR.Substring(15), out var sequenceNumber))
+                    if (int.TryParse(completeIR.Substring(15), out int sequenceNumber))
                     {
-                        if (commandResponseWaitQueue.TryRemove(sequenceNumber, out var completionSource))
+                        if (commandResponseWaitQueue.TryRemove(sequenceNumber, out TaskCompletionSource<bool> completionSource))
                         {
                             completionSource.SetResult(true);
                         }
@@ -192,13 +202,13 @@ namespace Hspi.Devices
 
                 case var errorMessage when iTachErrorResponse.IsMatch(feedback):
                     bool found = false;
-                    var matches = iTachErrorResponse.Match(errorMessage);
+                    Match matches = iTachErrorResponse.Match(errorMessage);
                     if (matches.Success)
                     {
-                        var errorGroup = matches.Groups["error"];
+                        Group errorGroup = matches.Groups["error"];
                         if (errorGroup.Success)
                         {
-                            if (int.TryParse(errorGroup.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var errorId))
+                            if (int.TryParse(errorGroup.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int errorId))
                             {
                                 if (errorId > 0 && errorId <= ItachErrorMessages.Length)
                                 {
@@ -250,11 +260,11 @@ namespace Hspi.Devices
         {
             Trace.WriteLine(Invariant($"Command to {Name} on {DeviceIP} failed with {error}"));
 
-            var keys = commandResponseWaitQueue.Keys;
+            System.Collections.Generic.ICollection<int> keys = commandResponseWaitQueue.Keys;
 
-            foreach (var key in keys)
+            foreach (int key in keys)
             {
-                if (commandResponseWaitQueue.TryRemove(key, out var completionSource))
+                if (commandResponseWaitQueue.TryRemove(key, out TaskCompletionSource<bool> completionSource))
                 {
                     completionSource.SetException(new DeviceException(Invariant($"Failed with {error}")));
                 }

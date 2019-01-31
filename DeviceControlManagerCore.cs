@@ -1,19 +1,18 @@
 ﻿using HomeSeerAPI;
 using Hspi.DeviceData;
 using Hspi.Devices;
+using Hspi.Utils;
 using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Connector
 {
-    using Hspi.Utils;
-    using System.Diagnostics;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControlManagerCore : IDisposable, IDeviceFeedbackProvider
     {
@@ -45,7 +44,7 @@ namespace Hspi.Connector
 
         public object GetFeedbackValue(string feedbackName)
         {
-            if (feedbackValues.TryGetValue(feedbackName, out var value))
+            if (feedbackValues.TryGetValue(feedbackName, out object value))
             {
                 return value;
             }
@@ -64,25 +63,25 @@ namespace Hspi.Connector
 
         public async Task HandleCommand(string commandId, CancellationToken token)
         {
-            var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
+            CancellationToken finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
             using (await deviceActionLock.LockAsync(finalToken).ConfigureAwait(false))
             {
                 CheckConnection();
 
-                var command = connector.GetCommand(commandId);
+                DeviceCommand command = connector.GetCommand(commandId);
                 await connector.ExecuteCommand(command, finalToken).ConfigureAwait(false);
             }
         }
 
         public async Task HandleCommand(string feedbackName, object value, CancellationToken token)
         {
-            var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
+            CancellationToken finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
             using (await deviceActionLock.LockAsync(finalToken).ConfigureAwait(false))
             {
                 CheckConnection();
-                var feedback = connector.GetFeedback(feedbackName);
+                DeviceFeedback feedback = connector.GetFeedback(feedbackName);
                 await connector.ExecuteCommand(new FeedbackValue(feedback, value), finalToken);
             }
         }
@@ -99,9 +98,6 @@ namespace Hspi.Connector
                 if (disposing)
                 {
                     instanceCancellationSource.Cancel();
-                    instanceCancellationSource.Dispose();
-                    combinedCancellationSource.Dispose();
-
                     DisposeConnector();
                 }
 
@@ -164,7 +160,7 @@ namespace Hspi.Connector
         {
             while (!ShutdownToken.IsCancellationRequested)
             {
-                var command = await changedCommands.DequeueAsync(ShutdownToken).ConfigureAwait(false);
+                DeviceCommand command = await changedCommands.DequeueAsync(ShutdownToken).ConfigureAwait(false);
                 try
                 {
                     rootDeviceData.ProcessCommand(command);
@@ -180,7 +176,7 @@ namespace Hspi.Connector
         {
             while (!ShutdownToken.IsCancellationRequested)
             {
-                var feedbackData = await changedFeedbacks.DequeueAsync(ShutdownToken).ConfigureAwait(false);
+                FeedbackValue feedbackData = await changedFeedbacks.DequeueAsync(ShutdownToken).ConfigureAwait(false);
 
                 try
                 {
@@ -197,13 +193,11 @@ namespace Hspi.Connector
         {
             using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
             {
-                using (var deviceControl = Create())
-                {
-                    rootDeviceData.CreateOrUpdateDevices(deviceControl.Commands,
-                                                         deviceControl.Feedbacks);
-                }
-
                 await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
+                CheckConnection();
+
+                rootDeviceData.CreateOrUpdateDevices(connector.Commands, connector.Feedbacks);
+                await connector.Refresh(ShutdownToken).ConfigureAwait(false);
             }
 
             TaskHelper.StartAsync(ProcessFeedbacks, ShutdownToken);

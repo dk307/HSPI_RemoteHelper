@@ -1,10 +1,10 @@
 ﻿using NullGuard;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using static System.FormattableString;
 
 namespace Hspi.Devices
@@ -37,7 +37,7 @@ namespace Hspi.Devices
             if (canIgnore && ShouldIgnoreCommand(command.Id))
             {
                 Trace.WriteLine(Invariant($"Ignoring Command for IP2IR {Name} {command.Id} as it is out of order"));
-                return Task.FromResult(true);
+                return Task.CompletedTask;
             }
 
             return ExecuteCommandCore(command, token);
@@ -69,7 +69,7 @@ namespace Hspi.Devices
             }
             cancelSource = new CancellationTokenSource();
 
-            var cancelToken = cancelSource.Token;
+            CancellationToken cancelToken = cancelSource.Token;
 
             StartCommandLoop(command, DefaultCommandDelay, cancelToken);
         }
@@ -78,7 +78,7 @@ namespace Hspi.Devices
         {
             Task.Run(async () =>
             {
-                var token = default(CancellationToken);
+                CancellationToken token = default(CancellationToken);
                 TimeSpan delay = DefaultCommandDelay.Add(commandDelay);
                 do
                 {
@@ -94,7 +94,7 @@ namespace Hspi.Devices
 
         private bool ShouldIgnoreCommand(string commandId)
         {
-            foreach (var outofCommandDetector in outofCommandDetectors)
+            foreach (OutofOrderCommandDetector outofCommandDetector in outofCommandDetectors)
             {
                 if (outofCommandDetector.ShouldIgnore(commandId))
                 {

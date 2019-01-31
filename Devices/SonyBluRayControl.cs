@@ -1,6 +1,7 @@
 ﻿using Nito.AsyncEx;
 using NullGuard;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
@@ -9,7 +10,6 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using static System.FormattableString;
 
 namespace Hspi.Devices
@@ -55,7 +55,7 @@ namespace Hspi.Devices
             AddCommand(new SonyBluRayCommand(CommandName.PopupMenu, "AAAAAwAAHFoAAAApAw==", -174));
             AddCommand(new SonyBluRayCommand(CommandName.MediaPlayPause, "AAAAAwAAHFoAAAAZAw==", -173));  // same as pause
 
-            var digitCommands = new string[10]
+            string[] digitCommands = new string[10]
             {
                 "AAAAAwAAHFoAAAAJAw==",
                 "AAAAAwAAHFoAAAAAAw==",
@@ -85,16 +85,28 @@ namespace Hspi.Devices
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
 
-            UriBuilder uriBuilder = new UriBuilder();
-            uriBuilder.Host = deviceIP.ToString();
-            uriBuilder.Port = Port;
-            uriBuilder.Scheme = "http";
+            UriBuilder uriBuilder = new UriBuilder
+            {
+                Host = deviceIP.ToString(),
+                Port = Port,
+                Scheme = "http"
+            };
 
             client.BaseAddress = uriBuilder.Uri;
         }
 
         public override bool InvalidState => false;
         public PhysicalAddress MacAddress { get; }
+
+        public override Task Refresh(CancellationToken token)
+        {
+            return RefreshImpl(token);
+        }
+
+        public async Task RefreshImpl(CancellationToken token)
+        {
+            await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -191,11 +203,11 @@ namespace Hspi.Devices
                     request.Content = new StringContent(commandData, Encoding.UTF8, "text/xml");//CONTENT-TYPE header
                     request.Headers.Add("SOAPACTION", "\"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC\"");
 
-                    var response = await client.SendAsync(request, token).ConfigureAwait(false);
+                    HttpResponseMessage response = await client.SendAsync(request, token).ConfigureAwait(false);
                     if (response.IsSuccessStatusCode)
                     {
-                        var responseBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                        var output = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length - 1);
+                        byte[] responseBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                        string output = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length - 1);
                         Trace.WriteLine(Invariant($"Feedback from ADB Device {Name}:[{output}]"));
                     }
                     else

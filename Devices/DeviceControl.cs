@@ -5,11 +5,10 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControl : IDisposable
     {
@@ -52,7 +51,7 @@ namespace Hspi.Devices
 
         public DeviceCommand GetCommand(string id)
         {
-            if (commands.TryGetValue(id, out var command))
+            if (commands.TryGetValue(id, out DeviceCommand command))
             {
                 return command;
             }
@@ -60,9 +59,14 @@ namespace Hspi.Devices
             throw new CommandNotFoundException(Invariant($"{id} command Not found in {Name}"));
         }
 
+        public virtual Task Refresh(CancellationToken token)
+        {
+            return Task.CompletedTask;
+        }
+
         internal DeviceFeedback GetFeedback(string feedbackName)
         {
-            if (feedbacks.TryGetValue(feedbackName, out var feedback))
+            if (feedbacks.TryGetValue(feedbackName, out DeviceFeedback feedback))
             {
                 return feedback;
             }
@@ -89,15 +93,15 @@ namespace Hspi.Devices
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         protected virtual string TranslateStringFeedback(string input)
         {
-            if (String.IsNullOrEmpty(input))
+            if (string.IsNullOrEmpty(input))
             {
                 return input;
             }
 
-            var words = input.Split(' ', ':');
+            string[] words = input.Split(' ', ':');
 
-            var newWords = new List<string>(words.Length);
-            foreach (var v in words)
+            List<string> newWords = new List<string>(words.Length);
+            foreach (string v in words)
             {
                 if (v.Length > 1)
                 {
@@ -112,25 +116,18 @@ namespace Hspi.Devices
             return string.Join(" ", newWords);
         }
 
-        protected void UpdateCommand(DeviceCommand command)
-        {
-            Trace.WriteLine(Invariant($"Updating Command {command.Id} for {Name}"));
-            CommandChanged?.Invoke(this, command);
-        }
-
         protected void UpdateConnectedState(bool value)
         {
             Trace.WriteLine(Invariant($"Updating Connected State for {Name} to {value}"));
-
             connected = value;
 
-            UpdateCommand(value ? ConnectCommand : NotConnectedCommand);
+            CommandChanged?.Invoke(this, value ? ConnectCommand : NotConnectedCommand);
         }
 
         protected void UpdateFeedback(string feedbackName, object value)
         {
             Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to [{value}]"));
-            if (feedbacks.TryGetValue(feedbackName, out var feedback))
+            if (feedbacks.TryGetValue(feedbackName, out DeviceFeedback feedback))
             {
                 if ((value != null) && (value.GetType() == typeof(string)))
                 {

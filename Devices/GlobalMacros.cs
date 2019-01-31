@@ -8,16 +8,15 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using static System.FormattableString;
-
     internal static class IDeviceCommandHandlerExtension
     {
         public static async Task HandleCommandIgnoreException(this IDeviceCommandHandler handler, string commandId, CancellationToken token)
         {
-            try 
+            try
             {
                 await handler.HandleCommand(commandId, token).ConfigureAwait(false);
             }
@@ -27,7 +26,6 @@ namespace Hspi.Devices
             }
         }
     };
-
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class GlobalMacros : DeviceControl
@@ -60,7 +58,7 @@ namespace Hspi.Devices
         private static async Task DelayDefaultCommandTime(CancellationToken timeoutToken, params IDeviceCommandHandler[] devices)
         {
             int msWait = 0;
-            foreach (var device in devices)
+            foreach (IDeviceCommandHandler device in devices)
             {
                 msWait = Math.Max(msWait, (int)device.DefaultCommandDelay.TotalMilliseconds);
             }
@@ -68,9 +66,15 @@ namespace Hspi.Devices
             await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
         }
 
+        public override Task Refresh(CancellationToken token)
+        {
+            UpdateConnectedState(true);
+            return Task.CompletedTask;
+        }
+
         private static bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
         {
-            var value = deviceFeedbackProvider.GetFeedbackValue(feedbackName);
+            object value = deviceFeedbackProvider.GetFeedbackValue(feedbackName);
 
             if (value != null)
             {
@@ -83,7 +87,7 @@ namespace Hspi.Devices
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private static string GetFeedbackAsString(IDeviceFeedbackProvider connection, string feedbackName)
         {
-            var value = connection.GetFeedbackValue(feedbackName);
+            object value = connection.GetFeedbackValue(feedbackName);
 
             if (value != null)
             {
@@ -104,7 +108,7 @@ namespace Hspi.Devices
 
         private void ClearStatus()
         {
-            UpdateFeedback(FeedbackName.MacroStatus, "Working...");
+            UpdateFeedback(FeedbackName.MacroStatus, string.Empty);
         }
 
         private async Task<bool> EnsureAVRState(IDeviceCommandHandler avr, object expectedValue,
@@ -113,12 +117,12 @@ namespace Hspi.Devices
         {
             bool changed = false;
             await avr.HandleCommandIgnoreException(valueQueryCommand, token).ConfigureAwait(false);
-            var feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
+            IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
             do
             {
                 await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
-                var currentValue = feedbackProvider.GetFeedbackValue(feedbackName);
+                object currentValue = feedbackProvider.GetFeedbackValue(feedbackName);
                 if (object.Equals(currentValue, expectedValue))
                 {
                     break;
@@ -139,48 +143,44 @@ namespace Hspi.Devices
 
         private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
         {
-            Trace.WriteLine(Invariant($"Executing {command.Id} "));
-
-            UpdateFeedback(FeedbackName.RunningMacro, command.Id);
-            UpdateCommand(command);
-            UpdateStatus($"{command.Id}");
-
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
+            Trace.WriteLine(Invariant($"Executing {command.Id} "));
+
+            UpdateFeedback(FeedbackName.RunningMacro, command.Id);
+            UpdateStatus(command.Id);
+
             try
             {
-                CancellationTokenSource timeoutTokenSource = new CancellationTokenSource();
-                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
-                var timeoutToken = timeoutTokenSource.Token;
                 switch (command.Id)
                 {
                     case CommandName.MacroTurnOnNvidiaShield:
-                        await MacroTurnOnNvidiaShield(timeoutToken).ConfigureAwait(false);
+                        await MacroTurnOnNvidiaShield(token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroTurnOnXBoxOne:
-                        await MacroTurnOnXboxOne(timeoutToken).ConfigureAwait(false);
+                        await MacroTurnOnXboxOne(token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroTurnOnPS3:
-                        await MacroTurnOnPS3(timeoutToken).ConfigureAwait(false);
+                        await MacroTurnOnPS3(token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroTurnOffEverything:
-                        await MacroTurnoffEverything(timeoutToken).ConfigureAwait(false);
+                        await MacroTurnoffEverything(token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroTurnOnSonyBluRay:
-                        await MacroTurnOnSonyBluRay(timeoutToken).ConfigureAwait(false);
+                        await MacroTurnOnSonyBluRay(token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroGameModeOn:
-                        await MacroTurnGameMode(true, timeoutToken).ConfigureAwait(false);
+                        await MacroTurnGameMode(true, token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroGameModeOff:
-                        await MacroTurnGameMode(false, timeoutToken).ConfigureAwait(false);
+                        await MacroTurnGameMode(false, token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroToggleMute:
@@ -191,13 +191,12 @@ namespace Hspi.Devices
                         await TVPlayPause(token).ConfigureAwait(false);
                         break;
                 }
-                Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
+                Trace.TraceInformation(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
             }
             finally
             {
                 ClearStatus();
                 UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
-                UpdateCommand(ConnectCommand);
             }
         }
 
@@ -214,7 +213,7 @@ namespace Hspi.Devices
 
         private IDeviceCommandHandler GetConnection(DeviceType deviceType)
         {
-            var connection = ConnectionProvider.GetCommandHandler(deviceType);
+            IDeviceCommandHandler connection = ConnectionProvider.GetCommandHandler(deviceType);
             return connection;
         }
 
@@ -226,11 +225,11 @@ namespace Hspi.Devices
 
         private async Task MacroToggleMute(CancellationToken token)
         {
-            var avr = GetConnection(DeviceType.DenonAVR);
+            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
             await avr.HandleCommand(CommandName.MuteQuery, token).ConfigureAwait(false);
             await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
-            var muted = GetFeedbackAsBoolean(avr, FeedbackName.Mute) ?? false;
+            bool muted = GetFeedbackAsBoolean(avr, FeedbackName.Mute) ?? false;
             await avr.HandleCommand(muted ? CommandName.MuteOff : CommandName.MuteOn, token).ConfigureAwait(false);
         }
 
@@ -242,7 +241,7 @@ namespace Hspi.Devices
 
         private async Task MacroTurnGameModeCore(bool on, CancellationToken timeoutToken)
         {
-            var tv = GetConnection(DeviceType.SamsungTV);
+            IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
 
             UpdateFeedback(FeedbackName.TVGameMode, on);
 
@@ -283,9 +282,9 @@ namespace Hspi.Devices
         {
             UpdateStatus($"Turning Off Devices");
 
-            var tv = GetConnection(DeviceType.SamsungTV);
-            var avr = GetConnection(DeviceType.DenonAVR);
-            var shutdownDevices = GetAllDevices();
+            IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
+            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
+            IDeviceCommandHandler[] shutdownDevices = GetAllDevices();
 
             await ShutdownDevices(shutdownDevices, timeoutToken).ConfigureAwait(false);
             await tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
@@ -296,8 +295,8 @@ namespace Hspi.Devices
         {
             string input = DenonAVRControl.NvidiaShieldInput;
             string inputSwitchCommand = CommandName.ChangeInputMPLAY;
-            var device = GetConnection(DeviceType.ADBRemoteControl);
-            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.ADBRemoteControl);
+            IDeviceCommandHandler device = GetConnection(DeviceType.ADBRemoteControl);
+            IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.ADBRemoteControl);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
         }
 
@@ -305,8 +304,8 @@ namespace Hspi.Devices
         {
             string input = DenonAVRControl.PS3Input;
             string inputSwitchCommand = CommandName.ChangeInputCD;
-            var device = GetConnection(DeviceType.PS3);
-            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.PS3);
+            IDeviceCommandHandler device = GetConnection(DeviceType.PS3);
+            IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.PS3);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
@@ -314,8 +313,8 @@ namespace Hspi.Devices
         {
             string input = DenonAVRControl.BlueRayPlayerInput;
             string inputSwitchCommand = CommandName.ChangeInputBD;
-            var device = GetConnection(DeviceType.SonyBluRay);
-            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.SonyBluRay);
+            IDeviceCommandHandler device = GetConnection(DeviceType.SonyBluRay);
+            IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.SonyBluRay);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
         }
 
@@ -323,8 +322,8 @@ namespace Hspi.Devices
         {
             string input = DenonAVRControl.XBoxOneInput;
             string inputSwitchCommand = CommandName.ChangeInputGAME2;
-            var device = GetConnection(DeviceType.XboxOne);
-            var shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.XboxOne);
+            IDeviceCommandHandler device = GetConnection(DeviceType.XboxOne);
+            IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.XboxOne);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
@@ -346,8 +345,8 @@ namespace Hspi.Devices
         private async Task ShutdownDevices(IEnumerable<IDeviceCommandHandler> shutdownDevices,
                                                   CancellationToken timeoutToken)
         {
-            var shutdownTasks = new List<Task>();
-            foreach (var shutdownDevice in shutdownDevices)
+            List<Task> shutdownTasks = new List<Task>();
+            foreach (IDeviceCommandHandler shutdownDevice in shutdownDevices)
             {
                 shutdownTasks.Add(shutdownDevice.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
             }
@@ -356,8 +355,8 @@ namespace Hspi.Devices
             shutdownTasks.Clear();
 
             await DelayDefaultCommandTime(timeoutToken, shutdownDevices.ToArray()).ConfigureAwait(false);
- 
-            foreach (var shutdownDevice in shutdownDevices)
+
+            foreach (IDeviceCommandHandler shutdownDevice in shutdownDevices)
             {
                 if (GetFeedbackAsBoolean(shutdownDevice, FeedbackName.Power) ?? true)
                 {
@@ -373,7 +372,7 @@ namespace Hspi.Devices
             bool turnedOn = false;
             do
             {
-                var isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
+                bool? isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
                 if (isOn ?? true)
                 {
                     break;
@@ -390,7 +389,7 @@ namespace Hspi.Devices
             } while (!token.IsCancellationRequested);
 
             return turnedOn;
-        }        
+        }
 
         private async Task TurnOnDevice(string input, string inputSwitchCommand,
                                         IDeviceCommandHandler device,
@@ -398,15 +397,17 @@ namespace Hspi.Devices
                                         bool gameMode,
                                         CancellationToken timeoutToken)
         {
-            var tv = GetConnection(DeviceType.SamsungTV);
-            var avr = GetConnection(DeviceType.DenonAVR);
+            IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
+            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
 
             UpdateStatus($"Detecting Device Power State");
 
-            List<Task> tasks = new List<Task>();
-            tasks.Add(tv.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
-            tasks.Add(avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
-            tasks.Add(device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
+            List<Task> tasks = new List<Task>
+            {
+                tv.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
+                avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
+                device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken)
+            };
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
             tasks.Clear();
 
@@ -433,7 +434,7 @@ namespace Hspi.Devices
             UpdateStatus($"Setting up rest...");
 
             // Turn on/off Game Mode
-            var currentGameMode = GetFeedbackAsBoolean(ConnectionProvider.GetFeedbackProvider(DeviceType.GlobalMacros),
+            bool? currentGameMode = GetFeedbackAsBoolean(ConnectionProvider.GetFeedbackProvider(DeviceType.GlobalMacros),
                                                        FeedbackName.TVGameMode);
 
             if (!currentGameMode.HasValue || (currentGameMode.Value != gameMode))
@@ -455,13 +456,13 @@ namespace Hspi.Devices
 
         private async Task TVPlayPause(CancellationToken token)
         {
-            var avr = GetConnection(DeviceType.DenonAVR);
+            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
 
             await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
-            var feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
+            IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
             await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
-            var currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+            object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
 
             DeviceType? deviceType = null;
             switch (currentValue)
@@ -476,18 +477,18 @@ namespace Hspi.Devices
 
             if (deviceType.HasValue)
             {
-                var device = GetConnection(deviceType.Value);
+                IDeviceCommandHandler device = GetConnection(deviceType.Value);
                 await device.HandleCommand(CommandName.MediaPlayPause, token).ConfigureAwait(false);
             }
             else
             {
-                Debug.Print(Invariant($"There is no Play/Pause for Input:{currentValue}"));
+                Trace.TraceInformation(Invariant($"There is no Play/Pause for Input:{currentValue}"));
             }
         }
 
-        private void UpdateStatus(System.FormattableString formatableString)
+        private void UpdateStatus(string value)
         {
-            UpdateFeedback(FeedbackName.MacroStatus, formatableString.ToString());
+            UpdateFeedback(FeedbackName.MacroStatus, value);
         }
     }
 }

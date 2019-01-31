@@ -2,20 +2,19 @@
 using Hspi.Connector;
 using Hspi.DeviceData;
 using Hspi.Exceptions;
+using Hspi.Utils;
 using Nito.AsyncEx;
 using NullGuard;
 using Scheduler.Classes;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using System.Diagnostics;
+using System.Threading;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using Hspi.Utils;
-    using static System.FormattableString;
-
     internal interface IConnectionProvider
     {
         IDeviceCommandHandler GetCommandHandler(DeviceType deviceType);
@@ -99,7 +98,7 @@ namespace Hspi
 
         public override void SetIOMulti(List<CAPI.CAPIControl> colSend)
         {
-            foreach (var control in colSend)
+            foreach (CAPI.CAPIControl control in colSend)
             {
                 try
                 {
@@ -107,7 +106,7 @@ namespace Hspi
                     DeviceClass deviceClass = (DeviceClass)HS.GetDeviceByRef(refId);
 
                     DeviceIdentifier deviceIdentifier = null;
-                    var deviceId = DeviceIdentifier.IdentifyRoot(deviceClass);
+                    DeviceType? deviceId = DeviceIdentifier.IdentifyRoot(deviceClass);
 
                     if (deviceId == null)
                     {
@@ -117,10 +116,10 @@ namespace Hspi
 
                     using (connectorManagerLock.Lock())
                     {
-                        if (connectorManagers.TryGetValue(deviceId.Value, out var connector))
+                        if (connectorManagers.TryGetValue(deviceId.Value, out DeviceControlManagerCore connector))
                         {
-                            var combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
-                            combinedCancel.CancelAfter(TimeSpan.FromMinutes(2));
+                            CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
+                            combinedCancel.CancelAfter(TimeSpan.FromMinutes(1));
                             connector.HandleCommand(deviceIdentifier, control.ControlValue, combinedCancel.Token).ResultForSync();
                         }
                         else
@@ -160,7 +159,7 @@ namespace Hspi
         {
             if (!disposedValue)
             {
-                foreach (var connection in connectorManagers)
+                foreach (KeyValuePair<DeviceType, DeviceControlManagerCore> connection in connectorManagers)
                 {
                     connection.Value.Dispose();
                 }
@@ -194,11 +193,11 @@ namespace Hspi
             {
                 bool changed = false;
                 // Update changed or new
-                foreach (var device in pluginConfig.Devices)
+                foreach (KeyValuePair<DeviceType, DeviceControlConfig> device in pluginConfig.Devices)
                 {
-                    if (connectorManagers.TryGetValue(device.Key, out var oldConnectorBase))
+                    if (connectorManagers.TryGetValue(device.Key, out DeviceControlManagerCore oldConnectorBase))
                     {
-                        var oldConnector = oldConnectorBase as DeviceControlManager;
+                        DeviceControlManager oldConnector = oldConnectorBase as DeviceControlManager;
                         if (oldConnector == null)
                         {
                             continue;
@@ -210,7 +209,7 @@ namespace Hspi
                             oldConnector.Dispose();
                             if (device.Value.Enabled)
                             {
-                                var connection = new DeviceControlManager(HS,
+                                DeviceControlManager connection = new DeviceControlManager(HS,
                                                                           device.Value,
                                                                           this as IConnectionProvider,
                                                                           ShutdownCancellationToken);
@@ -224,7 +223,7 @@ namespace Hspi
                         if (device.Value.Enabled)
                         {
                             changed = true;
-                            var connection = new DeviceControlManager(HS,
+                            DeviceControlManager connection = new DeviceControlManager(HS,
                                                                       device.Value,
                                                                       this as IConnectionProvider,
                                                                       ShutdownCancellationToken);
@@ -236,7 +235,7 @@ namespace Hspi
 
                 if (changed)
                 {
-                    var connection =
+                    GlobalMacrosDeviceControlManager connection =
                         new GlobalMacrosDeviceControlManager(HS,
                                                              this as IConnectionProvider,
                                                              ShutdownCancellationToken);
@@ -248,9 +247,9 @@ namespace Hspi
 
         IDeviceCommandHandler IConnectionProvider.GetCommandHandler(DeviceType deviceType)
         {
-            if (connectorManagers.TryGetValue(deviceType, out var connection))
+            if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connection))
             {
-                var connectionBase = connection as IDeviceCommandHandler;
+                IDeviceCommandHandler connectionBase = connection as IDeviceCommandHandler;
                 if (connectionBase != null)
                 {
                     return connectionBase;
@@ -261,9 +260,9 @@ namespace Hspi
 
         IDeviceFeedbackProvider IConnectionProvider.GetFeedbackProvider(DeviceType deviceType)
         {
-            if (connectorManagers.TryGetValue(deviceType, out var connection))
+            if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connection))
             {
-                var connectionBase = connection as IDeviceFeedbackProvider;
+                IDeviceFeedbackProvider connectionBase = connection as IDeviceFeedbackProvider;
                 if (connectionBase != null)
                 {
                     return connectionBase;
