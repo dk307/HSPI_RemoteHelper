@@ -15,13 +15,6 @@ using static System.FormattableString;
 
 namespace Hspi
 {
-    internal interface IConnectionProvider
-    {
-        IDeviceCommandHandler GetCommandHandler(DeviceType deviceType);
-
-        IDeviceFeedbackProvider GetFeedbackProvider(DeviceType deviceType);
-    }
-
     /// <summary>
     /// Plugin class
     /// </summary>
@@ -50,7 +43,7 @@ namespace Hspi
 
                 RegisterConfigPage();
 
-                RestartConnections();
+                TaskHelper.StartAsync(RestartConnections, ShutdownCancellationToken);
 
                 Trace.TraceInformation(Invariant($"Finished InitIO on Port {port}"));
             }
@@ -65,7 +58,7 @@ namespace Hspi
 
         private void PluginConfig_ConfigChanged(object sender, EventArgs e)
         {
-            RestartConnections();
+            TaskHelper.StartAsync(RestartConnections, ShutdownCancellationToken);
         }
 
         public override void LogDebug(string message)

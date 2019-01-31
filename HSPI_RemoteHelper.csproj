@@ -113,6 +113,7 @@
     <Compile Include="Devices\IPAddressableDeviceControl.cs" />
     <Compile Include="Devices\SamsungTVControl.cs" />
     <Compile Include="Devices\SettableRangedDeviceFeedback.cs" />
+    <Compile Include="IConnectionProvider.cs" />
     <Compile Include="Utils\EnumHelper.cs" />
     <Compile Include="ExceptionHelper.cs" />
     <Compile Include="GlobalMacrosDeviceControlManager.cs" />
