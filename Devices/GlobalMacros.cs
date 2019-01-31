@@ -1,4 +1,5 @@
 ﻿using Hspi.Connector;
+using Hspi.Utils;
 using Nito.AsyncEx;
 using NullGuard;
 using System;
@@ -12,21 +13,6 @@ using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    internal static class IDeviceCommandHandlerExtension
-    {
-        public static async Task HandleCommandIgnoreException(this IDeviceCommandHandler handler, string commandId, CancellationToken token)
-        {
-            try
-            {
-                await handler.HandleCommand(commandId, token).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceWarning(Invariant($"Command for {handler.DeviceType} to {commandId} failed with {ex.GetFullMessage()}"));
-            }
-        }
-    };
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class GlobalMacros : DeviceControl
     {
@@ -95,15 +81,6 @@ namespace Hspi.Devices
             }
 
             return null;
-        }
-
-        private static async Task IgnoreException(Task task)
-        {
-            try
-            {
-                await Task.WhenAll(task).ConfigureAwait(false);
-            }
-            catch { }
         }
 
         private void ClearStatus()
@@ -439,12 +416,12 @@ namespace Hspi.Devices
 
             if (!currentGameMode.HasValue || (currentGameMode.Value != gameMode))
             {
-                tasks.Add(IgnoreException(MacroTurnGameModeCore(gameMode, timeoutToken)));
+                tasks.Add(MacroTurnGameModeCore(gameMode, timeoutToken).IgnoreException());
             }
 
             if (turnedOnAVR || inputChanged || deviceOn)
             {
-                tasks.Add(IgnoreException(SetAVRDefaultState(avr, timeoutToken)));
+                tasks.Add(SetAVRDefaultState(avr, timeoutToken).IgnoreException());
             }
 
             //shutdown Devices

@@ -98,6 +98,7 @@
     <Compile Include="Devices\DeviceCommand.cs" />
     <Compile Include="Devices\DeviceControl.cs" />
     <Compile Include="Devices\DirectInputKeys.cs" />
+    <Compile Include="Devices\IDeviceCommandHandlerExtension.cs" />
     <Compile Include="Devices\IP2IRDeviceControl.cs" />
     <Compile Include="Devices\OutofOrderCommandDetector.cs" />
     <Compile Include="Devices\PS3FakeControlDevice.cs" />

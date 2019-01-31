@@ -91,6 +91,7 @@ namespace Hspi.Connector
             TaskHelper.StartAsync(UpdateDevices, ShutdownToken);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "instanceCancellationSource")]
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)

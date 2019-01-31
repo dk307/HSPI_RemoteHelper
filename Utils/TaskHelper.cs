@@ -1,5 +1,4 @@
-﻿using Nito.AsyncEx.Synchronous;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,7 +22,7 @@ namespace Hspi.Utils
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "task")]
         public static void StartAsync(Func<Task> taskAction, CancellationToken token)
         {
-            var task = Task.Factory.StartNew(() => taskAction(), token,
+            Task<Task> task = Task.Factory.StartNew(() => taskAction(), token,
                                           TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
                                           TaskScheduler.Current);
         }
@@ -32,9 +31,18 @@ namespace Hspi.Utils
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public static void StartAsync(Action action, CancellationToken token)
         {
-            var task = Task.Factory.StartNew(action, token,
+            Task task = Task.Factory.StartNew(action, token,
                                           TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
                                           TaskScheduler.Current);
+        }
+
+        public static async Task IgnoreException(this Task task)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch { }
         }
     }
 }
