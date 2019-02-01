@@ -43,7 +43,7 @@ namespace Hspi
 
                 RegisterConfigPage();
 
-                TaskHelper.StartAsync(RestartConnections, ShutdownCancellationToken);
+                TaskHelper.StartAsync((Action)RestartConnections, ShutdownCancellationToken);
 
                 Trace.TraceInformation(Invariant($"Finished InitIO on Port {port}"));
             }
@@ -58,7 +58,7 @@ namespace Hspi
 
         private void PluginConfig_ConfigChanged(object sender, EventArgs e)
         {
-            TaskHelper.StartAsync(RestartConnections, ShutdownCancellationToken);
+            TaskHelper.StartAsync((Action)RestartConnections, ShutdownCancellationToken);
         }
 
         public override void LogDebug(string message)
