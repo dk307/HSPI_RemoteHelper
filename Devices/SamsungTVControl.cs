@@ -153,12 +153,15 @@ namespace Hspi.Devices
             switch (command.Id)
             {
                 case CommandName.PowerOn:
-                    await NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token).ConfigureAwait(false);
+                    var task1 = NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token);
+                    var task2 = SendIRCommandCore("Samsung TV - POWER ON", token);
+                    await Task.WhenAll(task1, task2).ConfigureAwait(false);
                     break;
 
                 case CommandName.PowerOff:
-                    // this is actually a toggle but only works when tv is on
-                    await SendCommandCore("KEY_POWER", token).ConfigureAwait(false);
+                    var task3 = SendCommandCore("KEY_POWER", token);
+                    var task4 = SendIRCommandCore("Samsung TV - POWER OFF", token);
+                    await Task.WhenAll(task3, task4).ConfigureAwait(false);
                     shutdownTime = DateTimeOffset.Now;
                     break;
 
@@ -167,8 +170,7 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.TVAVRInput:
-                    Connector.IDeviceCommandHandler connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
-                    await connector.HandleCommand("Samsung TV - INPUT HDMI 4", token).ConfigureAwait(false);
+                    await SendIRCommandCore("Samsung TV - INPUT HDMI 4", token).ConfigureAwait(false);
                     break;
 
                 default:
@@ -225,6 +227,12 @@ namespace Hspi.Devices
             Task.Run(() => UpdatePowerFeedbackState());
         }
 
+        private async Task SendIRCommandCore(string commandId, CancellationToken token)
+        {
+            Connector.IDeviceCommandHandler connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
+            await connector.HandleCommand(commandId, token).ConfigureAwait(false);
+        }
+
         private void WebSocket_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
             string message = e.Message;
@@ -260,7 +268,7 @@ namespace Hspi.Devices
         private readonly TaskCompletionSource<bool> connectedSource = new TaskCompletionSource<bool>();
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly IPAddress wolBroadCastAddress;
-        private string AppName = "HomeSeer";
+        private readonly string AppName = "HomeSeer";
         private DateTimeOffset? shutdownTime;
         private WebSocket webSocket;
 
