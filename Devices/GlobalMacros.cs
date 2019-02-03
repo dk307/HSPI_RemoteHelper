@@ -28,6 +28,23 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnSonyBluRay, type: DeviceCommandType.Both, fixedValue: -94));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnPS3, type: DeviceCommandType.Both, fixedValue: -93));
             AddCommand(new DeviceCommand(CommandName.MediaPlayPause, type: DeviceCommandType.Both, fixedValue: -92));
+            AddCommand(new DeviceCommand(CommandName.CursorUp, type: DeviceCommandType.Both, fixedValue: -91));
+            AddCommand(new DeviceCommand(CommandName.CursorDown, type: DeviceCommandType.Both, fixedValue: -90));
+            AddCommand(new DeviceCommand(CommandName.CursorLeft, type: DeviceCommandType.Both, fixedValue: -89));
+            AddCommand(new DeviceCommand(CommandName.CursorRight, type: DeviceCommandType.Both, fixedValue: -88));
+            AddCommand(new DeviceCommand(CommandName.Exit, type: DeviceCommandType.Both, fixedValue: -87));
+            AddCommand(new DeviceCommand(CommandName.Enter, type: DeviceCommandType.Both, fixedValue: -86));
+            AddCommand(new DeviceCommand(CommandName.Home, type: DeviceCommandType.Both, fixedValue: -85));
+            AddCommand(new DeviceCommand(CommandName.Return, type: DeviceCommandType.Both, fixedValue: -84));
+            AddCommand(new DeviceCommand(CommandName.MediaPrevious, type: DeviceCommandType.Both, fixedValue: -83));
+            AddCommand(new DeviceCommand(CommandName.MediaNext, type: DeviceCommandType.Both, fixedValue: -82));
+            AddCommand(new DeviceCommand(CommandName.MediaRewind, type: DeviceCommandType.Both, fixedValue: -81));
+            AddCommand(new DeviceCommand(CommandName.MediaFastForward, type: DeviceCommandType.Both, fixedValue: -80));
+            AddCommand(new DeviceCommand(CommandName.MediaSkipBackward, type: DeviceCommandType.Both, fixedValue: -79));
+            AddCommand(new DeviceCommand(CommandName.MediaSkipForward, type: DeviceCommandType.Both, fixedValue: -78));
+            AddCommand(new DeviceCommand(CommandName.MediaStepBackward, type: DeviceCommandType.Both, fixedValue: -77));
+            AddCommand(new DeviceCommand(CommandName.MediaStepForward, type: DeviceCommandType.Both, fixedValue: -76));
+            AddCommand(new DeviceCommand(CommandName.MediaStop, type: DeviceCommandType.Both, fixedValue: -75));
 
             AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
@@ -164,8 +181,8 @@ namespace Hspi.Devices
                         await MacroToggleMute(token).ConfigureAwait(false);
                         break;
 
-                    case CommandName.MediaPlayPause:
-                        await TVPlayPause(token).ConfigureAwait(false);
+                    default:
+                        await SendCommandToAVRInputDevice(command.Id, token).ConfigureAwait(false);
                         break;
                 }
                 Trace.TraceInformation(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
@@ -431,15 +448,20 @@ namespace Hspi.Devices
             tasks.Clear();
         }
 
-        private async Task TVPlayPause(CancellationToken token)
+        private async Task SendCommandToAVRInputDevice(string deviceCommand, CancellationToken token)
         {
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
-
-            await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
             IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
-            await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
             object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+
+            if (currentValue == null)
+            {
+                await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
+                await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+            }
+
+            currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
 
             DeviceType? deviceType = null;
             switch (currentValue)
@@ -455,11 +477,11 @@ namespace Hspi.Devices
             if (deviceType.HasValue)
             {
                 IDeviceCommandHandler device = GetConnection(deviceType.Value);
-                await device.HandleCommand(CommandName.MediaPlayPause, token).ConfigureAwait(false);
+                await device.HandleCommand(deviceCommand, token).ConfigureAwait(false);
             }
             else
             {
-                Trace.TraceInformation(Invariant($"There is no Play/Pause for Input:{currentValue}"));
+                Trace.TraceInformation(Invariant($"There is no device for Input:{currentValue}"));
             }
         }
 
