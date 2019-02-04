@@ -153,15 +153,13 @@ namespace Hspi.Devices
             switch (command.Id)
             {
                 case CommandName.PowerOn:
-                    var task1 = NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token);
+                    //var task1 = NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token);
                     var task2 = SendIRCommandCore("Samsung TV - POWER ON", token);
-                    await Task.WhenAll(task1, task2).ConfigureAwait(false);
+                    await Task.WhenAll(task2).ConfigureAwait(false);
                     break;
 
                 case CommandName.PowerOff:
-                    var task3 = SendCommandCore("KEY_POWER", token);
-                    var task4 = SendIRCommandCore("Samsung TV - POWER OFF", token);
-                    await Task.WhenAll(task3, task4).ConfigureAwait(false);
+                    await SendIRCommandCore("Samsung TV - POWER OFF", token).ConfigureAwait(false);
                     shutdownTime = DateTimeOffset.Now;
                     break;
 
@@ -187,7 +185,7 @@ namespace Hspi.Devices
                 TimeSpan wait = DateTimeOffset.Now - shutdownTime.Value;
                 if (wait <= TimeSpan.FromSeconds(7))
                 {
-                    await Task.Delay(wait).ConfigureAwait(false);
+                    return false;
                 }
             }
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
@@ -208,6 +206,12 @@ namespace Hspi.Devices
             }
         }
 
+        private async Task SendIRCommandCore(string commandId, CancellationToken token)
+        {
+            Connector.IDeviceCommandHandler connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
+            await connector.HandleCommand(commandId, token).ConfigureAwait(false);
+        }
+
         private async Task UpdatePowerFeedbackState(CancellationToken token = default(CancellationToken))
         {
             UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
@@ -225,12 +229,6 @@ namespace Hspi.Devices
             Trace.WriteLine(Invariant($"Connection to Samsung TV {Name} on {DeviceIP} Errored with {e.Exception.Message}"));
             UpdateConnectedState(false);
             Task.Run(() => UpdatePowerFeedbackState());
-        }
-
-        private async Task SendIRCommandCore(string commandId, CancellationToken token)
-        {
-            Connector.IDeviceCommandHandler connector = ConnectionProvider.GetCommandHandler(DeviceType.IP2IR);
-            await connector.HandleCommand(commandId, token).ConfigureAwait(false);
         }
 
         private void WebSocket_MessageReceived(object sender, MessageReceivedEventArgs e)
@@ -265,11 +263,11 @@ namespace Hspi.Devices
         }
 
         private const int TVPort = 8001;
+        private readonly string AppName = "HomeSeer";
         private readonly TaskCompletionSource<bool> connectedSource = new TaskCompletionSource<bool>();
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly IPAddress wolBroadCastAddress;
-        private readonly string AppName = "HomeSeer";
-        private DateTimeOffset? shutdownTime;
+        private static DateTimeOffset? shutdownTime;
         private WebSocket webSocket;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]

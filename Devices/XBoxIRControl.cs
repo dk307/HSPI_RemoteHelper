@@ -37,6 +37,14 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown));
             AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp));
             AddCommand(new DeviceCommand(CommandName.MediaPlayPause));
+            AddCommand(new DeviceCommand(CommandName.Enter));
+            AddCommand(new DeviceCommand(CommandName.Return));
+            AddCommand(new DeviceCommand(CommandName.Exit));
+            AddCommand(new DeviceCommand(CommandName.Home));
+            AddCommand(new DeviceCommand(CommandName.MediaStop));
+            AddCommand(new DeviceCommand(CommandName.MediaRewind));
+            AddCommand(new DeviceCommand(CommandName.MediaFastForward));
+            AddCommand(new DeviceCommand(CommandName.Menu));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.String));
         }
@@ -120,12 +128,44 @@ namespace Hspi.Devices
                     await SendCommandCore("XBox One - POWER OFF", token).ConfigureAwait(false);
                     break;
 
+                case CommandName.Enter:
+                    await SendCommandCore("XBox One - ENTER", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.Exit:
+                    await SendCommandCore("XBox One - EXIT", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.Return:
+                    await SendCommandCore("XBox One - BACK", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.Home:
+                    await SendCommandCore("XBox One - MENU HOME", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.MediaStop:
+                    await SendCommandCore("XBox One - STOP", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.MediaRewind:
+                    await SendCommandCore("XBox One - REVERSE", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.MediaFastForward:
+                    await SendCommandCore("XBox One - FORWARD", token).ConfigureAwait(false);
+                    break;
+
                 case CommandName.PowerQuery:
                     UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
                     break;
 
                 case CommandName.MediaPlayPause:
                     await SendCommandCore("XBox One - PLAY PAUSE TOGGLE", token).ConfigureAwait(false);
+                    break;
+
+                case CommandName.Menu:
+                    await SendCommandCore("XBox One - MENU MAIN", token).ConfigureAwait(false);
                     break;
 
                 default:

@@ -45,6 +45,8 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MediaStepBackward, type: DeviceCommandType.Both, fixedValue: -77));
             AddCommand(new DeviceCommand(CommandName.MediaStepForward, type: DeviceCommandType.Both, fixedValue: -76));
             AddCommand(new DeviceCommand(CommandName.MediaStop, type: DeviceCommandType.Both, fixedValue: -75));
+            AddCommand(new DeviceCommand(CommandName.Info, type: DeviceCommandType.Both, fixedValue: -74));
+            AddCommand(new DeviceCommand(CommandName.Menu, type: DeviceCommandType.Both, fixedValue: -73));
 
             AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
@@ -72,6 +74,8 @@ namespace Hspi.Devices
         public override Task Refresh(CancellationToken token)
         {
             UpdateConnectedState(true);
+            ClearStatus();
+            UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
             return Task.CompletedTask;
         }
 
@@ -135,6 +139,32 @@ namespace Hspi.Devices
             return changed;
         }
 
+        private bool UpdateStates(DeviceCommand command)
+        {
+            switch (command.Id)
+            {
+                case CommandName.MacroTurnOnNvidiaShield:
+                case CommandName.MacroTurnOnXBoxOne:
+
+                case CommandName.MacroTurnOnPS3:
+
+                case CommandName.MacroTurnOffEverything:
+
+                case CommandName.MacroTurnOnSonyBluRay:
+
+                case CommandName.MacroGameModeOn:
+
+                case CommandName.MacroGameModeOff:
+
+                case CommandName.MacroToggleMute:
+                    return true;
+
+                default:
+
+                    return false;
+            }
+        }
+
         private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
         {
             Stopwatch stopWatch = new Stopwatch();
@@ -142,8 +172,13 @@ namespace Hspi.Devices
 
             Trace.WriteLine(Invariant($"Executing {command.Id} "));
 
-            UpdateFeedback(FeedbackName.RunningMacro, command.Id);
-            UpdateStatus(command.Id);
+            bool updateStatus = UpdateStates(command);
+
+            if (updateStatus)
+            {
+                UpdateFeedback(FeedbackName.RunningMacro, command.Id);
+                UpdateStatus(command.Id);
+            }
 
             try
             {
@@ -189,8 +224,11 @@ namespace Hspi.Devices
             }
             finally
             {
-                ClearStatus();
-                UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
+                if (updateStatus)
+                {
+                    ClearStatus();
+                    UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
+                }
             }
         }
 
@@ -245,7 +283,7 @@ namespace Hspi.Devices
             await Task.Delay(tv.DefaultCommandDelay, timeoutToken).ConfigureAwait(false);
 
             await tv.HandleCommand(CommandName.Menu, timeoutToken).ConfigureAwait(false);
-            await Task.Delay(750, timeoutToken).ConfigureAwait(false);
+            await Task.Delay(850, timeoutToken).ConfigureAwait(false);
 
             string[] commandsOn = { CommandName.CursorRight,
                                     CommandName.CursorDown,
