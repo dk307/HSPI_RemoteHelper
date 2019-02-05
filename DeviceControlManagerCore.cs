@@ -63,7 +63,7 @@ namespace Hspi.Connector
 
         public async Task HandleCommand(string commandId, CancellationToken token)
         {
-            CancellationToken finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
+            var finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
 
             using (await deviceActionLock.LockAsync(finalToken).ConfigureAwait(false))
             {

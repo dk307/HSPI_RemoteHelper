@@ -1,4 +1,5 @@
-﻿using Nito.AsyncEx;
+﻿using Hspi.Utils;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Concurrent;
@@ -13,12 +14,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using Hspi.Utils;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class IP2IRDeviceControl : IPAddressableDeviceControl
     {

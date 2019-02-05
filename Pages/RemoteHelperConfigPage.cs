@@ -12,21 +12,21 @@ using System.Text;
 using System.Web;
 using static System.FormattableString;
 
-namespace Hspi
+namespace Hspi.Pages
 {
     /// <summary>
     /// Helper class to generate configuration page for plugin
     /// </summary>
     /// <seealso cref="Scheduler.PageBuilderAndMenu.clsPageBuilder" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class ConfigPage : PageBuilderAndMenu.clsPageBuilder, IConnectionProvider
+    internal class RemoteHelperConfigPage : PageBuilderAndMenu.clsPageBuilder, IConnectionProvider
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigPage" /> class.
+        /// Initializes a new instance of the <see cref="RemoteHelperConfigPage" /> class.
         /// </summary>
         /// <param name="HS">The hs.</param>
         /// <param name="pluginConfig">The plugin configuration.</param>
-        public ConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(pageName)
+        public RemoteHelperConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(pageName)
         {
             this.HS = HS;
             this.pluginConfig = pluginConfig;
@@ -135,7 +135,7 @@ namespace Hspi
 
                 if (results.Length > 0)
                 {
-                    this.divToUpdate.Add(SaveErrorDivId, results.ToString());
+                    divToUpdate.Add(SaveErrorDivId, results.ToString());
                 }
                 else
                 {
@@ -162,23 +162,23 @@ namespace Hspi
                     try
                     {
                         using (var tmp = device.Create(this)) { }
-                        this.pluginConfig.UpdateDevice(device);
-                        this.pluginConfig.FireConfigChanged();
-                        this.divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                        pluginConfig.UpdateDevice(device);
+                        pluginConfig.FireConfigChanged();
+                        divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}")));
                     }
                     catch (Exception ex)
                     {
-                        this.divToUpdate.Add(SaveErrorDivId, Invariant($"Some Values are invalid with Error:{ex.GetFullMessage()}"));
+                        divToUpdate.Add(SaveErrorDivId, Invariant($"Some Values are invalid with Error:{ex.GetFullMessage()}"));
                     }
                 }
             }
             else if (form == NameToIdWithPrefix(CancelDeviceName))
             {
-                this.divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(DebugLoggingId))
             {
-                this.pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
+                pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
             }
 
             return base.postBackProc(Name, data, user, userRights);
@@ -215,7 +215,7 @@ namespace Hspi
             var b = new clsJQuery.jqButton(name, label, PageName, false)
             {
                 id = NameToIdWithPrefix(name),
-                url = Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}?{PageTypeId}={HttpUtility.UrlEncode(type)}&{DeviceIdId}={HttpUtility.UrlEncode(deviceId ?? string.Empty)}"),
+                url = Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}?{PageTypeId}={HttpUtility.UrlEncode(type)}&{DeviceIdId}={HttpUtility.UrlEncode(deviceId ?? string.Empty)}"),
             };
 
             return b.Build();
@@ -303,7 +303,7 @@ namespace Hspi
             stb.Append("<tr height='5'><td colspan=5></td></tr>");
             stb.Append(Invariant($"<tr><td colspan=5>"));
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
-            stb.Append(Invariant($"Debug Logging Enabled:{FormCheckBox(DebugLoggingId, string.Empty, this.pluginConfig.DebugLogging, true)}"));
+            stb.Append(Invariant($"Debug Logging Enabled:{FormCheckBox(DebugLoggingId, string.Empty, pluginConfig.DebugLogging, true)}"));
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
             stb.Append("</td></tr>");
 

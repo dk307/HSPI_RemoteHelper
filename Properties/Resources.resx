@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ActiveAppTemplate" xml:space="preserve">
+    <value>&lt;active-app&gt;
+    &lt;app&gt;Roku&lt;/app&gt;
+&lt;/active-app&gt;</value>
+  </data>
+  <data name="AppsTemplate" xml:space="preserve">
+    <value>&lt;apps&gt;
+    &lt;app id="1" version="1.0.0"&gt;Emulated App 1&lt;/app&gt;
+    &lt;app id="2" version="1.0.0"&gt;Emulated App 2&lt;/app&gt;
+    &lt;app id="3" version="1.0.0"&gt;Emulated App 3&lt;/app&gt;
+    &lt;app id="4" version="1.0.0"&gt;Emulated App 4&lt;/app&gt;
+    &lt;app id="5" version="1.0.0"&gt;Emulated App 5&lt;/app&gt;
+    &lt;app id="6" version="1.0.0"&gt;Emulated App 6&lt;/app&gt;
+    &lt;app id="7" version="1.0.0"&gt;Emulated App 7&lt;/app&gt;
+    &lt;app id="8" version="1.0.0"&gt;Emulated App 8&lt;/app&gt;
+    &lt;app id="9" version="1.0.0"&gt;Emulated App 9&lt;/app&gt;
+    &lt;app id="10" version="1.0.0"&gt;Emulated App 10&lt;/app&gt;
+&lt;/apps&gt;</value>
+  </data>
+  <data name="DeviceInfoTemplate" xml:space="preserve">
+    <value>&lt;device-info&gt;
+    &lt;udn&gt;{0}&lt;/udn&gt;
+    &lt;serial-number&gt;{1}&lt;/serial-number&gt;
+    &lt;device-id&gt;{1}&lt;/device-id&gt;
+    &lt;vendor-name&gt;Roku&lt;/vendor-name&gt;
+    &lt;model-number&gt;4400X&lt;/model-number&gt;
+    &lt;model-name&gt;Roku 4&lt;/model-name&gt;
+    &lt;model-region&gt;US&lt;/model-region&gt;
+    &lt;supports-ethernet&gt;true&lt;/supports-ethernet&gt;
+    &lt;wifi-mac&gt;00:00:00:00:00:00&lt;/wifi-mac&gt;
+    &lt;ethernet-mac&gt;00:00:00:00:00:00&lt;/ethernet-mac&gt;
+    &lt;network-type&gt;ethernet&lt;/network-type&gt;
+    &lt;user-device-name&gt;{2}&lt;/user-device-name&gt;
+    &lt;software-version&gt;7.5.0&lt;/software-version&gt;
+    &lt;software-build&gt;09021&lt;/software-build&gt;
+    &lt;secure-device&gt;true&lt;/secure-device&gt;
+    &lt;language&gt;en&lt;/language&gt;
+    &lt;country&gt;US&lt;/country&gt;
+    &lt;locale&gt;en_US&lt;/locale&gt;
+    &lt;time-zone&gt;US/Pacific&lt;/time-zone&gt;
+    &lt;time-zone-offset&gt;-480&lt;/time-zone-offset&gt;
+    &lt;power-mode&gt;PowerOn&lt;/power-mode&gt;
+    &lt;supports-suspend&gt;false&lt;/supports-suspend&gt;
+    &lt;supports-find-remote&gt;false&lt;/supports-find-remote&gt;
+    &lt;supports-audio-guide&gt;false&lt;/supports-audio-guide&gt;
+    &lt;developer-enabled&gt;false&lt;/developer-enabled&gt;
+    &lt;keyed-developer-id&gt;0000000000000000000000000000000000000000&lt;/keyed-developer-id&gt;
+    &lt;search-enabled&gt;false&lt;/search-enabled&gt;
+    &lt;voice-search-enabled&gt;false&lt;/voice-search-enabled&gt;
+    &lt;notifications-enabled&gt;false&lt;/notifications-enabled&gt;
+    &lt;notifications-first-use&gt;false&lt;/notifications-first-use&gt;
+    &lt;supports-private-listening&gt;false&lt;/supports-private-listening&gt;
+    &lt;headphones-connected&gt;false&lt;/headphones-connected&gt;
+&lt;/device-info&gt;</value>
+  </data>
+  <data name="IconBase64" xml:space="preserve">
+    <value>iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAoMBgDTD2qgAAAAASUVORK5CYII=</value>
+  </data>
+  <data name="SsdpDeviceInfoTemplate" xml:space="preserve">
+    <value>&lt;device&gt;
+    &lt;deviceType&gt;urn:roku-com:device:player:1-0&lt;/deviceType&gt;
+    &lt;friendlyName&gt;{0}&lt;/friendlyName&gt;
+    &lt;manufacturer&gt;Roku&lt;/manufacturer&gt;
+    &lt;manufacturerURL&gt;http://www.roku.com/&lt;/manufacturerURL&gt;
+    &lt;modelDescription&gt;Emulated Roku&lt;/modelDescription&gt;
+    &lt;modelName&gt;Roku 4&lt;/modelName&gt;
+    &lt;modelNumber&gt;4400x&lt;/modelNumber&gt;
+    &lt;modelURL&gt;http://www.roku.com/&lt;/modelURL&gt;
+    &lt;serialNumber&gt;{1}&lt;/serialNumber&gt;
+    &lt;UDN&gt;uuid:{2}&lt;/UDN&gt;
+&lt;/device&gt;</value>
+  </data>
+</root>

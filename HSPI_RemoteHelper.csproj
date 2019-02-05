@@ -76,7 +76,6 @@
     </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ConfigPage.cs" />
     <Compile Include="DeviceControlConfig.cs" />
     <Compile Include="DeviceControlManager.cs" />
     <Compile Include="DeviceControlManagerCore.cs" />
@@ -104,6 +103,7 @@
     <Compile Include="Devices\PS3FakeControlDevice.cs" />
     <Compile Include="Devices\SonyBluRayControl.cs" />
     <Compile Include="Devices\XBoxIRControl.cs" />
+    <Compile Include="EmulatorRokuConfig.cs" />
     <Compile Include="Exceptions\DeviceException.cs" />
     <Compile Include="Devices\DeviceFeedback.cs" />
     <Compile Include="Exceptions\DevicePoweredOffException.cs" />
@@ -115,6 +115,50 @@
     <Compile Include="Devices\SamsungTVControl.cs" />
     <Compile Include="Devices\SettableRangedDeviceFeedback.cs" />
     <Compile Include="IConnectionProvider.cs" />
+    <Compile Include="Pages\EmulatedRokuConfigPage.cs" />
+    <Compile Include="Pages\PageHelper.cs" />
+    <Compile Include="PlugInRoku.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="RokuToCommand.cs" />
+    <Compile Include="Roku\KeyPressedTrigger.cs" />
+    <Compile Include="Pages\RemoteHelperConfigPage.cs" />
+    <Compile Include="Roku\EmulatedRoku.cs" />
+    <Compile Include="Roku\EmulatedRokuSettings.cs" />
+    <Compile Include="Roku\ssdp\DeviceNetworkType.cs" />
+    <Compile Include="Roku\ssdp\DeviceNetworkTypeExtensions.cs" />
+    <Compile Include="Roku\ssdp\DisposableManagedObjectBase.cs" />
+    <Compile Include="Roku\ssdp\ExceptionExtensions.cs" />
+    <Compile Include="Roku\ssdp\HttpParserBase.cs" />
+    <Compile Include="Roku\ssdp\HttpRequestParser.cs" />
+    <Compile Include="Roku\ssdp\HttpResponseParser.cs" />
+    <Compile Include="Roku\ssdp\IEnumerableExtensions.cs" />
+    <Compile Include="Roku\ssdp\ISocketFactory.cs" />
+    <Compile Include="Roku\ssdp\ISsdpCommunicationsServer.cs" />
+    <Compile Include="Roku\ssdp\ISsdpDevicePublisher.cs" />
+    <Compile Include="Roku\ssdp\ISsdpLogger.cs" />
+    <Compile Include="Roku\ssdp\IUdpSocket.cs" />
+    <Compile Include="Roku\ssdp\NullLogger.cs" />
+    <Compile Include="Roku\ssdp\ReadOnlyEnumerable.cs" />
+    <Compile Include="Roku\ssdp\ReceivedUdpData.cs" />
+    <Compile Include="Roku\ssdp\RequestReceivedEventArgs.cs" />
+    <Compile Include="Roku\ssdp\ResponseReceivedEventArgs.cs" />
+    <Compile Include="Roku\ssdp\SocketClosedException.cs" />
+    <Compile Include="Roku\ssdp\SocketFactory.cs" />
+    <Compile Include="Roku\ssdp\SsdpCommunicationsServer.cs" />
+    <Compile Include="Roku\ssdp\SsdpConstants.cs" />
+    <Compile Include="Roku\ssdp\SsdpDevice.cs" />
+    <Compile Include="Roku\ssdp\SsdpDeviceExtensions.cs" />
+    <Compile Include="Roku\ssdp\SsdpDevicePublisher.cs" />
+    <Compile Include="Roku\ssdp\SsdpDevicePublisherBase.cs" />
+    <Compile Include="Roku\ssdp\SsdpRootDevice.cs" />
+    <Compile Include="Roku\ssdp\SsdpTraceLogger.cs" />
+    <Compile Include="Roku\ssdp\TaskEx.cs" />
+    <Compile Include="Roku\ssdp\UdpEndPoint.cs" />
+    <Compile Include="Roku\ssdp\UdpSocket.cs" />
     <Compile Include="Utils\EnumHelper.cs" />
     <Compile Include="ExceptionHelper.cs" />
     <Compile Include="GlobalMacrosDeviceControlManager.cs" />
@@ -159,6 +203,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="EmbedIO">
+      <Version>2.2.5</Version>
+    </PackageReference>
     <PackageReference Include="Fody">
       <Version>4.0.0-beta.2</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -209,6 +256,12 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml.Serialization" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- ILRepack -->
