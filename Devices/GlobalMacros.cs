@@ -221,7 +221,7 @@ namespace Hspi.Devices
                         await SendCommandToAVRInputDevice(command.Id, token).ConfigureAwait(false);
                         break;
                 }
-                Trace.TraceInformation(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
+                Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
             }
             finally
             {

@@ -455,7 +455,7 @@ namespace Hspi.Devices
                     break;
             }
 
-            Trace.TraceInformation(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
+            Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
         }
 
         private async Task<string> SendCommandCore(string commandData, CancellationToken token)

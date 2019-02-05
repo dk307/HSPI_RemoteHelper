@@ -69,6 +69,8 @@ namespace Hspi
 
                 keyPressedTriggers = keyPressedTriggersTemp.Select((x) => new KeyValuePair<KeyPressedTrigger, IEnumerable<DeviceCommandId>>(x.Key, x.Value))
                                              .ToImmutableDictionary(keyPressedTriggersTemp.Comparer);
+
+                Trace.TraceInformation(Invariant($"Loaded file {fileName}"));
             }
             catch (Exception ex)
             {
@@ -158,6 +160,10 @@ namespace Hspi
                     Trace.Write(Invariant($"Wait for [{key}] {timeLeft}"));
                     await Task.Delay(timeLeft).ConfigureAwait(false);
                 }
+            }
+            else
+            {
+                Trace.Write(Invariant($"No handler for [{key}] on {deviceId}"));
             }
         }
 

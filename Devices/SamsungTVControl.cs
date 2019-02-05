@@ -11,11 +11,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocket4Net;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class SamsungTVControl : IPAddressableDeviceControl
     {
@@ -108,13 +107,6 @@ namespace Hspi.Devices
 
         private async Task Connect(CancellationToken token)
         {
-            if (!await IsPoweredOn(token).ConfigureAwait(false))
-            {
-                throw new DevicePoweredOffException($"Samsung TV {Name} on {DeviceIP} not powered On");
-            }
-
-            UpdateFeedback(FeedbackName.Power, true);
-
             string nameBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(AppName));
             string socketsUrl = Invariant($"ws://{DeviceIP}:{TVPort}/api/v2/channels/samsung.remote.control?Name={nameBase64}");
             webSocket = new WebSocket(socketsUrl, "basic")
@@ -131,6 +123,7 @@ namespace Hspi.Devices
 
             await connectedSource.Task.WaitAsync(token).ConfigureAwait(false);
             Trace.WriteLine(Invariant($"Connected to Samsung TV {Name} on {DeviceIP}"));
+            UpdateFeedback(FeedbackName.Power, true);
             UpdateConnectedState(true);
         }
 
@@ -189,6 +182,12 @@ namespace Hspi.Devices
                     return false;
                 }
             }
+            else
+            {
+                //first time start
+                return false;
+            }
+
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
         }
