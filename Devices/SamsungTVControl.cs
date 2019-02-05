@@ -174,17 +174,8 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             // TV keeps reponding to Pings for 7s after it has been turned off
-            if (shutdownTime.HasValue)
+            if ((DateTimeOffset.Now - shutdownTime) <= TimeSpan.FromSeconds(7))
             {
-                TimeSpan wait = DateTimeOffset.Now - shutdownTime.Value;
-                if (wait <= TimeSpan.FromSeconds(7))
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                //first time start
                 return false;
             }
 
@@ -270,7 +261,7 @@ namespace Hspi.Devices
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private readonly IPAddress wolBroadCastAddress;
 
-        private static DateTimeOffset? shutdownTime;
+        private static DateTimeOffset shutdownTime = DateTimeOffset.Now;
         private WebSocket webSocket;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
