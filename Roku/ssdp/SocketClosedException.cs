@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Rssdp
 {
     /// <summary>
     /// To be thrown when a socket is unexpectedly closed, or accessed in a closed state.
     /// </summary>
-#if SUPPORTS_SERIALISATION
 
     [Serializable]
-#endif
     internal class SocketClosedException : Exception
     {
         /// <summary>

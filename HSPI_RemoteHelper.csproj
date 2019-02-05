@@ -33,7 +33,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -49,7 +49,7 @@
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -61,6 +61,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Hspi.Program</StartupObject>
@@ -123,7 +124,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="RokuToCommand.cs" />
     <Compile Include="Roku\KeyPressedTrigger.cs" />
     <Compile Include="Pages\RemoteHelperConfigPage.cs" />
     <Compile Include="Roku\EmulatedRoku.cs" />
@@ -276,6 +276,8 @@
       <InputAssemblies Include="$(OutputPath)\WebSocket4Net.dll" />
       <InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
       <InputAssemblies Include="$(OutputPath)\SuperSocket.ClientEngine.dll" />
+      <InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
+      <InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
     </ItemGroup>
     <ItemGroup>
       <!-- Must be a fully qualified name -->

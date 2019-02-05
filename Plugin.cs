@@ -166,6 +166,8 @@ namespace Hspi
         /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
         /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "emulatedRokuConfigPage")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "configPage")]
         protected override void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -323,7 +325,6 @@ namespace Hspi
         private readonly ConcurrentDictionary<DeviceType, DeviceControlManagerCore> connectorManagers
                                 = new ConcurrentDictionary<DeviceType, DeviceControlManagerCore>();
 
-        private CancellationTokenSource cancellationTokenSourceForUpdateDevice = new CancellationTokenSource();
         private RemoteHelperConfigPage configPage;
         private bool disposedValue = false;
         private PluginConfig pluginConfig;

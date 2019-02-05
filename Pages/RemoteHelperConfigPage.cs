@@ -19,16 +19,15 @@ namespace Hspi.Pages
     /// </summary>
     /// <seealso cref="Scheduler.PageBuilderAndMenu.clsPageBuilder" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class RemoteHelperConfigPage : PageBuilderAndMenu.clsPageBuilder, IConnectionProvider
+    internal class RemoteHelperConfigPage : PageHelper, IConnectionProvider
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="RemoteHelperConfigPage" /> class.
         /// </summary>
         /// <param name="HS">The hs.</param>
         /// <param name="pluginConfig">The plugin configuration.</param>
-        public RemoteHelperConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(pageName)
+        public RemoteHelperConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(HS, Name)
         {
-            this.HS = HS;
             this.pluginConfig = pluginConfig;
         }
 
@@ -36,15 +35,6 @@ namespace Hspi.Pages
         /// Gets the name of the web page.
         /// </summary>
         public static string Name => pageName;
-
-        public static string HtmlEncode<T>([AllowNull]T value)
-        {
-            if (value == null)
-            {
-                return string.Empty;
-            }
-            return HttpUtility.HtmlEncode(value);
-        }
 
         IDeviceCommandHandler IConnectionProvider.GetCommandHandler(DeviceType deviceType)
         {
@@ -184,32 +174,6 @@ namespace Hspi.Pages
             return base.postBackProc(Name, data, user, userRights);
         }
 
-        protected static string HtmlTextBox(string name, string defaultText, int size = 25, string type = "text", bool @readonly = false)
-        {
-            return Invariant($"<input type=\'{type}\' id=\'{NameToIdWithPrefix(name)}\' size=\'{size}\' name=\'{name}\' value=\'{HtmlEncode(defaultText)}\' {(@readonly ? "readonly" : string.Empty)}>");
-        }
-
-        protected string FormCheckBox(string name, string label, bool @checked, bool autoPostBack = false)
-        {
-            var cb = new clsJQuery.jqCheckBox(name, label, PageName, true, true)
-            {
-                id = NameToIdWithPrefix(name),
-                @checked = @checked,
-                autoPostBack = autoPostBack,
-            };
-            return cb.Build();
-        }
-
-        protected string FormPageButton(string name, string label)
-        {
-            var b = new clsJQuery.jqButton(name, label, PageName, true)
-            {
-                id = NameToIdWithPrefix(name),
-            };
-
-            return b.Build();
-        }
-
         protected string PageTypeButton(string name, string label, string type, string deviceId = null)
         {
             var b = new clsJQuery.jqButton(name, label, PageName, false)
@@ -229,11 +193,6 @@ namespace Hspi.Pages
         private static string NameToId(string name)
         {
             return name.Replace(' ', '_');
-        }
-
-        private static string NameToIdWithPrefix(string name)
-        {
-            return Invariant($"{IdPrefix}{NameToId(name)}");
         }
 
         private string BuildAddNewWebPageBody(DeviceControlConfig deviceConfig)
@@ -323,12 +282,10 @@ namespace Hspi.Pages
         private const string EnabledId = "EnabledId";
         private const string IdPrefix = "id_";
         private const string NameId = "NameId";
-        private const string PageTypeId = "type";
         private const int PortsMax = 8;
         private const string SaveDeviceName = "SaveButton";
         private const string SaveErrorDivId = "message_id";
         private static readonly string pageName = Invariant($"{PluginData.PluginName} Configuration").Replace(' ', '_');
-        private readonly IHSApplication HS;
         private readonly PluginConfig pluginConfig;
     }
 }

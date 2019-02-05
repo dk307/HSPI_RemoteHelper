@@ -12,12 +12,6 @@ namespace Hspi
             Key = key;
         }
 
-        public bool IsValid()
-        {
-            return !string.IsNullOrWhiteSpace(Key) &&
-                   DeviceId != Guid.Empty;
-        }
-
         public readonly Guid DeviceId;
         public readonly string Key;
 

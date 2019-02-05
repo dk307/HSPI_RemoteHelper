@@ -60,6 +60,14 @@ namespace Hspi.Devices
             return ExecuteCommand2(command, token);
         }
 
+        public override Task Refresh(CancellationToken token)
+        {
+            UpdateConnectedState(true);
+            ClearStatus();
+            UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
+            return Task.CompletedTask;
+        }
+
         private static async Task DelayDefaultCommandTime(CancellationToken timeoutToken, params IDeviceCommandHandler[] devices)
         {
             int msWait = 0;
@@ -69,14 +77,6 @@ namespace Hspi.Devices
             }
 
             await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
-        }
-
-        public override Task Refresh(CancellationToken token)
-        {
-            UpdateConnectedState(true);
-            ClearStatus();
-            UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
-            return Task.CompletedTask;
         }
 
         private static bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
@@ -102,6 +102,33 @@ namespace Hspi.Devices
             }
 
             return null;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
+        private static bool UpdateStates(DeviceCommand command)
+        {
+            switch (command.Id)
+            {
+                case CommandName.MacroTurnOnNvidiaShield:
+                case CommandName.MacroTurnOnXBoxOne:
+
+                case CommandName.MacroTurnOnPS3:
+
+                case CommandName.MacroTurnOffEverything:
+
+                case CommandName.MacroTurnOnSonyBluRay:
+
+                case CommandName.MacroGameModeOn:
+
+                case CommandName.MacroGameModeOff:
+
+                case CommandName.MacroToggleMute:
+                    return true;
+
+                default:
+
+                    return false;
+            }
         }
 
         private void ClearStatus()
@@ -137,32 +164,6 @@ namespace Hspi.Devices
             } while (!token.IsCancellationRequested && (maxRetries > 0));
 
             return changed;
-        }
-
-        private bool UpdateStates(DeviceCommand command)
-        {
-            switch (command.Id)
-            {
-                case CommandName.MacroTurnOnNvidiaShield:
-                case CommandName.MacroTurnOnXBoxOne:
-
-                case CommandName.MacroTurnOnPS3:
-
-                case CommandName.MacroTurnOffEverything:
-
-                case CommandName.MacroTurnOnSonyBluRay:
-
-                case CommandName.MacroGameModeOn:
-
-                case CommandName.MacroGameModeOff:
-
-                case CommandName.MacroToggleMute:
-                    return true;
-
-                default:
-
-                    return false;
-            }
         }
 
         private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
@@ -359,6 +360,43 @@ namespace Hspi.Devices
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
+        private async Task SendCommandToAVRInputDevice(string deviceCommand, CancellationToken token)
+        {
+            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
+            IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
+
+            object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+
+            if (currentValue == null)
+            {
+                await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
+                await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+            }
+
+            currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+
+            DeviceType? deviceType = null;
+            switch (currentValue)
+            {
+                case DenonAVRControl.NvidiaShieldInput:
+                    deviceType = DeviceType.ADBRemoteControl; break;
+                case DenonAVRControl.XBoxOneInput:
+                    deviceType = DeviceType.XboxOne; break;
+                case DenonAVRControl.BlueRayPlayerInput:
+                    deviceType = DeviceType.SonyBluRay; break;
+            }
+
+            if (deviceType.HasValue)
+            {
+                IDeviceCommandHandler device = GetConnection(deviceType.Value);
+                await device.HandleCommand(deviceCommand, token).ConfigureAwait(false);
+            }
+            else
+            {
+                Trace.TraceInformation(Invariant($"There is no device for Input:{currentValue}"));
+            }
+        }
+
         private async Task SetAVRDefaultState(IDeviceCommandHandler avr, CancellationToken timeoutToken)
         {
             await avr.HandleCommand(FeedbackName.DialogEnhancementLevel, 50, timeoutToken).ConfigureAwait(false);
@@ -484,43 +522,6 @@ namespace Hspi.Devices
 
             await tasks.WhenAll().ConfigureAwait(false);
             tasks.Clear();
-        }
-
-        private async Task SendCommandToAVRInputDevice(string deviceCommand, CancellationToken token)
-        {
-            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
-            IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
-
-            object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
-
-            if (currentValue == null)
-            {
-                await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
-                await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
-            }
-
-            currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
-
-            DeviceType? deviceType = null;
-            switch (currentValue)
-            {
-                case DenonAVRControl.NvidiaShieldInput:
-                    deviceType = DeviceType.ADBRemoteControl; break;
-                case DenonAVRControl.XBoxOneInput:
-                    deviceType = DeviceType.XboxOne; break;
-                case DenonAVRControl.BlueRayPlayerInput:
-                    deviceType = DeviceType.SonyBluRay; break;
-            }
-
-            if (deviceType.HasValue)
-            {
-                IDeviceCommandHandler device = GetConnection(deviceType.Value);
-                await device.HandleCommand(deviceCommand, token).ConfigureAwait(false);
-            }
-            else
-            {
-                Trace.TraceInformation(Invariant($"There is no device for Input:{currentValue}"));
-            }
         }
 
         private void UpdateStatus(string value)

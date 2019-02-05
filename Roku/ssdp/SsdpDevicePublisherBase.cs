@@ -37,14 +37,6 @@ namespace Rssdp.Infrastructure
         #region Constructors
 
         /// <summary>
-        /// Default constructor.
-        /// </summary>
-        /// <param name="communicationsServer">The <see cref="ISsdpCommunicationsServer"/> implementation, used to send and receive SSDP network messages.</param>
-        protected SsdpDevicePublisherBase(ISsdpCommunicationsServer communicationsServer) : this(communicationsServer, NullLogger.Instance)
-        {
-        }
-
-        /// <summary>
         /// Full constructor.
         /// </summary>
         /// <param name="communicationsServer">The <see cref="ISsdpCommunicationsServer"/> implementation, used to send and receive SSDP network messages.</param>

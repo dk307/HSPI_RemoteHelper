@@ -17,55 +17,63 @@ namespace Hspi
 {
     internal partial class Plugin : HspiBase, IConnectionProvider
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
         public void LoadRokuToDeviceMapping()
         {
-            string fileName = emulatorRokuPluginConfig.CommandMappingFile;
-            if (string.IsNullOrWhiteSpace(fileName) || !File.Exists(fileName))
+            try
             {
-                Trace.TraceError(Invariant($"Command Mapping file {fileName} not found"));
-                return;
-            }
-
-            XDocument xml = XDocument.Load(fileName);
-
-            var query = from c in xml.Root.Descendants("map")
-                        select new
-                        {
-                            Roku = c.Attribute("roku").Value,
-                            Key = c.Attribute("key").Value,
-                            Device = c.Attribute("device").Value,
-                            Command = c.Attribute("command").Value,
-                        };
-
-            var keyPressedTriggersTemp =
-                new Dictionary<KeyPressedTrigger, List<DeviceCommandId>>(new KeyPressedTrigger.EqualityComparer());
-            var rokuDevices = emulatorRokuPluginConfig.Devices;
-            foreach (var element in query)
-            {
-                var rokuDevice = rokuDevices.Values.Where(
-                    (x) => { return element.Roku == x.Name; }).FirstOrDefault();
-
-                if (rokuDevice != null)
+                string fileName = emulatorRokuPluginConfig.CommandMappingFile;
+                if (string.IsNullOrWhiteSpace(fileName) || !File.Exists(fileName))
                 {
-                    var id = new KeyPressedTrigger(rokuDevice.Id, element.Key);
+                    Trace.TraceError(Invariant($"Command Mapping file {fileName} not found"));
+                    return;
+                }
 
-                    if (Enum.TryParse(element.Device, true, out DeviceType deviceType))
+                XDocument xml = XDocument.Load(fileName);
+
+                var query = from c in xml.Root.Descendants("map")
+                            select new
+                            {
+                                Roku = c.Attribute("roku").Value,
+                                Key = c.Attribute("key").Value,
+                                Device = c.Attribute("device").Value,
+                                Command = c.Attribute("command").Value,
+                            };
+
+                var keyPressedTriggersTemp =
+                    new Dictionary<KeyPressedTrigger, List<DeviceCommandId>>(new KeyPressedTrigger.EqualityComparer());
+                var rokuDevices = emulatorRokuPluginConfig.Devices;
+                foreach (var element in query)
+                {
+                    var rokuDevice = rokuDevices.Values.Where(
+                        (x) => { return element.Roku == x.Name; }).FirstOrDefault();
+
+                    if (rokuDevice != null)
                     {
-                        var value = new DeviceCommandId(deviceType, element.Command);
+                        var id = new KeyPressedTrigger(rokuDevice.Id, element.Key);
 
-                        if (!keyPressedTriggersTemp.TryGetValue(id, out var deviceCommandIds))
+                        if (Enum.TryParse(element.Device, true, out DeviceType deviceType))
                         {
-                            deviceCommandIds = new List<DeviceCommandId>();
-                            keyPressedTriggersTemp.Add(id, deviceCommandIds);
-                        }
+                            var value = new DeviceCommandId(deviceType, element.Command);
 
-                        deviceCommandIds.Add(value);
+                            if (!keyPressedTriggersTemp.TryGetValue(id, out var deviceCommandIds))
+                            {
+                                deviceCommandIds = new List<DeviceCommandId>();
+                                keyPressedTriggersTemp.Add(id, deviceCommandIds);
+                            }
+
+                            deviceCommandIds.Add(value);
+                        }
                     }
                 }
-            }
 
-            keyPressedTriggers = keyPressedTriggersTemp.Select((x) => new KeyValuePair<KeyPressedTrigger, IEnumerable<DeviceCommandId>>(x.Key, x.Value))
-                                         .ToImmutableDictionary(keyPressedTriggersTemp.Comparer);
+                keyPressedTriggers = keyPressedTriggersTemp.Select((x) => new KeyValuePair<KeyPressedTrigger, IEnumerable<DeviceCommandId>>(x.Key, x.Value))
+                                             .ToImmutableDictionary(keyPressedTriggersTemp.Comparer);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(Invariant($"Failed to load device mapping file with {ex.GetFullMessage()}"));
+            }
         }
 
         private async Task RestartRokuOperations()
@@ -125,7 +133,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                Trace.TraceError(Invariant($"Failed in starting with {ex.GetFullMessage()}"));
+                Trace.TraceError(Invariant($"Failed in starting rokus with {ex.GetFullMessage()}"));
             }
         }
 

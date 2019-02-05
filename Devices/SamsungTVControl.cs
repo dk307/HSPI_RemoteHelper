@@ -70,6 +70,7 @@ namespace Hspi.Devices
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public PhysicalAddress MacAddress { get; }
 
         public override Task Refresh(CancellationToken token)

@@ -229,7 +229,7 @@ namespace Hspi
         private const string SsdpAdvertiseKey = "SsdpAdvertiseKey";
         private const string MinWaitForKeyPressKey = "MinWaitForKeyPress";
         private const string CommandMappingFileKey = "CommandMappingFile";
-        private static readonly string FileName = "HSPI_EmulatedRoku.exe.ini";
+        private const string FileName = "HSPI_EmulatedRoku.exe.ini";
         private readonly AsyncReaderWriterLock configLock = new AsyncReaderWriterLock();
         private readonly Dictionary<Guid, EmulatedRokuSettings> devices = new Dictionary<Guid, EmulatedRokuSettings>();
         private readonly IHSApplication HS;

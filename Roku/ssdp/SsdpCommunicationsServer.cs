@@ -88,17 +88,6 @@ namespace Rssdp.Infrastructure
         }
 
         /// <summary>
-        /// Partial constructor.
-        /// </summary>
-        /// <param name="socketFactory">An implementation of the <see cref="ISocketFactory"/> interface that can be used to make new unicast and multicast sockets. Cannot be null.</param>
-        /// <param name="localPort">The specific local port to use for all sockets created by this instance. Specify zero to indicate the system should choose a free port itself.</param>
-        /// <exception cref="System.ArgumentNullException">The <paramref name="socketFactory"/> argument is null.</exception>
-        public SsdpCommunicationsServer(ISocketFactory socketFactory, int localPort)
-            : this(socketFactory, localPort, SsdpConstants.SsdpDefaultMulticastTimeToLive)
-        {
-        }
-
-        /// <summary>
         /// Full constructor.
         /// </summary>
         /// <param name="socketFactory">An implementation of the <see cref="ISocketFactory"/> interface that can be used to make new unicast and multicast sockets. Cannot be null.</param>
