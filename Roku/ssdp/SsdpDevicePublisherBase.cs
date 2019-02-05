@@ -28,7 +28,7 @@ namespace Rssdp.Infrastructure
 
         private Random _Random;
         private TimeSpan _MinCacheTime;
-        private TimeSpan _NotificationBroadcastInterval;
+        private TimeSpan _NotificationBroadcastInterval = TimeSpan.Zero;
 
         private const string ServerVersion = "1.0";
 
@@ -74,8 +74,9 @@ namespace Rssdp.Infrastructure
         /// <para>This method ignores duplicate device adds (if the same device instance is added multiple times, the second and subsequent add calls do nothing).</para>
         /// </remarks>
         /// <param name="device">The <see cref="SsdpDevice"/> instance to add.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown if the <paramref name="device"/> argument is null.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown if the <paramref name="device"/> contains property values that are not acceptable to the UPnP 1.0 specification.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if the <paramref name="device"/> argument is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the <paramref name="device"/> contains property values that are not acceptable to the UPnP 1.0 specification.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "AddDevice")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "t", Justification = "Capture task to local variable supresses compiler warning, but task is not really needed.")]
         public void AddDevice(SsdpRootDevice device)
         {
@@ -119,7 +120,8 @@ namespace Rssdp.Infrastructure
         /// <para>This method does nothing if the device was not found in the collection.</para>
         /// </remarks>
         /// <param name="device">The <see cref="SsdpDevice"/> instance to add.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown if the <paramref name="device"/> argument is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if the <paramref name="device"/> argument is null.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "RemoveDevice")]
         public void RemoveDevice(SsdpRootDevice device)
         {
             if (device == null) throw new ArgumentNullException("device");

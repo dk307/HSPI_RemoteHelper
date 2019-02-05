@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Rssdp.Infrastructure;
+using System;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Security;
-using System.Text;
-using Rssdp.Infrastructure;
 
 namespace Rssdp
 {
@@ -32,7 +28,7 @@ namespace Rssdp
         /// Null or empty string will use <see cref="IPAddress.Any"/>.</param>
         public SocketFactory(string ipAddress)
         {
-            if (String.IsNullOrEmpty(ipAddress))
+            if (string.IsNullOrEmpty(ipAddress))
                 _LocalIP = IPAddress.Any;
             else
                 _LocalIP = IPAddress.Parse(ipAddress);
@@ -132,6 +128,7 @@ namespace Rssdp
         /// <param name="retVal">Socket for setting options</param>
         /// <param name="multicastTimeToLive">Multicast Time to live for multicast options</param>
         /// <returns></returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "DeviceNetworkType")]
         private void SetMulticastSocketOptions(Socket retVal, int multicastTimeToLive)
         {
             string multicastIpAddress = _DeviceNetworkType.GetMulticastIPAddress();

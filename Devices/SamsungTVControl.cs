@@ -267,7 +267,10 @@ namespace Hspi.Devices
         private readonly string AppName = "HomeSeer";
         private readonly TaskCompletionSource<bool> connectedSource = new TaskCompletionSource<bool>();
         private readonly AsyncLock connectionLock = new AsyncLock();
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private readonly IPAddress wolBroadCastAddress;
+
         private static DateTimeOffset? shutdownTime;
         private WebSocket webSocket;
 
