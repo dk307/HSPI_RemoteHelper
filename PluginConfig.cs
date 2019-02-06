@@ -1,6 +1,7 @@
 ﻿using HomeSeerAPI;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -72,14 +73,14 @@ namespace Hspi
             }
         }
 
-        public IReadOnlyDictionary<DeviceType, DeviceControlConfig> Devices
+        public ImmutableDictionary<DeviceType, DeviceControlConfig> Devices
         {
             get
             {
                 configLock.EnterReadLock();
                 try
                 {
-                    return new Dictionary<DeviceType, DeviceControlConfig>(devices);
+                    return devices.ToImmutableDictionary();
                 }
                 finally
                 {
@@ -208,7 +209,7 @@ namespace Hspi
         private const string DeviceIPId = "DeviceIP";
         private const string DeviceNameId = "Name";
         private const string EnabledId = "Enabled";
-        private readonly static string FileName = Invariant($"{Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location)}.ini");
+        private static readonly string FileName = Invariant($"{Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location)}.ini");
         private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
         private readonly IDictionary<DeviceType, DeviceControlConfig> devices = new Dictionary<DeviceType, DeviceControlConfig>();
         private readonly IHSApplication HS;

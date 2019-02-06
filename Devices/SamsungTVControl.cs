@@ -69,7 +69,6 @@ namespace Hspi.Devices
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public PhysicalAddress MacAddress { get; }
 
         public override Task Refresh(CancellationToken token)
@@ -147,14 +146,13 @@ namespace Hspi.Devices
             switch (command.Id)
             {
                 case CommandName.PowerOn:
-                    //var task1 = NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token);
+                    var task1 = NetworkHelper.SendWolAsync(new IPEndPoint(wolBroadCastAddress, 9), MacAddress, token);
                     var task2 = SendIRCommandCore("Samsung TV - POWER ON", token);
-                    await Task.WhenAll(task2).ConfigureAwait(false);
+                    await Task.WhenAll(task1, task2).ConfigureAwait(false);
                     break;
 
                 case CommandName.PowerOff:
                     await SendIRCommandCore("Samsung TV - POWER OFF", token).ConfigureAwait(false);
-                    shutdownTime = DateTimeOffset.Now;
                     break;
 
                 case CommandName.PowerQuery:
@@ -174,11 +172,6 @@ namespace Hspi.Devices
         private async Task<bool> IsPoweredOn(CancellationToken token)
         {
             // TV keeps reponding to Pings for 7s after it has been turned off
-            if ((DateTimeOffset.Now - shutdownTime) <= TimeSpan.FromSeconds(7))
-            {
-                return false;
-            }
-
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(750);
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).WaitAsync(token).ConfigureAwait(false);
         }
@@ -261,7 +254,6 @@ namespace Hspi.Devices
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private readonly IPAddress wolBroadCastAddress;
 
-        private static DateTimeOffset shutdownTime = DateTimeOffset.Now;
         private WebSocket webSocket;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]

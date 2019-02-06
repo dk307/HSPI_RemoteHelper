@@ -268,7 +268,7 @@ namespace Hspi
             {
                 bool changed = false;
                 // Update changed or new
-                foreach (KeyValuePair<DeviceType, DeviceControlConfig> device in pluginConfig.Devices)
+                foreach (var device in pluginConfig.Devices)
                 {
                     if (connectorManagers.TryGetValue(device.Key, out DeviceControlManagerCore oldConnectorBase))
                     {

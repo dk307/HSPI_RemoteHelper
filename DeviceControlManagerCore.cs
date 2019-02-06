@@ -161,7 +161,7 @@ namespace Hspi.Connector
         {
             while (!ShutdownToken.IsCancellationRequested)
             {
-                DeviceCommand command = await changedCommands.DequeueAsync(ShutdownToken).ConfigureAwait(false);
+                var command = await changedCommands.DequeueAsync(ShutdownToken).ConfigureAwait(false);
                 try
                 {
                     rootDeviceData.ProcessCommand(command);
@@ -192,17 +192,26 @@ namespace Hspi.Connector
 
         private async Task UpdateDevices()
         {
-            using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
+            try
             {
-                await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
-                CheckConnection();
+                using (await deviceActionLock.LockAsync(ShutdownToken).ConfigureAwait(false))
+                {
+                    await changedCommands.EnqueueAsync(DeviceControl.NotConnectedCommand).ConfigureAwait(false);
+                    CheckConnection();
 
-                rootDeviceData.CreateOrUpdateDevices(connector.Commands, connector.Feedbacks);
-                await connector.Refresh(ShutdownToken).ConfigureAwait(false);
+                    rootDeviceData.CreateOrUpdateDevices(connector.Commands, connector.Feedbacks);
+                    await connector.Refresh(ShutdownToken).ConfigureAwait(false);
+                }
+
+                var taskProcessCommands = ProcessCommands();
+                var taskProcessFeedbacks = ProcessFeedbacks();
+
+                await Task.WhenAll(taskProcessCommands, taskProcessFeedbacks).ConfigureAwait(false);
             }
-
-            TaskHelper.StartAsync(ProcessFeedbacks, ShutdownToken);
-            TaskHelper.StartAsync(ProcessCommands, ShutdownToken);
+            catch (Exception ex)
+            {
+                Trace.TraceError(Invariant($"Error occured for {DeviceType} UpdateDevices : {ex.GetFullMessage()}"));
+            }
         }
 
         private readonly AsyncProducerConsumerQueue<DeviceCommand> changedCommands = new AsyncProducerConsumerQueue<DeviceCommand>();

@@ -5,17 +5,16 @@ using NullGuard;
 using Scheduler.Classes;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.DeviceData
 {
-    using System.Diagnostics;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class DeviceRootDeviceManager
     {
@@ -145,9 +144,11 @@ namespace Hspi.DeviceData
                 string address = deviceAddress;
                 device.set_Address(HS, address);
                 device.set_Device_Type_String(HS, deviceData.HSDeviceTypeString);
-                var hsDeviceType = new DeviceTypeInfo_m.DeviceTypeInfo();
-                hsDeviceType.Device_API = deviceData.DeviceAPI;
-                hsDeviceType.Device_Type = deviceData.HSDeviceType;
+                var hsDeviceType = new DeviceTypeInfo_m.DeviceTypeInfo
+                {
+                    Device_API = deviceData.DeviceAPI,
+                    Device_Type = deviceData.HSDeviceType
+                };
 
                 device.set_DeviceType_Set(HS, hsDeviceType);
                 device.set_Interface(HS, PluginData.PluginName);

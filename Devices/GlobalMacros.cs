@@ -284,7 +284,7 @@ namespace Hspi.Devices
             await Task.Delay(tv.DefaultCommandDelay, timeoutToken).ConfigureAwait(false);
 
             await tv.HandleCommand(CommandName.Menu, timeoutToken).ConfigureAwait(false);
-            await Task.Delay(850, timeoutToken).ConfigureAwait(false);
+            await Task.Delay(1500, timeoutToken).ConfigureAwait(false);
 
             string[] commandsOn = { CommandName.CursorRight,
                                     CommandName.CursorDown,
@@ -437,6 +437,12 @@ namespace Hspi.Devices
             await shutdownTasks.WhenAll().ConfigureAwait(false);
         }
 
+        private async Task TurnDeviceOn(IDeviceCommandHandler connection, CancellationToken token)
+        {
+            await connection.HandleCommandIgnoreException(CommandName.PowerOn, token).ConfigureAwait(false);
+            await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
+        }
+
         private async Task<bool> TurnDeviceOnIfOff(IDeviceCommandHandler connection, CancellationToken token)
         {
             bool turnedOn = false;
@@ -485,8 +491,12 @@ namespace Hspi.Devices
 
             UpdateStatus($"Turning On Devices");
 
-            await TurnDeviceOnIfOff(tv, timeoutToken).ConfigureAwait(false);
-            bool turnedOnAVR = await TurnDeviceOnIfOff(avr, timeoutToken).ConfigureAwait(false);
+            var turnTVOnTask = TurnDeviceOn(tv, timeoutToken); // tv power query is not reliable
+            var turnedOnAVRTask = TurnDeviceOnIfOff(avr, timeoutToken);
+
+            await Task.WhenAll(turnTVOnTask, turnedOnAVRTask).ConfigureAwait(false);
+
+            var turnedOnAVR = turnedOnAVRTask.Result;
 
             UpdateStatus($"Switching {tv.Name} Input");
             await tv.HandleCommandIgnoreException(CommandName.TVAVRInput, timeoutToken).ConfigureAwait(false);
@@ -518,7 +528,7 @@ namespace Hspi.Devices
             }
 
             //shutdown Devices
-            tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken));
+            tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken).IgnoreException());
 
             await tasks.WhenAll().ConfigureAwait(false);
             tasks.Clear();

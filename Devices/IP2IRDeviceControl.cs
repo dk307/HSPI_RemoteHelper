@@ -64,12 +64,7 @@ namespace Hspi.Devices
 
         public override Task Refresh(CancellationToken token)
         {
-            return RefreshImpl(token);
-        }
-
-        public async Task RefreshImpl(CancellationToken token)
-        {
-            await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
+            return Task.CompletedTask;
         }
 
         protected override void Dispose(bool disposing)
