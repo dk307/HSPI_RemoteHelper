@@ -443,12 +443,17 @@ namespace Hspi.Devices
             await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
         }
 
-        private async Task<bool> TurnDeviceOnIfOff(IDeviceCommandHandler connection, CancellationToken token)
+        private async Task<bool> TurnDeviceOnIfOff(IDeviceCommandHandler connection,
+                                                   bool waitForPowerOn,
+                                                   CancellationToken token,
+                                                   string powerOnCommand = CommandName.PowerOn,
+                                                   string powerQueryCommand = CommandName.PowerQuery,
+                                                   string powerFeedbackName = FeedbackName.Power)
         {
             bool turnedOn = false;
             do
             {
-                bool? isOn = GetFeedbackAsBoolean(connection, FeedbackName.Power);
+                bool? isOn = GetFeedbackAsBoolean(connection, powerFeedbackName);
                 if (isOn ?? true)
                 {
                     break;
@@ -456,13 +461,13 @@ namespace Hspi.Devices
                 else
                 {
                     turnedOn = true;
-                    await connection.HandleCommandIgnoreException(CommandName.PowerOn, token).ConfigureAwait(false);
+                    await connection.HandleCommandIgnoreException(powerOnCommand, token).ConfigureAwait(false);
                     await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
                 }
 
-                await connection.HandleCommandIgnoreException(CommandName.PowerQuery, token).ConfigureAwait(false);
+                await connection.HandleCommandIgnoreException(powerQueryCommand, token).ConfigureAwait(false);
                 await Task.Delay(connection.DefaultCommandDelay, token).ConfigureAwait(false);
-            } while (!token.IsCancellationRequested);
+            } while (!token.IsCancellationRequested && waitForPowerOn);
 
             return turnedOn;
         }
@@ -480,7 +485,6 @@ namespace Hspi.Devices
 
             List<Task> tasks = new List<Task>
             {
-                tv.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
                 avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
                 device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken)
             };
@@ -492,7 +496,10 @@ namespace Hspi.Devices
             UpdateStatus($"Turning On Devices");
 
             var turnTVOnTask = TurnDeviceOn(tv, timeoutToken); // tv power query is not reliable
-            var turnedOnAVRTask = TurnDeviceOnIfOff(avr, timeoutToken);
+            var turnedOnAVRTask = TurnDeviceOnIfOff(avr, true, timeoutToken,  // turn on zone 1
+                                                    CommandName.Zone1On,
+                                                    CommandName.Zone1PowerStatusQuery,
+                                                    FeedbackName.Zone1Status);
 
             await Task.WhenAll(turnTVOnTask, turnedOnAVRTask).ConfigureAwait(false);
 
@@ -509,7 +516,7 @@ namespace Hspi.Devices
 
             UpdateStatus($"Turning on {device.Name}");
 
-            bool deviceOn = await TurnDeviceOnIfOff(device, timeoutToken).ConfigureAwait(false);
+            bool deviceOn = await TurnDeviceOnIfOff(device, false, timeoutToken).ConfigureAwait(false);
 
             UpdateStatus($"Setting up rest...");
 

@@ -40,6 +40,13 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.ChangeInputBD, "SIBD", fixedValue: -75));
             AddCommand(new DeviceCommand(CommandName.ChangeInputCD, "SICD", fixedValue: -74));
 
+            AddCommand(new DeviceCommand(CommandName.Zone1On, "ZMON", fixedValue: -70));
+            AddCommand(new DeviceCommand(CommandName.Zone1Off, "ZMOFF", fixedValue: -69));
+            AddCommand(new DeviceCommand(CommandName.Zone2On, "Z2ON", fixedValue: -68));
+            AddCommand(new DeviceCommand(CommandName.Zone2Off, "Z2OFF", fixedValue: -67));
+            AddCommand(new DeviceCommand(CommandName.Zone1PowerStatusQuery, "ZM?", fixedValue: -66));
+            AddCommand(new DeviceCommand(CommandName.Zone2PowerStatusQuery, "Z2?", fixedValue: -65));
+
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Mute, TypeCode.Boolean));
             AddFeedback(new SettableRangedDeviceFeedback(FeedbackName.Volume, 0, 98, 1));
@@ -51,6 +58,8 @@ namespace Hspi.Devices
             AddFeedback(new SettableRangedDeviceFeedback(FeedbackName.SubwooferAdjustLevel, 38.5, 62, 1));
             AddFeedback(new DeviceFeedback(FeedbackName.Audyssey, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.DynamicVolume, TypeCode.String));
+            AddFeedback(new DeviceFeedback(FeedbackName.Zone1Status, TypeCode.Boolean));
+            AddFeedback(new DeviceFeedback(FeedbackName.Zone2Status, TypeCode.Boolean));
         }
 
         public override bool InvalidState
@@ -324,6 +333,8 @@ namespace Hspi.Devices
                                                CommandName.PowerQuery,
                                                CommandName.MuteQuery,
                                                CommandName.VolumeQuery,
+                                               CommandName.Zone1PowerStatusQuery,
+                                               CommandName.Zone2PowerStatusQuery,
                     };
 
                     foreach (string macroCommand in commandsQuery)
@@ -412,6 +423,22 @@ namespace Hspi.Devices
 
                 case "MUOFF":
                     UpdateFeedback(FeedbackName.Mute, false);
+                    break;
+
+                case "ZMON":
+                    UpdateFeedback(FeedbackName.Zone1Status, true);
+                    break;
+
+                case "ZMOFF":
+                    UpdateFeedback(FeedbackName.Zone1Status, false);
+                    break;
+
+                case "Z2ON":
+                    UpdateFeedback(FeedbackName.Zone2Status, true);
+                    break;
+
+                case "Z2OFF":
+                    UpdateFeedback(FeedbackName.Zone2Status, false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("MVMAX", StringComparison.Ordinal):

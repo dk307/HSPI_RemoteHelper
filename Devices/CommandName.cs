@@ -106,5 +106,11 @@
         public const string BackspaceEventUp = "Backspace - Event Up";
         public const string BackspaceEventDown = "Backspace - Event Down";
         public const string PopupMenu = "Pop up Menu";
+        public const string Zone1On = "Zone 1 On";
+        public const string Zone1Off = "Zone 1 Off";
+        public const string Zone2On = "Zone 2 On";
+        public const string Zone2Off = "Zone 2 Off";
+        public const string Zone1PowerStatusQuery = "Zone 1 Power Status Query";
+        public const string Zone2PowerStatusQuery = "Zone 2 Power Status Query";
     }
 }
