@@ -42,6 +42,10 @@ namespace Hspi.Utils
             {
                 await task.ConfigureAwait(false);
             }
+            catch (TaskCanceledException)
+            {
+                throw;
+            }
             catch { }
         }
     }

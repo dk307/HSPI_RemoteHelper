@@ -395,6 +395,7 @@ namespace Hspi.Devices
             return await NetworkHelper.PingHost(DeviceIP, 80, networkPingTimeout, token).ConfigureAwait(false);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void ProcessFeedback(string feedback)
         {
             if (string.IsNullOrWhiteSpace(feedback))

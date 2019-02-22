@@ -495,7 +495,7 @@ namespace Hspi.Devices
 
             UpdateStatus($"Turning On Devices");
 
-            var turnTVOnTask = TurnDeviceOn(tv, timeoutToken); // tv power query is not reliable
+            var turnTVOnTask = TurnDeviceOn(tv, timeoutToken).IgnoreException(); // tv power query is not reliable
             var turnedOnAVRTask = TurnDeviceOnIfOff(avr, true, timeoutToken,  // turn on zone 1
                                                     CommandName.Zone1On,
                                                     CommandName.Zone1PowerStatusQuery,

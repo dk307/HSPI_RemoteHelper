@@ -146,7 +146,7 @@ namespace Hspi
                         if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connector))
                         {
                             CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
-                            combinedCancel.CancelAfter(TimeSpan.FromMinutes(1));
+                            combinedCancel.CancelAfter(TimeSpan.FromSeconds(30));
                             connector.HandleCommand(deviceIdentifier, control.ControlValue, combinedCancel.Token).ResultForSync();
                         }
                         else
