@@ -151,7 +151,6 @@ namespace Hspi.Connector
                 connector.CommandChanged -= Connector_CommandChanged;
                 connector.FeedbackChanged -= Connector_FeedbackChanged;
                 connector.Dispose();
-                connector = null;
 
                 changedCommands.Enqueue(DeviceControl.NotConnectedCommand);
             }
@@ -210,7 +209,10 @@ namespace Hspi.Connector
             }
             catch (Exception ex)
             {
-                Trace.TraceError(Invariant($"Error occured for {DeviceType} UpdateDevices : {ex.GetFullMessage()}"));
+                if (!ex.IsCancelException())
+                {
+                    Trace.TraceError(Invariant($"Error occured for {DeviceType} UpdateDevices : {ex.GetFullMessage()}"));
+                }
             }
         }
 

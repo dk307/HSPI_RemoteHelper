@@ -288,6 +288,7 @@ namespace Hspi.Devices
             client = new TcpClient()
             {
                 NoDelay = true,
+                LingerState = new LingerOption(false, 0),
             };
 
             stopTokenSource = new CancellationTokenSource();

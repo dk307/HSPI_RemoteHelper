@@ -14,7 +14,7 @@ namespace Hspi.Devices
     internal static class NetworkHelper
     {
         /// <summary>
-        /// Using IOControl code to configue socket KeepAliveValues for line disconnection detection(because default is toooo slow)
+        /// Using IOControl code to configue socket KeepAliveValues for line disconnection detection(because default is too slow)
         /// </summary>
         /// <param name="tcpc">TcpClient</param>
         /// <param name="KeepAliveTime">The keep alive time. (ms)</param>

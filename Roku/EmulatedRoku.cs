@@ -2,6 +2,7 @@
 using Rssdp;
 using Rssdp.Infrastructure;
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -56,6 +57,7 @@ namespace Hspi.Roku
         private void Start(CancellationToken cancellationToken)
         {
             var serverUrl = new Uri(Invariant($"http://{Settings.RokuAddress.Address}:{Settings.RokuAddress.Port}/"));
+            Trace.TraceInformation(Invariant($"Starting Emulated Roku at {serverUrl}"));
             server = new WebServer(new string[] { serverUrl.ToString() }, RoutingStrategy.Regex);
             var webAPIModule = new WebApiModule();
             webAPIModule.RegisterController<CommandsAPIController>();
@@ -63,6 +65,7 @@ namespace Hspi.Roku
             server.Module<WebApiModule>().RegisterController(CreateWebApiModule);
             server.RunAsync(cancellationToken);
             publisher.AddDevice(deviceDefinition);
+            Trace.TraceInformation(Invariant($"Started Emulated Roku at {serverUrl}"));
         }
 
         public readonly EmulatedRokuSettings Settings;

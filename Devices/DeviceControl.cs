@@ -30,7 +30,7 @@ namespace Hspi.Devices
         public event EventHandler<FeedbackValue> FeedbackChanged;
 
         public IEnumerable<DeviceCommand> Commands => commands;
-        public bool Connected => connected;
+        public bool Connected { get; private set; } = false;
         public IEnumerable<DeviceFeedback> Feedbacks => feedbacks;
         public abstract bool InvalidState { get; }
         public string Name { get; }
@@ -82,10 +82,6 @@ namespace Hspi.Devices
         {
             if (!disposedValue)
             {
-                if (disposing)
-                {
-                }
-
                 disposedValue = true;
             }
         }
@@ -119,7 +115,7 @@ namespace Hspi.Devices
         protected void UpdateConnectedState(bool value)
         {
             Trace.WriteLine(Invariant($"Updating Connected State for {Name} to {value}"));
-            connected = value;
+            Connected = value;
 
             CommandChanged?.Invoke(this, value ? ConnectCommand : NotConnectedCommand);
         }
@@ -149,7 +145,6 @@ namespace Hspi.Devices
 
         private readonly DeviceCommandCollection commands = new DeviceCommandCollection();
         private readonly DeviceFeedbackCollection feedbacks = new DeviceFeedbackCollection();
-        private bool connected = false;
         private bool disposedValue = false;
 
         [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
