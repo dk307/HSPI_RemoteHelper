@@ -1,5 +1,6 @@
 ﻿using HomeSeerAPI;
 using Hspi.Roku;
+using Hspi.Utils;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;

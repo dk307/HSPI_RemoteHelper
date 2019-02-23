@@ -6,6 +6,7 @@ using System.Globalization;
 
 namespace Hspi.DeviceData
 {
+    using Hspi.Utils;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]

@@ -1,5 +1,6 @@
 ﻿using HomeSeerAPI;
 using Hspi.Connector;
+using Hspi.Utils;
 using NullGuard;
 using Scheduler;
 using System;

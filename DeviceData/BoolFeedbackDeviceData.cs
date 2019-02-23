@@ -8,6 +8,7 @@ using System.IO;
 
 namespace Hspi.DeviceData
 {
+    using Hspi.Utils;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -43,20 +44,22 @@ namespace Hspi.DeviceData
         {
             get
             {
-                var pairs = new List<VSVGPairs.VSPair>();
-                pairs.Add(new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Status)
+                var pairs = new List<VSVGPairs.VSPair>
                 {
-                    PairType = VSVGPairs.VSVGPairType.SingleValue,
-                    Value = OffValue,
-                    Status = "Off",
-                });
+                    new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Status)
+                    {
+                        PairType = VSVGPairs.VSVGPairType.SingleValue,
+                        Value = OffValue,
+                        Status = "Off",
+                    },
 
-                pairs.Add(new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Status)
-                {
-                    PairType = VSVGPairs.VSVGPairType.SingleValue,
-                    Value = OnValue,
-                    Status = "On",
-                });
+                    new VSVGPairs.VSPair(HomeSeerAPI.ePairStatusControl.Status)
+                    {
+                        PairType = VSVGPairs.VSVGPairType.SingleValue,
+                        Value = OnValue,
+                        Status = "On",
+                    }
+                };
                 return pairs;
             }
         }
@@ -65,20 +68,22 @@ namespace Hspi.DeviceData
         {
             get
             {
-                var pairs = new List<VSVGPairs.VGPair>();
-                pairs.Add(new VSVGPairs.VGPair()
+                var pairs = new List<VSVGPairs.VGPair>
                 {
-                    PairType = VSVGPairs.VSVGPairType.SingleValue,
-                    Graphic = Path.Combine(PluginData.HSImagesPathRoot, "on.gif"),
-                    Set_Value = OnValue
-                });
+                    new VSVGPairs.VGPair()
+                    {
+                        PairType = VSVGPairs.VSVGPairType.SingleValue,
+                        Graphic = Path.Combine(PluginData.HSImagesPathRoot, "on.gif"),
+                        Set_Value = OnValue
+                    },
 
-                pairs.Add(new VSVGPairs.VGPair()
-                {
-                    PairType = VSVGPairs.VSVGPairType.SingleValue,
-                    Graphic = Path.Combine(PluginData.HSImagesPathRoot, "off.gif"),
-                    Set_Value = OffValue
-                });
+                    new VSVGPairs.VGPair()
+                    {
+                        PairType = VSVGPairs.VSVGPairType.SingleValue,
+                        Graphic = Path.Combine(PluginData.HSImagesPathRoot, "off.gif"),
+                        Set_Value = OffValue
+                    }
+                };
 
                 return pairs;
             }

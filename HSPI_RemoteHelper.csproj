@@ -161,7 +161,7 @@
     <Compile Include="Roku\ssdp\UdpEndPoint.cs" />
     <Compile Include="Roku\ssdp\UdpSocket.cs" />
     <Compile Include="Utils\EnumHelper.cs" />
-    <Compile Include="ExceptionHelper.cs" />
+    <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="GlobalMacrosDeviceControlManager.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />

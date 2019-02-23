@@ -3,7 +3,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Hspi
+namespace Hspi.Utils
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal static class ExceptionHelper

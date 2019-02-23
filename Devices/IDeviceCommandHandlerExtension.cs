@@ -1,4 +1,5 @@
 ﻿using Hspi.Connector;
+using Hspi.Utils;
 using System;
 using System.Diagnostics;
 using System.Threading;

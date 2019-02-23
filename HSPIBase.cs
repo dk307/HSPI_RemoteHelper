@@ -3,6 +3,7 @@ using HSCF.Communication.Scs.Communication;
 using HSCF.Communication.Scs.Communication.EndPoints.Tcp;
 using HSCF.Communication.ScsServices.Client;
 using Hspi.Exceptions;
+using Hspi.Utils;
 using NullGuard;
 using System;
 using System.Collections.Generic;
@@ -124,7 +125,7 @@ namespace Hspi
 
         public void WaitforShutDownOrDisconnect()
         {
-            this.shutdownWaitEvent.WaitOne();
+            shutdownWaitEvent.WaitOne();
         }
 
         public void Dispose()
@@ -301,21 +302,21 @@ namespace Hspi
                 Debug.Listeners.Remove(hsTraceListener);
             }
 
-            if ((this.CallbackClient != null) &&
-                (this.CallbackClient.CommunicationState == CommunicationStates.Connected))
+            if ((CallbackClient != null) &&
+                (CallbackClient.CommunicationState == CommunicationStates.Connected))
             {
-                this.CallbackClient.Disconnect();
-                this.CallbackClient = null;
+                CallbackClient.Disconnect();
+                CallbackClient = null;
             }
 
-            if ((this.HsClient != null) &&
-                (this.HsClient.CommunicationState == CommunicationStates.Connected))
+            if ((HsClient != null) &&
+                (HsClient.CommunicationState == CommunicationStates.Connected))
             {
-                this.HsClient.Disconnect();
-                this.HsClient = null;
+                HsClient.Disconnect();
+                HsClient = null;
             }
 
-            this.shutdownWaitEvent.Set();
+            shutdownWaitEvent.Set();
             Trace.WriteLine("Disconnected Hspi Connection");
         }
 
