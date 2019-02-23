@@ -65,7 +65,7 @@ namespace Hspi.Roku
             server.Module<WebApiModule>().RegisterController(CreateWebApiModule);
             server.RunAsync(cancellationToken);
             publisher.AddDevice(deviceDefinition);
-            Trace.TraceInformation(Invariant($"Started Emulated Roku at {serverUrl}"));
+            Trace.TraceInformation(Invariant($"Started Emulated Roku at {serverUrl} with {server.Listener.IsListening}"));
         }
 
         public readonly EmulatedRokuSettings Settings;

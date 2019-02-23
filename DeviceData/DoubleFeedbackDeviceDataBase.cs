@@ -1,14 +1,13 @@
 ﻿using HomeSeerAPI;
+using Hspi.Utils;
 using NullGuard;
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using static System.FormattableString;
 
 namespace Hspi.DeviceData
 {
-    using Hspi.Utils;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DoubleFeedbackDeviceDataBase : FeedbackDeviceData
     {

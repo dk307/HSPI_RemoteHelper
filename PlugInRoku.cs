@@ -79,6 +79,17 @@ namespace Hspi
             }
         }
 
+        private void DisposeRokuServers()
+        {
+            using (var sync = rokuConnectorManagerLock.Lock())
+            {
+                foreach (var pair in rokuConnectorManager)
+                {
+                    pair.Value.Dispose();
+                }
+            }
+        }
+
         private async Task RestartRokuOperations()
         {
             try

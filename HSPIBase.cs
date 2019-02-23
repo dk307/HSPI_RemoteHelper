@@ -289,7 +289,7 @@ namespace Hspi
 
         private void DisconnectHspiConnection()
         {
-            Trace.WriteLine("Disconnecting Hspi Connection");
+            Trace.TraceInformation("Disconnecting Hspi Connection");
             cancellationTokenSource.Cancel();
 
             if (HsClient != null)

@@ -172,10 +172,15 @@ namespace Hspi
         {
             if (!disposedValue)
             {
-                foreach (KeyValuePair<DeviceType, DeviceControlManagerCore> connection in connectorManagers)
+                using (connectorManagerLock.Lock())
                 {
-                    connection.Value.Dispose();
+                    foreach (var connection in connectorManagers)
+                    {
+                        connection.Value.Dispose();
+                    }
                 }
+
+                DisposeRokuServers();
 
                 if (pluginConfig != null)
                 {
