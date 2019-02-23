@@ -367,33 +367,38 @@ namespace Hspi.Devices
 
             object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
 
-            if ((currentValue == null) || string.IsNullOrEmpty(currentValue as string))
-            {
-                await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
-                await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
-            }
-
-            currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
-
             DeviceType? deviceType = null;
-            switch (currentValue)
+            int retry = 3;
+            do
             {
-                case DenonAVRControl.NvidiaShieldInput:
-                    deviceType = DeviceType.ADBRemoteControl; break;
-                case DenonAVRControl.XBoxOneInput:
-                    deviceType = DeviceType.XboxOne; break;
-                case DenonAVRControl.BlueRayPlayerInput:
-                    deviceType = DeviceType.SonyBluRay; break;
-            }
+                switch (currentValue)
+                {
+                    case DenonAVRControl.NvidiaShieldInput:
+                        deviceType = DeviceType.ADBRemoteControl; retry = 0; break;
+                    case DenonAVRControl.XBoxOneInput:
+                        deviceType = DeviceType.XboxOne; retry = 0; break;
+                    case DenonAVRControl.BlueRayPlayerInput:
+                        deviceType = DeviceType.SonyBluRay; retry = 0; break;
+                    default:
+                        if (retry > 0)
+                        {
+                            await avr.HandleCommandIgnoreException(CommandName.InputStatusQuery, token).ConfigureAwait(false);
+                            await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+                        }
+                        currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+                        retry--;
+                        break;
+                }
+            } while (retry > 0);
 
             if (deviceType.HasValue)
             {
-                IDeviceCommandHandler device = GetConnection(deviceType.Value);
+                var device = GetConnection(deviceType.Value);
                 await device.HandleCommand(deviceCommand, token).ConfigureAwait(false);
             }
             else
             {
-                Trace.TraceWarning(Invariant($"There is no device for Input:{currentValue}"));
+                Trace.TraceWarning(Invariant($"There is no device for Input:[{currentValue}]"));
             }
         }
 

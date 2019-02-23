@@ -13,6 +13,12 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal static class NetworkHelper
     {
+        public static void CloseConnection(this TcpClient tcpClient)
+        {
+            tcpClient.GetStream().Close();
+            tcpClient.Close();
+        }
+
         /// <summary>
         /// Using IOControl code to configue socket KeepAliveValues for line disconnection detection(because default is too slow)
         /// </summary>

@@ -306,6 +306,7 @@ namespace Hspi.Devices
         {
             if (client != null)
             {
+                client.CloseConnection();
                 client.Dispose();
             }
         }
