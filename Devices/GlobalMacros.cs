@@ -367,7 +367,7 @@ namespace Hspi.Devices
 
             object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
 
-            if (currentValue == null)
+            if ((currentValue == null) || string.IsNullOrEmpty(currentValue as string))
             {
                 await avr.HandleCommand(CommandName.InputStatusQuery, token).ConfigureAwait(false);
                 await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
@@ -393,7 +393,7 @@ namespace Hspi.Devices
             }
             else
             {
-                Trace.TraceInformation(Invariant($"There is no device for Input:{currentValue}"));
+                Trace.TraceWarning(Invariant($"There is no device for Input:{currentValue}"));
             }
         }
 
