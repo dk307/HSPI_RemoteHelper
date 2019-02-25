@@ -107,7 +107,7 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.Exit:
-                    await SendIRCommandCore("Samsung TV - CURSOR EXIT", token).ConfigureAwait(false);
+                    await SendIRCommandCore("Samsung TV - EXIT", token).ConfigureAwait(false);
                     break;
 
                 case CommandName.Menu:
