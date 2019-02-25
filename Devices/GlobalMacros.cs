@@ -104,29 +104,21 @@ namespace Hspi.Devices
             return null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
-        private static bool UpdateStates(DeviceCommand command)
+        private static bool ShouldUpdateStates(DeviceCommand command)
         {
             switch (command.Id)
             {
                 case CommandName.MacroTurnOnNvidiaShield:
                 case CommandName.MacroTurnOnXBoxOne:
-
                 case CommandName.MacroTurnOnPS3:
-
                 case CommandName.MacroTurnOffEverything:
-
                 case CommandName.MacroTurnOnSonyBluRay:
-
                 case CommandName.MacroGameModeOn:
-
                 case CommandName.MacroGameModeOff:
-
                 case CommandName.MacroToggleMute:
                     return true;
 
                 default:
-
                     return false;
             }
         }
@@ -173,7 +165,7 @@ namespace Hspi.Devices
 
             Trace.WriteLine(Invariant($"Executing {command.Id} "));
 
-            bool updateStatus = UpdateStates(command);
+            bool updateStatus = ShouldUpdateStates(command);
 
             if (updateStatus)
             {
