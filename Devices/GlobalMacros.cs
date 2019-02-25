@@ -434,7 +434,7 @@ namespace Hspi.Devices
             await shutdownTasks.WhenAll().ConfigureAwait(false);
         }
 
-        private async Task TurnDeviceOn(IDeviceCommandHandler connection, CancellationToken token)
+        private static async Task TurnDeviceOn(IDeviceCommandHandler connection, CancellationToken token)
         {
             await connection.HandleCommandIgnoreException(CommandName.PowerOn, token).ConfigureAwait(false);
             await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
