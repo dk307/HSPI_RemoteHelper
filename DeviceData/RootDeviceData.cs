@@ -1,15 +1,14 @@
 ﻿using HomeSeerAPI;
 using Hspi.Devices;
 using NullGuard;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.DeviceData
 {
-    using System;
-    using static System.FormattableString;
-
     /// <summary>
     ///  Base class for Root Devices
     /// </summary>

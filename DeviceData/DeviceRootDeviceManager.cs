@@ -80,6 +80,10 @@ namespace Hspi.DeviceData
             {
                 feedbackDevice.UpdateValue(HS, feedbackData.Value);
             }
+            else
+            {
+                Trace.TraceWarning($"Device for Feedback {feedbackData.Feedback.Id} Not found.");
+            }
         }
 
         private static FeedbackDeviceData GetDevice(DeviceFeedback feedback, int? refId)
