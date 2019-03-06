@@ -85,9 +85,9 @@ namespace Hspi
                 emulatorRokuPluginConfig.ConfigChanged += EmulatorRokuPluginConfig_ConfigChanged;
                 RegisterConfigPage();
 
-                TaskHelper.StartAsync(RestartConnections, ShutdownCancellationToken);
-                TaskHelper.StartAsync(RestartRokuOperations, ShutdownCancellationToken);
-                TaskHelper.StartAsync(LoadRokuToDeviceMapping, ShutdownCancellationToken);
+                TaskHelper.StartAsyncWithErrorChecking("RestartConnections", RestartConnections, ShutdownCancellationToken);
+                TaskHelper.StartAsyncWithErrorChecking("RestartRokuOperations", RestartRokuOperations, ShutdownCancellationToken);
+                TaskHelper.StartAsyncWithErrorChecking("LoadRokuToDeviceMapping", LoadRokuToDeviceMapping, ShutdownCancellationToken);
 
                 Trace.TraceInformation(Invariant($"Finished InitIO on Port {port}"));
             }
@@ -146,7 +146,7 @@ namespace Hspi
                         if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connector))
                         {
                             CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
-                            combinedCancel.CancelAfter(TimeSpan.FromSeconds(30));
+                            combinedCancel.CancelAfter(commandMaxTime);
                             connector.HandleCommand(deviceIdentifier, control.ControlValue, combinedCancel.Token).ResultForSync();
                         }
                         else
@@ -205,8 +205,8 @@ namespace Hspi
 
         private void EmulatorRokuPluginConfig_ConfigChanged(object sender, EventArgs e)
         {
-            TaskHelper.StartAsync(RestartRokuOperations, ShutdownCancellationToken);
-            TaskHelper.StartAsync(LoadRokuToDeviceMapping, ShutdownCancellationToken);
+            TaskHelper.StartAsyncWithErrorChecking("RestartRokuOperations", RestartRokuOperations, ShutdownCancellationToken);
+            TaskHelper.StartAsyncWithErrorChecking("LoadRokuToDeviceMapping", LoadRokuToDeviceMapping, ShutdownCancellationToken);
         }
 
         private async Task HandleCommand(DeviceType deviceType, string commandId)
@@ -218,7 +218,7 @@ namespace Hspi
                     if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connector))
                     {
                         CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
-                        combinedCancel.CancelAfter(TimeSpan.FromMinutes(1));
+                        combinedCancel.CancelAfter(commandMaxTime);
                         await connector.HandleCommand(commandId, combinedCancel.Token).ConfigureAwait(false);
                     }
                     else
@@ -235,7 +235,7 @@ namespace Hspi
 
         private void PluginConfig_RemoteHelperConfigChanged(object sender, EventArgs e)
         {
-            TaskHelper.StartAsync(RestartConnections, ShutdownCancellationToken);
+            TaskHelper.StartAsyncWithErrorChecking("RestartConnections", RestartConnections, ShutdownCancellationToken);
         }
 
         private void RegisterConfigPage()
@@ -267,9 +267,9 @@ namespace Hspi
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
-        private void RestartConnections()
+        private async Task RestartConnections()
         {
-            using (connectorManagerLock.Lock())
+            using (var sync = await connectorManagerLock.LockAsync().ConfigureAwait(false))
             {
                 bool changed = false;
                 // Update changed or new
@@ -325,6 +325,7 @@ namespace Hspi
             }
         }
 
+        private static readonly TimeSpan commandMaxTime = TimeSpan.FromSeconds(30);
         private readonly AsyncLock connectorManagerLock = new AsyncLock();
 
         private readonly ConcurrentDictionary<DeviceType, DeviceControlManagerCore> connectorManagers

@@ -19,7 +19,7 @@ namespace Hspi
     internal partial class Plugin : HspiBase, IConnectionProvider
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
-        public void LoadRokuToDeviceMapping()
+        public async Task LoadRokuToDeviceMapping()
         {
             try
             {
@@ -72,6 +72,7 @@ namespace Hspi
                                              .ToImmutableDictionary(keyPressedTriggersTemp.Comparer);
 
                 Trace.TraceInformation(Invariant($"Loaded file {fileName}"));
+                await Task.Delay(0);
             }
             catch (Exception ex)
             {

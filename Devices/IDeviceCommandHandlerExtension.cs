@@ -16,12 +16,12 @@ namespace Hspi.Devices
             {
                 await handler.HandleCommand(commandId, token).ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
+                if (ex.IsCancelException())
+                {
+                    throw;
+                }
                 Trace.TraceWarning(Invariant($"Command for {handler.DeviceType} to {commandId} failed with {ex.GetFullMessage()}"));
             }
         }

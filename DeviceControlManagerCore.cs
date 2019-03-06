@@ -88,7 +88,9 @@ namespace Hspi.Connector
 
         public void Start()
         {
-            TaskHelper.StartAsync(UpdateDevices, ShutdownToken);
+            TaskHelper.StartAsyncWithErrorChecking(Invariant($"{Name} UpdateDevices"),
+                                                  UpdateDevices,
+                                                  ShutdownToken);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "instanceCancellationSource")]

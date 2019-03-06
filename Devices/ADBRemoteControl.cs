@@ -410,12 +410,6 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.PowerOff:
-                    // some apps keep streaming when sleep, so try back and home screen
-                    await SendCommandCore(GetCommand(CommandName.Return).Data, token).ConfigureAwait(false);
-                    await Task.Delay(DefaultCommandDelay).ConfigureAwait(false);
-                    await SendCommandCore(GetCommand(CommandName.Home).Data, token).ConfigureAwait(false);
-                    await Task.Delay(DefaultCommandDelay).ConfigureAwait(false);
-
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
 
@@ -482,7 +476,7 @@ namespace Hspi.Devices
 
                 using (CancellationTokenSource timedCancel = new CancellationTokenSource())
                 {
-                    timedCancel.CancelAfter(TimeSpan.FromSeconds(30));
+                    timedCancel.CancelAfter(TimeSpan.FromSeconds(10));
                     await adbClient.ExecuteRemoteCommandAsync(commandData, device, receiver, timedCancel.Token, 1000).ConfigureAwait(false);
                 }
                 token.ThrowIfCancellationRequested();

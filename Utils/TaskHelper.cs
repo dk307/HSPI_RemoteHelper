@@ -1,11 +1,26 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Utils
 {
     internal static class TaskHelper
     {
+        public static async Task IgnoreException(this Task task)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                throw;
+            }
+            catch { }
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public static T ResultForSync<T>(this Task<T> @this)
         {
@@ -28,25 +43,37 @@ namespace Hspi.Utils
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "task")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public static void StartAsync(Action action, CancellationToken token)
+        public static void StartAsyncWithErrorChecking(string taskName,
+                                                              Func<Task> taskAction,
+                                                              CancellationToken token)
         {
-            Task task = Task.Factory.StartNew(action, token,
-                                          TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
-                                          TaskScheduler.Current);
+            var task = Task.Factory.StartNew(() => RunInLoop(taskName, taskAction, token), token,
+                                         TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                                         TaskScheduler.Current);
         }
 
-        public static async Task IgnoreException(this Task task)
+        private static async Task RunInLoop(string taskName, Func<Task> taskAction, CancellationToken token)
         {
-            try
+            bool loop = true;
+            while (loop && !token.IsCancellationRequested)
             {
-                await task.ConfigureAwait(false);
+                try
+                {
+                    Trace.WriteLine(Invariant($"{taskName} Starting"));
+                    await taskAction().ConfigureAwait(false);
+                    Trace.WriteLine(Invariant($"{taskName} Finished"));
+                    loop = false;  //finished sucessfully
+                }
+                catch (Exception ex)
+                {
+                    if (ex.IsCancelException())
+                    {
+                        throw;
+                    }
+
+                    Trace.TraceError(Invariant($"{taskName} failed with {ex.GetFullMessage()}. Restarting ..."));
+                }
             }
-            catch (TaskCanceledException)
-            {
-                throw;
-            }
-            catch { }
         }
     }
 }
