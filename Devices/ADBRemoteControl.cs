@@ -24,8 +24,10 @@ namespace Hspi.Devices
         public ADBRemoteControl(string name, IPAddress deviceIP,
                                 string adbPath, TimeSpan defaultCommandDelay,
                                 int defaultKeyboardDevice, int mediaKeyboardDevice,
-                                IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider, adbOutofCommandDetectors)
+                                IConnectionProvider connectionProvider,
+                                AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, commandQueue, feedbackQueue, adbOutofCommandDetectors)
         {
             if (!File.Exists(adbPath))
             {
@@ -285,7 +287,7 @@ namespace Hspi.Devices
 
             SharpAdbClient.DeviceData device = GetOnlineDevice();
 
-            int retries = 10;
+            int retries = 20;
             while ((device == null) && (retries > 0))
             {
                 await Task.Delay(50).ConfigureAwait(false);
@@ -293,7 +295,7 @@ namespace Hspi.Devices
                 retries--;
             }
 
-            UpdateConnectedState(true);
+            await UpdateConnectedState(device != null, token).ConfigureAwait(false);
             return device;
         }
 
@@ -334,12 +336,12 @@ namespace Hspi.Devices
             MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
         }
 
-        private void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
+        private async void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
             if (e.Device.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal))
             {
                 Trace.WriteLine(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
-                UpdateConnectedState(false);
+                await UpdateConnectedState(false, CancellationToken.None).ConfigureAwait(false);
             }
         }
 
@@ -355,12 +357,12 @@ namespace Hspi.Devices
                 if (packageGroup.Success)
                 {
                     found = true;
-                    UpdateFeedback(FeedbackName.CurrentApplication, packageGroup.Value);
+                    await UpdateFeedback(FeedbackName.CurrentApplication, packageGroup.Value, token).ConfigureAwait(false);
                 }
             }
             if (!found)
             {
-                UpdateFeedback(FeedbackName.CurrentApplication, string.Empty);
+                await UpdateFeedback(FeedbackName.CurrentApplication, string.Empty, token).ConfigureAwait(false);
             }
         }
 
@@ -403,10 +405,10 @@ namespace Hspi.Devices
                 case CommandName.PowerQuery:
                     if (!await IsPoweredOn(token).ConfigureAwait(false))
                     {
-                        UpdateFeedback(FeedbackName.Power, false);
+                        await UpdateFeedback(FeedbackName.Power, false, token).ConfigureAwait(false);
                         break;
                     }
-                    UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token).ConfigureAwait(false));
+                    await UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token).ConfigureAwait(false), token).ConfigureAwait(false);
                     break;
 
                 case CommandName.PowerOff:
@@ -414,12 +416,14 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.ScreenQuery:
-                    UpdateFeedback(FeedbackName.Screen, await CheckScreenOn(token).ConfigureAwait(false));
+                    await UpdateFeedback(FeedbackName.Screen,
+                                         await CheckScreenOn(token).ConfigureAwait(false),
+                                         token).ConfigureAwait(false);
                     break;
 
                 case CommandName.ScreenSaveRunningQuery:
                     output = await SendCommandCore("dumpsys power | grep \"mWakefulness\"", token).ConfigureAwait(false);
-                    UpdateFeedback(FeedbackName.ScreenSaverRunning, !output.Contains("Awake"));
+                    await UpdateFeedback(FeedbackName.ScreenSaverRunning, !output.Contains("Awake"), token).ConfigureAwait(false);
                     break;
 
                 case CommandName.CurrentApplicationQuery:
@@ -470,7 +474,7 @@ namespace Hspi.Devices
 
                 if (device == null)
                 {
-                    UpdateConnectedState(false);
+                    await UpdateConnectedState(false, token).ConfigureAwait(false);
                     throw new DeviceException(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
                 }
 

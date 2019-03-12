@@ -43,6 +43,8 @@ namespace Hspi.DeviceData
 
         public IList<VSVGPairs.VSPair> GetStatusPairs(IEnumerable<DeviceCommand> commands)
         {
+            commandValuesReverse.Clear();
+            commandValues.Clear();
             var pairs = new List<VSVGPairs.VSPair>();
             int value = -100;
             int row = 1;

@@ -16,8 +16,11 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class GlobalMacros : DeviceControl
     {
-        public GlobalMacros(string name, IConnectionProvider connectionProvider) :
-            base(name, connectionProvider)
+        public GlobalMacros(string name,
+                            IConnectionProvider connectionProvider,
+                            AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                            AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, connectionProvider, commandQueue, feedbackQueue)
         {
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnNvidiaShield, type: DeviceCommandType.Both, fixedValue: -100));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOffEverything, type: DeviceCommandType.Both, fixedValue: -99));
@@ -62,10 +65,14 @@ namespace Hspi.Devices
 
         public override Task Refresh(CancellationToken token)
         {
-            UpdateConnectedState(true);
-            ClearStatus();
-            UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
-            return Task.CompletedTask;
+            return RefreshImpl(token);
+        }
+
+        private async Task RefreshImpl(CancellationToken token)
+        {
+            await UpdateConnectedState(true, token).ConfigureAwait(false);
+            await ClearStatus(token).ConfigureAwait(false);
+            await UpdateFeedback(FeedbackName.RunningMacro, string.Empty, token).ConfigureAwait(false);
         }
 
         private static async Task DelayDefaultCommandTime(CancellationToken timeoutToken, params IDeviceCommandHandler[] devices)
@@ -145,9 +152,9 @@ namespace Hspi.Devices
             await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
         }
 
-        private void ClearStatus()
+        private async Task ClearStatus(CancellationToken token)
         {
-            UpdateFeedback(FeedbackName.MacroStatus, string.Empty);
+            await UpdateFeedback(FeedbackName.MacroStatus, string.Empty, token).ConfigureAwait(false);
         }
 
         private async Task<bool> EnsureAVRState(IDeviceCommandHandler avr, object expectedValue,
@@ -191,8 +198,8 @@ namespace Hspi.Devices
 
             if (updateStatus)
             {
-                UpdateFeedback(FeedbackName.RunningMacro, command.Id);
-                UpdateStatus(command.Id);
+                await UpdateFeedback(FeedbackName.RunningMacro, command.Id, token).ConfigureAwait(false);
+                await UpdateStatus(command.Id, token).ConfigureAwait(false);
             }
 
             try
@@ -241,8 +248,8 @@ namespace Hspi.Devices
             {
                 if (updateStatus)
                 {
-                    ClearStatus();
-                    UpdateFeedback(FeedbackName.RunningMacro, string.Empty);
+                    await ClearStatus(token).ConfigureAwait(false);
+                    await UpdateFeedback(FeedbackName.RunningMacro, string.Empty, token).ConfigureAwait(false);
                 }
             }
         }
@@ -282,7 +289,7 @@ namespace Hspi.Devices
 
         private async Task MacroTurnGameMode(bool on, CancellationToken timeoutToken)
         {
-            UpdateStatus($"Setting TV Game Mode to {(on ? "ON" : "OFF")}");
+            await UpdateStatus($"Setting TV Game Mode to {(on ? "ON" : "OFF")}", timeoutToken).ConfigureAwait(false);
             await MacroTurnGameModeCore(TimeSpan.Zero, on, timeoutToken).ConfigureAwait(false);
         }
 
@@ -292,7 +299,7 @@ namespace Hspi.Devices
 
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
 
-            UpdateFeedback(FeedbackName.TVGameMode, on);
+            await UpdateFeedback(FeedbackName.TVGameMode, on, timeoutToken).ConfigureAwait(false);
 
             await tv.HandleCommand(CommandName.Exit, timeoutToken).ConfigureAwait(false);
             await Task.Delay(tv.DefaultCommandDelay, timeoutToken).ConfigureAwait(false);
@@ -329,7 +336,7 @@ namespace Hspi.Devices
 
         private async Task MacroTurnoffEverything(CancellationToken timeoutToken)
         {
-            UpdateStatus($"Turning Off Devices");
+            await UpdateStatus($"Turning Off Devices", timeoutToken).ConfigureAwait(false);
 
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
@@ -471,7 +478,7 @@ namespace Hspi.Devices
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
 
-            UpdateStatus($"Detecting Device Power State");
+            await UpdateStatus($"Detecting Device Power State", timeoutToken).ConfigureAwait(false);
 
             List<Task> tasks = new List<Task>
             {
@@ -483,7 +490,7 @@ namespace Hspi.Devices
 
             await DelayDefaultCommandTime(timeoutToken, device, avr).ConfigureAwait(false);
 
-            UpdateStatus($"Turning On AVR");
+            await UpdateStatus($"Turning On AVR", timeoutToken).ConfigureAwait(false);
 
             // https://denon.custhelp.com/app/answers/detail/a_id/9/~/power-on-order-for-hdmi-connected-products
 
@@ -492,23 +499,23 @@ namespace Hspi.Devices
                                                     CommandName.Zone1PowerStatusQuery,
                                                     FeedbackName.Zone1Status).ConfigureAwait(false);
 
-            UpdateStatus($"Switching {avr.Name} to {input}");
+            await UpdateStatus($"Switching {avr.Name} to {input}", timeoutToken).ConfigureAwait(false);
             bool inputChanged = await EnsureAVRState(avr, input, CommandName.InputStatusQuery,
                                  inputSwitchCommand, FeedbackName.Input, int.MaxValue, timeoutToken).ConfigureAwait(false);
 
-            UpdateStatus($"Turning On TV");
+            await UpdateStatus($"Turning On TV", timeoutToken).ConfigureAwait(false);
 
             await TurnDeviceOn(tv, timeoutToken).IgnoreException().ConfigureAwait(false); // tv power query is not reliable
 
-            UpdateStatus($"Switching {tv.Name} Input");
+            await UpdateStatus($"Switching {tv.Name} Input", timeoutToken).ConfigureAwait(false);
             await tv.HandleCommandIgnoreException(CommandName.TVAVRInput, timeoutToken).ConfigureAwait(false);
             await DelayDefaultCommandTime(timeoutToken, tv).ConfigureAwait(false);
 
-            UpdateStatus($"Turning on {device.Name}");
+            await UpdateStatus($"Turning on {device.Name}", timeoutToken).ConfigureAwait(false);
 
             bool deviceOn = await TurnDeviceOnIfOff(device, false, timeoutToken).ConfigureAwait(false);
 
-            UpdateStatus($"Setting up rest...");
+            await UpdateStatus($"Setting up rest...", timeoutToken).ConfigureAwait(false);
 
             // Turn on/off Game Mode
             bool? currentGameMode = GetFeedbackAsBoolean(ConnectionProvider.GetFeedbackProvider(DeviceType.GlobalMacros),
@@ -516,7 +523,7 @@ namespace Hspi.Devices
 
             if (!currentGameMode.HasValue || (currentGameMode.Value != gameMode))
             {
-                tasks.Add(MacroTurnGameModeCore(deviceOn ? tv.PowerOnDelay : TimeSpan.Zero,
+                tasks.Add(MacroTurnGameModeCore(deviceOn ? tv.PowerOnDelay + tv.PowerOnDelay : TimeSpan.Zero,
                                                 gameMode,
                                                 timeoutToken).IgnoreException());
             }
@@ -533,9 +540,9 @@ namespace Hspi.Devices
             tasks.Clear();
         }
 
-        private void UpdateStatus(string value)
+        private async Task UpdateStatus(string value, CancellationToken token)
         {
-            UpdateFeedback(FeedbackName.MacroStatus, value);
+            await UpdateFeedback(FeedbackName.MacroStatus, value, token).ConfigureAwait(false);
         }
     }
 }

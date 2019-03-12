@@ -1,5 +1,6 @@
 ﻿using HomeSeerAPI;
 using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
 using System.Threading;
 
@@ -15,9 +16,10 @@ namespace Hspi.Connector
             this.connectionProvider = connectionProvider;
         }
 
-        public override DeviceControl Create()
+        public override DeviceControl Create(AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                             AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue)
         {
-            return new GlobalMacros(Name, connectionProvider);
+            return new GlobalMacros(Name, connectionProvider, commandQueue, feedbackQueue);
         }
 
         private readonly IConnectionProvider connectionProvider;

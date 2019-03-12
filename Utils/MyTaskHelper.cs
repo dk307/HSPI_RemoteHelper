@@ -6,7 +6,7 @@ using static System.FormattableString;
 
 namespace Hspi.Utils
 {
-    internal static class TaskHelper
+    internal static class MyTaskHelper
     {
         public static async Task IgnoreException(this Task task)
         {
@@ -14,11 +14,13 @@ namespace Hspi.Utils
             {
                 await task.ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
+            catch (Exception ex)
             {
-                throw;
+                if (ex.IsCancelException())
+                {
+                    throw;
+                }
             }
-            catch { }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]

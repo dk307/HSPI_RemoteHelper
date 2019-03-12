@@ -1,5 +1,6 @@
 ﻿using HomeSeerAPI;
 using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Threading;
@@ -23,9 +24,10 @@ namespace Hspi.Connector
         public TimeSpan DefaultCommandDelay => DeviceConfig.DefaultCommandDelay;
         public TimeSpan PowerOnDelay => DeviceConfig.PowerOnDelay;
 
-        public override DeviceControl Create()
+        public override DeviceControl Create(AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                             AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue)
         {
-            return DeviceConfig.Create(connectionProvider);
+            return DeviceConfig.Create(connectionProvider, commandQueue, feedbackQueue);
         }
 
         private readonly IConnectionProvider connectionProvider;

@@ -15,7 +15,6 @@ namespace Hspi.Devices
     {
         public static void CloseConnection(this TcpClient tcpClient)
         {
-            tcpClient.GetStream().Close();
             tcpClient.Close();
         }
 

@@ -18,8 +18,10 @@ namespace Hspi.Devices
     {
         public DenonAVRControl(string name, IPAddress deviceIP,
                                 TimeSpan defaultCommandDelay,
-                                IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider, avrOutofCommandDetectors)
+                                IConnectionProvider connectionProvider,
+                                AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, commandQueue, feedbackQueue, avrOutofCommandDetectors)
         {
             AddDynamicVolumeCommands(-500);
             AddDialogEnhancerCommands(-400);
@@ -294,12 +296,12 @@ namespace Hspi.Devices
             stopTokenSource = new CancellationTokenSource();
 
             await client.ConnectAsync(DeviceIP.ToString(), AVRPort).ConfigureAwait(false);
-            UpdateConnectedState(true);
+            await UpdateConnectedState(true, token).ConfigureAwait(false);
 
-            client.SetSocketKeepAliveValues(10 * 1000, 1000);
+            client.SetSocketKeepAliveValues(60 * 1000, 1000);
 
             stream = client.GetStream();
-            TaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
+            MyTaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
         }
 
         private void DisposeConnection()
@@ -319,7 +321,7 @@ namespace Hspi.Devices
                 case CommandName.PowerQuery:
                     if (!await IsNetworkOn(token).ConfigureAwait(false))
                     {
-                        UpdateFeedback(FeedbackName.Power, false);
+                        await UpdateFeedback(FeedbackName.Power, false, token).ConfigureAwait(false);
                         return;
                     }
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
@@ -398,7 +400,7 @@ namespace Hspi.Devices
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        private void ProcessFeedback(string feedback)
+        private async Task ProcessFeedback(string feedback, CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(feedback))
             {
@@ -412,36 +414,36 @@ namespace Hspi.Devices
             switch (feedbackU)
             {
                 case "PWON":
-                    UpdateFeedback(FeedbackName.Power, true);
+                    await UpdateFeedback(FeedbackName.Power, true, token).ConfigureAwait(false);
                     break;
 
                 case "PWOFF":
                 case "PWSTANDBY":
-                    UpdateFeedback(FeedbackName.Power, false);
+                    await UpdateFeedback(FeedbackName.Power, false, token).ConfigureAwait(false);
                     break;
 
                 case "MUON":
-                    UpdateFeedback(FeedbackName.Mute, true);
+                    await UpdateFeedback(FeedbackName.Mute, true, token).ConfigureAwait(false);
                     break;
 
                 case "MUOFF":
-                    UpdateFeedback(FeedbackName.Mute, false);
+                    await UpdateFeedback(FeedbackName.Mute, false, token).ConfigureAwait(false);
                     break;
 
                 case "ZMON":
-                    UpdateFeedback(FeedbackName.Zone1Status, true);
+                    await UpdateFeedback(FeedbackName.Zone1Status, true, token).ConfigureAwait(false);
                     break;
 
                 case "ZMOFF":
-                    UpdateFeedback(FeedbackName.Zone1Status, false);
+                    await UpdateFeedback(FeedbackName.Zone1Status, false, token).ConfigureAwait(false);
                     break;
 
                 case "Z2ON":
-                    UpdateFeedback(FeedbackName.Zone2Status, true);
+                    await UpdateFeedback(FeedbackName.Zone2Status, true, token).ConfigureAwait(false);
                     break;
 
                 case "Z2OFF":
-                    UpdateFeedback(FeedbackName.Zone2Status, false);
+                    await UpdateFeedback(FeedbackName.Zone2Status, false, token).ConfigureAwait(false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("MVMAX", StringComparison.Ordinal):
@@ -449,23 +451,23 @@ namespace Hspi.Devices
 
                 case var feedbackU2 when feedbackU2.StartsWith("MV", StringComparison.Ordinal):
                     string volString = feedbackU.Substring(2);
-                    UpdateFeedbackForVolumeString(FeedbackName.Volume, volString);
+                    await UpdateFeedbackForVolumeString(FeedbackName.Volume, volString, token).ConfigureAwait(false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("SI", StringComparison.Ordinal):
-                    UpdateFeedback(FeedbackName.Input, feedback.Substring(2));
+                    await UpdateFeedback(FeedbackName.Input, feedback.Substring(2), token).ConfigureAwait(false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("MS", StringComparison.Ordinal):
-                    UpdateFeedback(FeedbackName.SoundMode, feedback.Substring(2));
+                    await UpdateFeedback(FeedbackName.SoundMode, feedback.Substring(2), token).ConfigureAwait(false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("PSMULTEQ:", StringComparison.Ordinal):
-                    UpdateFeedback(FeedbackName.Audyssey, feedback.Substring(9));
+                    await UpdateFeedback(FeedbackName.Audyssey, feedback.Substring(9), token).ConfigureAwait(false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("PSDYNVOL ", StringComparison.Ordinal):
-                    UpdateFeedback(FeedbackName.DynamicVolume, feedback.Substring(9));
+                    await UpdateFeedback(FeedbackName.DynamicVolume, feedback.Substring(9), token).ConfigureAwait(false);
                     break;
 
                 case var feedbackU2 when feedbackU2.StartsWith("PSDIL", StringComparison.Ordinal):
@@ -473,15 +475,15 @@ namespace Hspi.Devices
                     switch (dialogEnhancementStatus)
                     {
                         case "ON":
-                            UpdateFeedback(FeedbackName.DialogEnhancementMode, true);
+                            await UpdateFeedback(FeedbackName.DialogEnhancementMode, true, token).ConfigureAwait(false);
                             break;
 
                         case "OFF":
-                            UpdateFeedback(FeedbackName.DialogEnhancementMode, false);
+                            await UpdateFeedback(FeedbackName.DialogEnhancementMode, false, token).ConfigureAwait(false);
                             break;
 
                         default:
-                            UpdateFeedbackForVolumeString(FeedbackName.DialogEnhancementLevel, dialogEnhancementStatus);
+                            await UpdateFeedbackForVolumeString(FeedbackName.DialogEnhancementLevel, dialogEnhancementStatus, token).ConfigureAwait(false);
                             break;
                     }
 
@@ -492,15 +494,15 @@ namespace Hspi.Devices
                     switch (subwooferAdjustStatus)
                     {
                         case "ON":
-                            UpdateFeedback(FeedbackName.SubwooferAdjustMode, true);
+                            await UpdateFeedback(FeedbackName.SubwooferAdjustMode, true, token).ConfigureAwait(false);
                             break;
 
                         case "OFF":
-                            UpdateFeedback(FeedbackName.SubwooferAdjustMode, false);
+                            await UpdateFeedback(FeedbackName.SubwooferAdjustMode, false, token).ConfigureAwait(false);
                             break;
 
                         default:
-                            UpdateFeedbackForVolumeString(FeedbackName.SubwooferAdjustLevel, subwooferAdjustStatus);
+                            await UpdateFeedbackForVolumeString(FeedbackName.SubwooferAdjustLevel, subwooferAdjustStatus, token).ConfigureAwait(false);
                             break;
                     }
                     break;
@@ -516,16 +518,18 @@ namespace Hspi.Devices
                     while (!token.IsCancellationRequested)
                     {
                         string feedback = await ReadLineAsync(reader).ConfigureAwait(false);
-                        ProcessFeedback(feedback);
+                        await ProcessFeedback(feedback, token).ConfigureAwait(false);
                     }
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                Trace.WriteLine(Invariant($"Connection to Denon AVR {Name} on {DeviceIP} dropped with {ExceptionHelper.GetFullMessage(ex)}"));
-                UpdateConnectedState(false);
+                if (!ex.IsCancelException())
+                {
+                    Trace.WriteLine(Invariant($"Connection to Denon AVR {Name} on {DeviceIP} dropped with {ExceptionHelper.GetFullMessage(ex)}"));
+                }
+                await UpdateConnectedState(false, token).ConfigureAwait(false);
             }
-            catch (ObjectDisposedException) { }
         }
 
         private async Task SendCommandCore(string commandData, CancellationToken token)
@@ -551,7 +555,7 @@ namespace Hspi.Devices
             await SendCommandCore(command.Data, token).ConfigureAwait(false);
         }
 
-        private void UpdateFeedbackForVolumeString(string feedbackName, string volString)
+        private async Task UpdateFeedbackForVolumeString(string feedbackName, string volString, CancellationToken token)
         {
             while (volString.Length < 3)
             {
@@ -560,7 +564,7 @@ namespace Hspi.Devices
             if (double.TryParse(volString, NumberStyles.Any, CultureInfo.InvariantCulture, out double volume))
             {
                 volume = volume / 10;
-                UpdateFeedback(feedbackName, volume);
+                await UpdateFeedback(feedbackName, volume, token).ConfigureAwait(false);
             }
         }
 

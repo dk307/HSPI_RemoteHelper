@@ -15,8 +15,10 @@ namespace Hspi.Devices
     {
         public XBoxIRControl(string name, IPAddress deviceIP,
                              TimeSpan defaultCommandDelay,
-                             IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider, xboxOneOutofCommandDetectors)
+                             IConnectionProvider connectionProvider,
+                             AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                             AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, commandQueue, feedbackQueue, xboxOneOutofCommandDetectors)
         {
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));
             AddCommand(new DeviceCommand(CommandName.PowerOff, fixedValue: -199));
@@ -156,7 +158,9 @@ namespace Hspi.Devices
                     break;
 
                 case CommandName.PowerQuery:
-                    UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
+                    await UpdateFeedback(FeedbackName.Power,
+                                         await IsPoweredOn(token).ConfigureAwait(false),
+                                         token).ConfigureAwait(false);
                     break;
 
                 case CommandName.MediaPlayPause:

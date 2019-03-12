@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 
 namespace Hspi.Devices
 {
+    using Nito.AsyncEx;
     using static System.FormattableString;
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class PS3FakeControlDevice : DeviceControl
     {
         public PS3FakeControlDevice(string name,
-                                IConnectionProvider connectionProvider) :
-            base(name, connectionProvider)
+                                IConnectionProvider connectionProvider,
+                                AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, connectionProvider, commandQueue, feedbackQueue)
         {
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -200));
             AddCommand(new DeviceCommand(CommandName.PowerOff, fixedValue: -199));
@@ -26,16 +29,19 @@ namespace Hspi.Devices
 
         public override Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
+            return ExecuteCommandCore(command, token);
+        }
+
+        public async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        {
             Trace.WriteLine(Invariant($"Sending {command.Id} to PS3 {Name}"));
 
             switch (command.Id)
             {
                 case CommandName.PowerQuery:
-                    UpdateFeedback(FeedbackName.Power, true);
+                    await UpdateFeedback(FeedbackName.Power, true, token).ConfigureAwait(false);
                     break;
             }
-
-            return Task.CompletedTask;
         }
     }
 }

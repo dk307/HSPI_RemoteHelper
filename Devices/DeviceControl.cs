@@ -1,4 +1,5 @@
-﻿using NullGuard;
+﻿using Nito.AsyncEx;
+using NullGuard;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,9 +13,14 @@ namespace Hspi.Devices
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControl : IDisposable
     {
-        protected DeviceControl(string name, IConnectionProvider connectionProvider)
+        protected DeviceControl(string name,
+                                IConnectionProvider connectionProvider,
+                                AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue)
         {
             ConnectionProvider = connectionProvider;
+            this.commandQueue = commandQueue;
+            this.feedbackQueue = feedbackQueue;
             Name = name;
             AddCommand(ConnectCommand);
             AddCommand(NotConnectedCommand);
@@ -24,10 +30,6 @@ namespace Hspi.Devices
         {
             Dispose(false);
         }
-
-        public event EventHandler<DeviceCommand> CommandChanged;
-
-        public event EventHandler<FeedbackValue> FeedbackChanged;
 
         public IEnumerable<DeviceCommand> Commands => commands;
         public bool Connected { get; private set; } = false;
@@ -112,15 +114,15 @@ namespace Hspi.Devices
             return string.Join(" ", newWords);
         }
 
-        protected void UpdateConnectedState(bool value)
+        protected async Task UpdateConnectedState(bool value, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Updating Connected State for {Name} to {value}"));
             Connected = value;
 
-            CommandChanged?.Invoke(this, value ? ConnectCommand : NotConnectedCommand);
+            await commandQueue.EnqueueAsync(value ? ConnectCommand : NotConnectedCommand, token).ConfigureAwait(false);
         }
 
-        protected void UpdateFeedback(string feedbackName, object value)
+        protected async Task UpdateFeedback(string feedbackName, object value, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to [{value}]"));
             if (feedbacks.TryGetValue(feedbackName, out DeviceFeedback feedback))
@@ -129,7 +131,8 @@ namespace Hspi.Devices
                 {
                     value = TranslateStringFeedback((string)value);
                 }
-                FeedbackChanged?.Invoke(this, new FeedbackValue(feedback, value));
+
+                await feedbackQueue.EnqueueAsync(new FeedbackValue(feedback, value), token).ConfigureAwait(false);
             }
             else
             {
@@ -145,6 +148,8 @@ namespace Hspi.Devices
 
         private readonly DeviceCommandCollection commands = new DeviceCommandCollection();
         private readonly DeviceFeedbackCollection feedbacks = new DeviceFeedbackCollection();
+        private readonly AsyncProducerConsumerQueue<DeviceCommand> commandQueue;
+        private readonly AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue;
         private bool disposedValue = false;
 
         [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]

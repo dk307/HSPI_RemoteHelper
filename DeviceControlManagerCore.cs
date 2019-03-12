@@ -35,7 +35,8 @@ namespace Hspi.Connector
             instanceCancellationSource.Cancel();
         }
 
-        public abstract DeviceControl Create();
+        public abstract DeviceControl Create(AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                             AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue);
 
         public void Dispose()
         {
@@ -88,8 +89,8 @@ namespace Hspi.Connector
 
         public void Start()
         {
-            TaskHelper.StartAsyncWithErrorChecking(Invariant($"{Name} UpdateDevices"),
-                                                  UpdateDevices,
+            MyTaskHelper.StartAsyncWithErrorChecking(Invariant($"{Name} StartAsync"),
+                                                  StartAsync,
                                                   ShutdownToken);
         }
 
@@ -120,21 +121,8 @@ namespace Hspi.Connector
 
             if (connector == null)
             {
-                connector = Create();
-                connector.FeedbackChanged += Connector_FeedbackChanged;
-                connector.CommandChanged += Connector_CommandChanged;
+                connector = Create(changedCommands, changedFeedbacks);
             }
-        }
-
-        private void Connector_CommandChanged(object sender, DeviceCommand command)
-        {
-            changedCommands.Enqueue(command);
-        }
-
-        private void Connector_FeedbackChanged(object sender, FeedbackValue changedFeedback)
-        {
-            changedFeedbacks.Enqueue(changedFeedback);
-            feedbackValues[changedFeedback.Feedback.Id] = changedFeedback.Value;
         }
 
         private void DestroyConnection()
@@ -150,10 +138,7 @@ namespace Hspi.Connector
         {
             if (connector != null)
             {
-                connector.CommandChanged -= Connector_CommandChanged;
-                connector.FeedbackChanged -= Connector_FeedbackChanged;
                 connector.Dispose();
-
                 changedCommands.Enqueue(DeviceControl.NotConnectedCommand);
             }
         }
@@ -169,7 +154,7 @@ namespace Hspi.Connector
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceWarning(Invariant($"Failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                    Trace.TraceWarning(Invariant($"{Name} failed to update Command {command.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
                 }
             }
         }
@@ -178,20 +163,22 @@ namespace Hspi.Connector
         {
             while (!ShutdownToken.IsCancellationRequested)
             {
-                FeedbackValue feedbackData = await changedFeedbacks.DequeueAsync(ShutdownToken).ConfigureAwait(false);
+                var feedbackData = await changedFeedbacks.DequeueAsync(ShutdownToken).ConfigureAwait(false);
 
                 try
                 {
+                    Trace.WriteLine(Invariant($"{Name} processing feedback {feedbackData.Feedback.Id} on {DeviceType}"));
+                    feedbackValues[feedbackData.Feedback.Id] = feedbackData.Value;
                     rootDeviceData.ProcessFeedback(feedbackData);
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceWarning(Invariant($"Failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
+                    Trace.TraceWarning(Invariant($"{Name} failed to update Feedback {feedbackData.Feedback.Id} on {DeviceType} with {ExceptionHelper.GetFullMessage(ex)}"));
                 }
             }
         }
 
-        private async Task UpdateDevices()
+        private async Task StartAsync()
         {
             try
             {
@@ -201,7 +188,10 @@ namespace Hspi.Connector
                     CheckConnection();
 
                     rootDeviceData.CreateOrUpdateDevices(connector.Commands, connector.Feedbacks);
-                    await connector.Refresh(ShutdownToken).ConfigureAwait(false);
+                    if (connector != null)
+                    {
+                        await connector.Refresh(ShutdownToken).IgnoreException().ConfigureAwait(false);
+                    }
                 }
 
                 var taskProcessCommands = ProcessCommands();
@@ -213,8 +203,9 @@ namespace Hspi.Connector
             {
                 if (!ex.IsCancelException())
                 {
-                    Trace.TraceError(Invariant($"Error occured for {DeviceType} UpdateDevices : {ex.GetFullMessage()}"));
+                    Trace.TraceError(Invariant($"{Name} error occured for {DeviceType} StartAsync : {ex.GetFullMessage()}"));
                 }
+                throw;
             }
         }
 

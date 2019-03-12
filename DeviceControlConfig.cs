@@ -1,4 +1,5 @@
 ﻿using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Generic;
@@ -96,7 +97,9 @@ namespace Hspi
             throw new KeyNotFoundException();
         }
 
-        public DeviceControl Create(IConnectionProvider connectionProvider)
+        public DeviceControl Create(IConnectionProvider connectionProvider,
+                                    AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                    AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue)
         {
             switch (DeviceType)
             {
@@ -105,7 +108,9 @@ namespace Hspi
                                                 PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
                                                 IPAddress.Parse(AdditionalValues[WolBroadCastAddressId]),
                                                 DefaultCommandDelay,
-                                                connectionProvider);
+                                                connectionProvider,
+                                                commandQueue,
+                                                feedbackQueue);
 
                 case DeviceType.ADBRemoteControl:
                     return new ADBRemoteControl(Name, DeviceIP,
@@ -113,31 +118,45 @@ namespace Hspi
                                                 DefaultCommandDelay,
                                                 Convert.ToInt32(AdditionalValues[ADBMediaKeyboardDeviceDeviceId], CultureInfo.InvariantCulture),
                                                 Convert.ToInt32(AdditionalValues[ADBDefaultKeyboardDeviceId], CultureInfo.InvariantCulture),
-                                                connectionProvider);
+                                                connectionProvider,
+                                                commandQueue,
+                                                feedbackQueue);
 
                 case DeviceType.DenonAVR:
-                    return new DenonAVRControl(Name, DeviceIP, DefaultCommandDelay, connectionProvider);
+                    return new DenonAVRControl(Name, DeviceIP, DefaultCommandDelay,
+                                               connectionProvider,
+                                               commandQueue,
+                                               feedbackQueue);
 
                 case DeviceType.IP2IR:
                     return new IP2IRDeviceControl(Name, DeviceIP,
                                                   DefaultCommandDelay,
                                                   AdditionalValues[IP2IRFileNameId],
-                                                  connectionProvider);
+                                                  connectionProvider,
+                                                  commandQueue,
+                                                  feedbackQueue);
 
                 case DeviceType.XboxOne:
                     return new XBoxIRControl(Name, DeviceIP,
                                                    DefaultCommandDelay,
-                                                   connectionProvider);
+                                                   connectionProvider,
+                                                   commandQueue,
+                                                   feedbackQueue);
 
                 case DeviceType.SonyBluRay:
                     return new SonyBluRayControl(Name, DeviceIP,
                                                 PhysicalAddress.Parse(AdditionalValues[PhysicalAddressId]),
                                                 IPAddress.Parse(AdditionalValues[WolBroadCastAddressId]),
                                                 DefaultCommandDelay,
-                                                connectionProvider);
+                                                connectionProvider,
+                                                commandQueue,
+                                                feedbackQueue);
 
                 case DeviceType.PS3:
-                    return new PS3FakeControlDevice(Name, connectionProvider);
+                    return new PS3FakeControlDevice(Name,
+                                                    connectionProvider,
+                                                    commandQueue,
+                                                    feedbackQueue);
             }
 
             throw new KeyNotFoundException();

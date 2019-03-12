@@ -17,8 +17,10 @@ namespace Hspi.Devices
                                 PhysicalAddress macAddress,
                                 IPAddress wolBroadCastAddress,
                                 TimeSpan defaultCommandDelay,
-                                IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider)
+                                IConnectionProvider connectionProvider,
+                                AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, commandQueue, feedbackQueue)
         {
             this.wolBroadCastAddress = wolBroadCastAddress;
             MacAddress = macAddress;
@@ -149,9 +151,9 @@ namespace Hspi.Devices
             await connector.HandleCommand(commandId, token).ConfigureAwait(false);
         }
 
-        private async Task UpdatePowerFeedbackState(CancellationToken token = default(CancellationToken))
+        private async Task UpdatePowerFeedbackState(CancellationToken token)
         {
-            UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
+            await UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false), token).ConfigureAwait(false);
         }
 
         private readonly IPAddress wolBroadCastAddress;

@@ -85,9 +85,9 @@ namespace Hspi
                 emulatorRokuPluginConfig.ConfigChanged += EmulatorRokuPluginConfig_ConfigChanged;
                 RegisterConfigPage();
 
-                TaskHelper.StartAsyncWithErrorChecking("RestartConnections", RestartConnections, ShutdownCancellationToken);
-                TaskHelper.StartAsyncWithErrorChecking("RestartRokuOperations", RestartRokuOperations, ShutdownCancellationToken);
-                TaskHelper.StartAsyncWithErrorChecking("LoadRokuToDeviceMapping", LoadRokuToDeviceMapping, ShutdownCancellationToken);
+                MyTaskHelper.StartAsyncWithErrorChecking("RestartConnections", RestartConnections, ShutdownCancellationToken);
+                MyTaskHelper.StartAsyncWithErrorChecking("RestartRokuOperations", RestartRokuOperations, ShutdownCancellationToken);
+                MyTaskHelper.StartAsyncWithErrorChecking("LoadRokuToDeviceMapping", LoadRokuToDeviceMapping, ShutdownCancellationToken);
 
                 Trace.TraceInformation(Invariant($"Finished InitIO on Port {port}"));
             }
@@ -157,7 +157,7 @@ namespace Hspi
                 }
                 catch (Exception ex)
                 {
-                    LogError(Invariant($"Failed With {ExceptionHelper.GetFullMessage(ex)}"));
+                    Trace.TraceError(Invariant($"Command Failed With {ExceptionHelper.GetFullMessage(ex)}"));
                 }
             }
         }
@@ -205,8 +205,8 @@ namespace Hspi
 
         private void EmulatorRokuPluginConfig_ConfigChanged(object sender, EventArgs e)
         {
-            TaskHelper.StartAsyncWithErrorChecking("RestartRokuOperations", RestartRokuOperations, ShutdownCancellationToken);
-            TaskHelper.StartAsyncWithErrorChecking("LoadRokuToDeviceMapping", LoadRokuToDeviceMapping, ShutdownCancellationToken);
+            MyTaskHelper.StartAsyncWithErrorChecking("RestartRokuOperations", RestartRokuOperations, ShutdownCancellationToken);
+            MyTaskHelper.StartAsyncWithErrorChecking("LoadRokuToDeviceMapping", LoadRokuToDeviceMapping, ShutdownCancellationToken);
         }
 
         private async Task HandleCommand(DeviceType deviceType, string commandId)
@@ -229,13 +229,13 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                LogError(Invariant($"Failed With {ExceptionHelper.GetFullMessage(ex)}"));
+                Trace.TraceError(Invariant($"{deviceType.ToString("g")} command {commandId} failed With {ExceptionHelper.GetFullMessage(ex)}"));
             }
         }
 
         private void PluginConfig_RemoteHelperConfigChanged(object sender, EventArgs e)
         {
-            TaskHelper.StartAsyncWithErrorChecking("RestartConnections", RestartConnections, ShutdownCancellationToken);
+            MyTaskHelper.StartAsyncWithErrorChecking("RestartConnections", RestartConnections, ShutdownCancellationToken);
         }
 
         private void RegisterConfigPage()

@@ -20,9 +20,11 @@ namespace Hspi.Devices
         public SonyBluRayControl(string name, IPAddress deviceIP,
                                 PhysicalAddress macAddress,
                                 IPAddress wolBroadCastAddress,
-                                 TimeSpan defaultCommandDelay,
-                                IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider, outofCommandDetectors)
+                                TimeSpan defaultCommandDelay,
+                                IConnectionProvider connectionProvider,
+                                AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, commandQueue, feedbackQueue, outofCommandDetectors)
         {
             this.wolBroadCastAddress = wolBroadCastAddress;
             MacAddress = macAddress;
@@ -130,9 +132,9 @@ namespace Hspi.Devices
                 throw new DevicePoweredOffException($"Sony Blu Ray {Name} on {DeviceIP} not powered On");
             }
 
-            UpdateFeedback(FeedbackName.Power, true);
+            await UpdateFeedback(FeedbackName.Power, true, token).ConfigureAwait(false);
             Trace.WriteLine(Invariant($"Connected to Sony Blu Ray {Name} on {DeviceIP}"));
-            UpdateConnectedState(true);
+            await UpdateConnectedState(true, token).ConfigureAwait(false);
         }
 
         private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
@@ -220,7 +222,9 @@ namespace Hspi.Devices
 
         private async Task UpdatePowerFeedbackState(CancellationToken token)
         {
-            UpdateFeedback(FeedbackName.Power, await IsPoweredOn(token).ConfigureAwait(false));
+            await UpdateFeedback(FeedbackName.Power,
+                           await IsPoweredOn(token).ConfigureAwait(false),
+                           token).ConfigureAwait(false);
         }
 
         private const int Port = 50001;

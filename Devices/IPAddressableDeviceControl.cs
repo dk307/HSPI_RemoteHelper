@@ -1,4 +1,5 @@
-﻿using NullGuard;
+﻿using Nito.AsyncEx;
+using NullGuard;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,8 +16,10 @@ namespace Hspi.Devices
         protected IPAddressableDeviceControl(string name, IPAddress deviceIP,
                                              TimeSpan defaultCommandDelay,
                                              IConnectionProvider connectionProvider,
+                                             AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                             AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue,
                                              IList<OutofOrderCommandDetector> outofCommandDetectors = null) :
-            base(name, connectionProvider)
+            base(name, connectionProvider, commandQueue, feedbackQueue)
         {
             DefaultCommandDelay = defaultCommandDelay;
             DeviceIP = deviceIP;

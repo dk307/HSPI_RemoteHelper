@@ -24,8 +24,10 @@ namespace Hspi.Devices
         public IP2IRDeviceControl(string name, IPAddress deviceIP,
                                   TimeSpan defaultCommandDelay,
                                   string fileName,
-                                  IConnectionProvider connectionProvider) :
-            base(name, deviceIP, defaultCommandDelay, connectionProvider)
+                                  IConnectionProvider connectionProvider,
+                                  AsyncProducerConsumerQueue<DeviceCommand> commandQueue,
+                                  AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue) :
+            base(name, deviceIP, defaultCommandDelay, connectionProvider, commandQueue, feedbackQueue)
         {
             // <commands>
             // <ir name="Samsung TV HDMI4",\  id="-100", port="1:2", pronto="0000 33 44 "/>
@@ -119,10 +121,10 @@ namespace Hspi.Devices
             stopTokenSource = new CancellationTokenSource();
 
             await client.ConnectAsync(DeviceIP.ToString(), Port).ConfigureAwait(false);
-            UpdateConnectedState(true);
+            await UpdateConnectedState(true, token).ConfigureAwait(false);
 
             stream = client.GetStream();
-            TaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
+            MyTaskHelper.StartAsync(() => ProcessRead(stopTokenSource.Token), stopTokenSource.Token);
         }
 
         private void DisposeConnection()
@@ -243,19 +245,21 @@ namespace Hspi.Devices
                     }
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                Trace.WriteLine(Invariant($"Connection to IP2IR {Name} on {DeviceIP} dropped with {ExceptionHelper.GetFullMessage(ex)}"));
-                UpdateConnectedState(false);
+                if (!ex.IsCancelException())
+                {
+                    Trace.WriteLine(Invariant($"Connection to Denon AVR {Name} on {DeviceIP} dropped with {ExceptionHelper.GetFullMessage(ex)}"));
+                }
+                await UpdateConnectedState(false, combinedToken).ConfigureAwait(false);
             }
-            catch (ObjectDisposedException) { }
         }
 
         private void SetError(string error)
         {
             Trace.WriteLine(Invariant($"Command to {Name} on {DeviceIP} failed with {error}"));
 
-            System.Collections.Generic.ICollection<int> keys = commandResponseWaitQueue.Keys;
+            var keys = commandResponseWaitQueue.Keys;
 
             foreach (int key in keys)
             {

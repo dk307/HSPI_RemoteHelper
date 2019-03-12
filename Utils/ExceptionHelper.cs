@@ -24,7 +24,7 @@ namespace Hspi.Utils
                     return stb.ToString();
 
                 default:
-                    return ex.Message;
+                    return ex.ToString();
             }
         }
 
