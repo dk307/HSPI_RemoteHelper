@@ -61,9 +61,9 @@ namespace Hspi.Devices
             throw new CommandNotFoundException(Invariant($"{id} command Not found in {Name}"));
         }
 
-        public virtual Task Refresh(CancellationToken token)
+        public virtual async Task Refresh(CancellationToken token)
         {
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
 
         internal DeviceFeedback GetFeedback(string feedbackName)

@@ -80,9 +80,30 @@ namespace Hspi.Devices
             base.Dispose(disposing);
         }
 
-        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
-            return ExecuteCommandCore2(command, token);
+            using (await connectionLock.LockAsync().ConfigureAwait(false))
+            {
+                Trace.WriteLine(Invariant($"Sending {command.Id} to IP2IR {Name} on {DeviceIP}"));
+
+                if (!Connected)
+                {
+                    await Connect(token).ConfigureAwait(false);
+                }
+
+                int irCounter = Interlocked.Increment(ref counter);
+                string data = string.Format(CultureInfo.InvariantCulture, command.Data, irCounter) + Seperator;
+
+                byte[] bytes = encoding.GetBytes(data);
+                TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
+                commandResponseWaitQueue[irCounter] = taskCompletionSource;
+                await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+
+                CancellationTokenSource delay = new CancellationTokenSource(DefaultCommandDelay + DefaultCommandDelay);
+                await taskCompletionSource.Task
+                                          .WaitAsync(CancellationTokenSource.CreateLinkedTokenSource(token, delay.Token).Token)
+                                          .ConfigureAwait(false);
+            }
         }
 
         private static async Task<string> ReadLineAsync(StreamReader reader)
@@ -133,32 +154,6 @@ namespace Hspi.Devices
             {
                 client.CloseConnection();
                 client.Dispose();
-            }
-        }
-
-        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
-        {
-            using (await connectionLock.LockAsync().ConfigureAwait(false))
-            {
-                Trace.WriteLine(Invariant($"Sending {command.Id} to IP2IR {Name} on {DeviceIP}"));
-
-                if (!Connected)
-                {
-                    await Connect(token).ConfigureAwait(false);
-                }
-
-                int irCounter = Interlocked.Increment(ref counter);
-                string data = string.Format(CultureInfo.InvariantCulture, command.Data, irCounter) + Seperator;
-
-                byte[] bytes = encoding.GetBytes(data);
-                TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-                commandResponseWaitQueue[irCounter] = taskCompletionSource;
-                await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
-
-                CancellationTokenSource delay = new CancellationTokenSource(DefaultCommandDelay + DefaultCommandDelay);
-                await taskCompletionSource.Task
-                                          .WaitAsync(CancellationTokenSource.CreateLinkedTokenSource(token, delay.Token).Token)
-                                          .ConfigureAwait(false);
             }
         }
 

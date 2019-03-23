@@ -52,12 +52,7 @@ namespace Hspi.Devices
 
         public override bool InvalidState => false;
 
-        public override Task Refresh(CancellationToken token)
-        {
-            return RefreshImpl(token);
-        }
-
-        public async Task RefreshImpl(CancellationToken token)
+        public override async Task Refresh(CancellationToken token)
         {
             await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
         }
@@ -71,12 +66,7 @@ namespace Hspi.Devices
             base.Dispose(disposing);
         }
 
-        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
-        {
-            return ExecuteCommandCore2(command, token);
-        }
-
-        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Sending {command.Id} to  XBox {Name} on {DeviceIP}"));
 

@@ -30,20 +30,20 @@ namespace Hspi.Devices
 
         public IPAddress DeviceIP { get; }
 
-        public override Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
-            return ExecuteCommandCore(command, true, token);
+            await ExecuteCommandCore(command, true, token).ConfigureAwait(false);
         }
 
-        public Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
+        public async Task ExecuteCommandCore(DeviceCommand command, bool canIgnore, CancellationToken token)
         {
             if (canIgnore && ShouldIgnoreCommand(command.Id))
             {
                 Trace.WriteLine(Invariant($"Ignoring Command for IP2IR {Name} {command.Id} as it is out of order"));
-                return Task.CompletedTask;
+                return;
             }
 
-            return ExecuteCommandCore(command, token);
+            await ExecuteCommandCore(command, token).ConfigureAwait(false);
         }
 
         protected static void MacroStopCommandLoop([AllowNull]ref CancellationTokenSource cancelSource)

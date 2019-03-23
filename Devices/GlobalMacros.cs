@@ -58,17 +58,74 @@ namespace Hspi.Devices
 
         public override bool InvalidState => false;
 
-        public override Task ExecuteCommand(DeviceCommand command, CancellationToken token)
+        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
-            return ExecuteCommand2(command, token);
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            Trace.WriteLine(Invariant($"Executing {command.Id} "));
+
+            bool updateStatus = ShouldUpdateStates(command);
+
+            if (updateStatus)
+            {
+                await UpdateFeedback(FeedbackName.RunningMacro, command.Id, token).ConfigureAwait(false);
+                await UpdateStatus(command.Id, token).ConfigureAwait(false);
+            }
+
+            try
+            {
+                switch (command.Id)
+                {
+                    case CommandName.MacroTurnOnNvidiaShield:
+                        await MacroTurnOnNvidiaShield(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroTurnOnXBoxOne:
+                        await MacroTurnOnXboxOne(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroTurnOnPS3:
+                        await MacroTurnOnPS3(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroTurnOffEverything:
+                        await MacroTurnoffEverything(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroTurnOnSonyBluRay:
+                        await MacroTurnOnSonyBluRay(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroGameModeOn:
+                        await MacroTurnGameMode(true, token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroGameModeOff:
+                        await MacroTurnGameMode(false, token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.MacroToggleMute:
+                        await MacroToggleMute(token).ConfigureAwait(false);
+                        break;
+
+                    default:
+                        await SendCommandToAVRInputDevice(command.Id, token).ConfigureAwait(false);
+                        break;
+                }
+                Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
+            }
+            finally
+            {
+                if (updateStatus)
+                {
+                    await ClearStatus(token).ConfigureAwait(false);
+                    await UpdateFeedback(FeedbackName.RunningMacro, string.Empty, token).ConfigureAwait(false);
+                }
+            }
         }
 
-        public override Task Refresh(CancellationToken token)
-        {
-            return RefreshImpl(token);
-        }
-
-        private async Task RefreshImpl(CancellationToken token)
+        public override async Task Refresh(CancellationToken token)
         {
             await UpdateConnectedState(true, token).ConfigureAwait(false);
             await ClearStatus(token).ConfigureAwait(false);
@@ -185,73 +242,6 @@ namespace Hspi.Devices
             } while (!token.IsCancellationRequested && (maxRetries > 0));
 
             return changed;
-        }
-
-        private async Task ExecuteCommand2(DeviceCommand command, CancellationToken token)
-        {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            Trace.WriteLine(Invariant($"Executing {command.Id} "));
-
-            bool updateStatus = ShouldUpdateStates(command);
-
-            if (updateStatus)
-            {
-                await UpdateFeedback(FeedbackName.RunningMacro, command.Id, token).ConfigureAwait(false);
-                await UpdateStatus(command.Id, token).ConfigureAwait(false);
-            }
-
-            try
-            {
-                switch (command.Id)
-                {
-                    case CommandName.MacroTurnOnNvidiaShield:
-                        await MacroTurnOnNvidiaShield(token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroTurnOnXBoxOne:
-                        await MacroTurnOnXboxOne(token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroTurnOnPS3:
-                        await MacroTurnOnPS3(token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroTurnOffEverything:
-                        await MacroTurnoffEverything(token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroTurnOnSonyBluRay:
-                        await MacroTurnOnSonyBluRay(token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroGameModeOn:
-                        await MacroTurnGameMode(true, token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroGameModeOff:
-                        await MacroTurnGameMode(false, token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroToggleMute:
-                        await MacroToggleMute(token).ConfigureAwait(false);
-                        break;
-
-                    default:
-                        await SendCommandToAVRInputDevice(command.Id, token).ConfigureAwait(false);
-                        break;
-                }
-                Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed}"));
-            }
-            finally
-            {
-                if (updateStatus)
-                {
-                    await ClearStatus(token).ConfigureAwait(false);
-                    await UpdateFeedback(FeedbackName.RunningMacro, string.Empty, token).ConfigureAwait(false);
-                }
-            }
         }
 
         private IDeviceCommandHandler[] GetAllDevices()

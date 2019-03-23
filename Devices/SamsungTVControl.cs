@@ -49,22 +49,12 @@ namespace Hspi.Devices
         public override bool InvalidState => false;
         public PhysicalAddress MacAddress { get; }
 
-        public override Task Refresh(CancellationToken token)
-        {
-            return RefreshImpl(token);
-        }
-
-        public async Task RefreshImpl(CancellationToken token)
+        public override async Task Refresh(CancellationToken token)
         {
             await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
         }
 
-        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
-        {
-            return ExecuteCommandCore2(command, token);
-        }
-
-        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Sending {command.Id} to Samsung TV {Name}"));
 

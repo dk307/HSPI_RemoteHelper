@@ -100,12 +100,7 @@ namespace Hspi.Devices
         public override bool InvalidState => false;
         public PhysicalAddress MacAddress { get; }
 
-        public override Task Refresh(CancellationToken token)
-        {
-            return RefreshImpl(token);
-        }
-
-        public async Task RefreshImpl(CancellationToken token)
+        public override async Task Refresh(CancellationToken token)
         {
             await ExecuteCommand(GetCommand(CommandName.PowerQuery), token).ConfigureAwait(false);
         }
@@ -120,24 +115,7 @@ namespace Hspi.Devices
             base.Dispose(disposing);
         }
 
-        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
-        {
-            return ExecuteCommandCore2(command, token);
-        }
-
-        private async Task Connect(CancellationToken token)
-        {
-            if (!await IsPoweredOn(token).ConfigureAwait(false))
-            {
-                throw new DevicePoweredOffException($"Sony Blu Ray {Name} on {DeviceIP} not powered On");
-            }
-
-            await UpdateFeedback(FeedbackName.Power, true, token).ConfigureAwait(false);
-            Trace.WriteLine(Invariant($"Connected to Sony Blu Ray {Name} on {DeviceIP}"));
-            await UpdateConnectedState(true, token).ConfigureAwait(false);
-        }
-
-        private async Task ExecuteCommandCore2(DeviceCommand command, CancellationToken token)
+        protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Sending {command.Id} to Sony Blu Ray {Name} on {DeviceIP}"));
 
@@ -178,6 +156,18 @@ namespace Hspi.Devices
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
             }
+        }
+
+        private async Task Connect(CancellationToken token)
+        {
+            if (!await IsPoweredOn(token).ConfigureAwait(false))
+            {
+                throw new DevicePoweredOffException($"Sony Blu Ray {Name} on {DeviceIP} not powered On");
+            }
+
+            await UpdateFeedback(FeedbackName.Power, true, token).ConfigureAwait(false);
+            Trace.WriteLine(Invariant($"Connected to Sony Blu Ray {Name} on {DeviceIP}"));
+            await UpdateConnectedState(true, token).ConfigureAwait(false);
         }
 
         private async Task<bool> IsPoweredOn(CancellationToken token)

@@ -113,12 +113,7 @@ namespace Hspi.Devices
             }
         }
 
-        public override Task Refresh(CancellationToken token)
-        {
-            return RefreshImpl(token);
-        }
-
-        public async Task RefreshImpl(CancellationToken token)
+        public override async Task Refresh(CancellationToken token)
         {
             await ExecuteCommand(GetCommand(CommandName.CurrentApplicationQuery), token).ConfigureAwait(false);
             await ExecuteCommand(GetCommand(CommandName.ScreenSaveRunningQuery), token).ConfigureAwait(false);
@@ -137,12 +132,97 @@ namespace Hspi.Devices
             base.Dispose(disposing);
         }
 
-        protected override Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
             try
             {
                 Trace.WriteLine(Invariant($"Sending {command.Id} to Andriod Device {Name} on {DeviceIP}"));
-                return SendCommand(command, token);
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
+
+                string output;
+                switch (command.Id)
+                {
+                    case CommandName.CursorDownEventDown:
+                        MacroStartCommandLoop(CommandName.CursorDown);
+                        break;
+
+                    case CommandName.CursorLeftEventDown:
+                        MacroStartCommandLoop(CommandName.CursorLeft);
+                        break;
+
+                    case CommandName.CursorRightEventDown:
+                        MacroStartCommandLoop(CommandName.CursorRight);
+                        break;
+
+                    case CommandName.CursorUpEventDown:
+                        MacroStartCommandLoop(CommandName.CursorUp);
+                        break;
+
+                    case CommandName.BackspaceEventDown:
+                        MacroStartCommandLoop(CommandName.Backspace);
+                        break;
+
+                    case CommandName.CursorLeftEventUp:
+                    case CommandName.CursorRightEventUp:
+                    case CommandName.CursorUpEventUp:
+                    case CommandName.CursorDownEventUp:
+                    case CommandName.BackspaceEventUp:
+                        MacroStopCommandLoop(ref cursorCancelLoopSource);
+                        break;
+
+                    case CommandName.PowerQuery:
+                        if (!await IsPoweredOn(token).ConfigureAwait(false))
+                        {
+                            await UpdateFeedback(FeedbackName.Power, false, token).ConfigureAwait(false);
+                            break;
+                        }
+                        await UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token).ConfigureAwait(false), token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.PowerOff:
+                        await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.ScreenQuery:
+                        await UpdateFeedback(FeedbackName.Screen,
+                                             await CheckScreenOn(token).ConfigureAwait(false),
+                                             token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.ScreenSaveRunningQuery:
+                        output = await SendCommandCore("dumpsys power | grep \"mWakefulness\"", token).ConfigureAwait(false);
+                        await UpdateFeedback(FeedbackName.ScreenSaverRunning, !output.Contains("Awake"), token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.CurrentApplicationQuery:
+                        await QueryCurrentApplication(token).ConfigureAwait(false);
+                        break;
+
+                    case CommandName.Home:
+                    case CommandName.LaunchAmazonVideo:
+                    case CommandName.LaunchNetflix:
+                    case CommandName.LaunchPBSKids:
+                    case CommandName.LaunchPlex:
+                    case CommandName.LaunchYoutube:
+                    case CommandName.LaunchKodi:
+                    case CommandName.LaunchYouTubeKids:
+                        await SendCommandCore(command, token).ConfigureAwait(false);
+
+                        // set a loop to update current application
+                        queryRunningApplicationTokenSource?.Cancel();
+                        queryRunningApplicationTokenSource = new CancellationTokenSource();
+                        queryRunningApplicationTokenSource.CancelAfter(10000);
+                        StartCommandLoop(GetCommand(CommandName.CurrentApplicationQuery),
+                                             TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
+                        break;
+
+                    default:
+                        await SendCommandCore(command, token).ConfigureAwait(false);
+                        break;
+                }
+
+                Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed} on Andriod Device {Name} on {DeviceIP}"));
             }
             catch
             {
@@ -151,14 +231,14 @@ namespace Hspi.Devices
             }
         }
 
-        protected override Task UpdateConnectedState(bool value, CancellationToken token)
+        protected override async Task UpdateConnectedState(bool value, CancellationToken token)
         {
             if (!value)
             {
                 directKeysDevices = null;
             }
 
-            return base.UpdateConnectedState(value, token);
+            await base.UpdateConnectedState(value, token).ConfigureAwait(false);
         }
 
         private void AddKeyboardCommands(int start)
@@ -375,96 +455,6 @@ namespace Hspi.Devices
             {
                 await UpdateFeedback(FeedbackName.CurrentApplication, string.Empty, token).ConfigureAwait(false);
             }
-        }
-
-        private async Task SendCommand(DeviceCommand command, CancellationToken token)
-        {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            string output;
-            switch (command.Id)
-            {
-                case CommandName.CursorDownEventDown:
-                    MacroStartCommandLoop(CommandName.CursorDown);
-                    break;
-
-                case CommandName.CursorLeftEventDown:
-                    MacroStartCommandLoop(CommandName.CursorLeft);
-                    break;
-
-                case CommandName.CursorRightEventDown:
-                    MacroStartCommandLoop(CommandName.CursorRight);
-                    break;
-
-                case CommandName.CursorUpEventDown:
-                    MacroStartCommandLoop(CommandName.CursorUp);
-                    break;
-
-                case CommandName.BackspaceEventDown:
-                    MacroStartCommandLoop(CommandName.Backspace);
-                    break;
-
-                case CommandName.CursorLeftEventUp:
-                case CommandName.CursorRightEventUp:
-                case CommandName.CursorUpEventUp:
-                case CommandName.CursorDownEventUp:
-                case CommandName.BackspaceEventUp:
-                    MacroStopCommandLoop(ref cursorCancelLoopSource);
-                    break;
-
-                case CommandName.PowerQuery:
-                    if (!await IsPoweredOn(token).ConfigureAwait(false))
-                    {
-                        await UpdateFeedback(FeedbackName.Power, false, token).ConfigureAwait(false);
-                        break;
-                    }
-                    await UpdateFeedback(FeedbackName.Power, await CheckScreenOn(token).ConfigureAwait(false), token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.PowerOff:
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.ScreenQuery:
-                    await UpdateFeedback(FeedbackName.Screen,
-                                         await CheckScreenOn(token).ConfigureAwait(false),
-                                         token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.ScreenSaveRunningQuery:
-                    output = await SendCommandCore("dumpsys power | grep \"mWakefulness\"", token).ConfigureAwait(false);
-                    await UpdateFeedback(FeedbackName.ScreenSaverRunning, !output.Contains("Awake"), token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.CurrentApplicationQuery:
-                    await QueryCurrentApplication(token).ConfigureAwait(false);
-                    break;
-
-                case CommandName.Home:
-                case CommandName.LaunchAmazonVideo:
-                case CommandName.LaunchNetflix:
-                case CommandName.LaunchPBSKids:
-                case CommandName.LaunchPlex:
-                case CommandName.LaunchYoutube:
-                case CommandName.LaunchKodi:
-                case CommandName.LaunchYouTubeKids:
-                    await SendCommandCore(command, token).ConfigureAwait(false);
-
-                    // set a loop to update current application
-                    queryRunningApplicationTokenSource?.Cancel();
-                    queryRunningApplicationTokenSource = new CancellationTokenSource();
-                    queryRunningApplicationTokenSource.CancelAfter(10000);
-                    StartCommandLoop(GetCommand(CommandName.CurrentApplicationQuery),
-                                         TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
-                    break;
-
-                default:
-                    await SendCommandCore(command, token).ConfigureAwait(false);
-                    break;
-            }
-
-            Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed} on Andriod Device {Name} on {DeviceIP}"));
         }
 
         private async Task SendCommandCore(DeviceCommand command, CancellationToken token)
