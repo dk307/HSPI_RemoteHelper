@@ -92,7 +92,11 @@
     <Compile Include="DeviceData\SettableRangedFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\StringFeedbackDeviceData.cs" />
     <Compile Include="Devices\ADBRemoteControl.cs" />
+    <Compile Include="Devices\ADBShellCharCommand.cs" />
+    <Compile Include="Devices\ADBShellDDCommand.cs" />
+    <Compile Include="Devices\ADBShellKeyEventCommand.cs" />
     <Compile Include="Devices\AdbShellKeys.cs" />
+    <Compile Include="Devices\ADBShellLaunchPackageCommand.cs" />
     <Compile Include="Devices\CommandName.cs" />
     <Compile Include="DeviceData\CommandNotFoundException.cs" />
     <Compile Include="Devices\DenonAVRControl.cs" />

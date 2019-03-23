@@ -114,9 +114,9 @@ namespace Hspi.Devices
             return string.Join(" ", newWords);
         }
 
-        protected async Task UpdateConnectedState(bool value, CancellationToken token)
+        protected virtual async Task UpdateConnectedState(bool value, CancellationToken token)
         {
-            Trace.WriteLine(Invariant($"Updating Connected State for {Name} to {value}"));
+            Trace.TraceInformation(Invariant($"Updating Connected State for {Name} to {value}"));
             Connected = value;
 
             await commandQueue.EnqueueAsync(value ? ConnectCommand : NotConnectedCommand, token).ConfigureAwait(false);
