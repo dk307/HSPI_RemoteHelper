@@ -449,7 +449,7 @@ namespace Hspi.Devices
                 case CommandName.LaunchYoutube:
                 case CommandName.LaunchKodi:
                 case CommandName.LaunchYouTubeKids:
-                    await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    await SendCommandCore(command, token).ConfigureAwait(false);
 
                     // set a loop to update current application
                     queryRunningApplicationTokenSource?.Cancel();
@@ -460,37 +460,42 @@ namespace Hspi.Devices
                     break;
 
                 default:
-                    var adbShellDDCommand = command as ADBShellDDCommand;
-                    if (adbShellDDCommand != null)
-                    {
-                        Func<CancellationToken, Task<string>> getCommand = async (token2) =>
-                       {
-                           if (directKeysDevices == null)
-                           {
-                               await UpdateDirectKeyDevices(false, token2).ConfigureAwait(false);
-                           }
-
-                           if (directKeysDevices != null &&
-                               directKeysDevices.TryGetValue((int)adbShellDDCommand.DirectInputKey, out int deviceId))
-                           {
-                               return string.Format(CultureInfo.InvariantCulture, command.Data, deviceId);
-                           }
-                           else
-                           {
-                               throw new DeviceException(Invariant($"No device found for {command.Id}"));
-                           }
-                       };
-
-                        await SendCommandCore(getCommand, token).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await SendCommandCore(command.Data, token).ConfigureAwait(false);
-                    }
+                    await SendCommandCore(command, token).ConfigureAwait(false);
                     break;
             }
 
             Trace.WriteLine(Invariant($"Executing {command.Id} took {stopWatch.Elapsed} on Andriod Device {Name} on {DeviceIP}"));
+        }
+
+        private async Task SendCommandCore(DeviceCommand command, CancellationToken token)
+        {
+            var adbShellDDCommand = command as ADBShellDDCommand;
+            if (adbShellDDCommand != null)
+            {
+                Func<CancellationToken, Task<string>> getCommand = async (token2) =>
+                {
+                    if (directKeysDevices == null)
+                    {
+                        await UpdateDirectKeyDevices(false, token2).ConfigureAwait(false);
+                    }
+
+                    if (directKeysDevices != null &&
+                        directKeysDevices.TryGetValue((int)adbShellDDCommand.DirectInputKey, out int deviceId))
+                    {
+                        return command.Data + deviceId.ToString(CultureInfo.InvariantCulture);
+                    }
+                    else
+                    {
+                        throw new DeviceException(Invariant($"No device found for {command.Id}"));
+                    }
+                };
+
+                await SendCommandCore(getCommand, token).ConfigureAwait(false);
+            }
+            else
+            {
+                await SendCommandCore(command.Data, token).ConfigureAwait(false);
+            }
         }
 
         private async Task<string> SendCommandCore(string commandData, CancellationToken token)

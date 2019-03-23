@@ -3,7 +3,6 @@ using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
-using static System.FormattableString;
 
 namespace Hspi.Devices
 {
@@ -47,7 +46,7 @@ namespace Hspi.Devices
                 stb.Append(GetString(GetBytes(new InputEvent())));
             }
 
-            stb.Append(Invariant($@"' | dd of=/dev/input/event{0}"));
+            stb.Append(@"' | dd of=/dev/input/event");
             return stb.ToString();
         }
 
