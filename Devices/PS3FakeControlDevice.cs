@@ -27,12 +27,7 @@ namespace Hspi.Devices
 
         public override bool InvalidState => false;
 
-        public override Task ExecuteCommand(DeviceCommand command, CancellationToken token)
-        {
-            return ExecuteCommandCore(command, token);
-        }
-
-        public async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
+        public override async Task ExecuteCommand(DeviceCommand command, CancellationToken token)
         {
             Trace.WriteLine(Invariant($"Sending {command.Id} to PS3 {Name}"));
 

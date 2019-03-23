@@ -1,7 +1,9 @@
-﻿using static System.FormattableString;
+﻿using NullGuard;
+using static System.FormattableString;
 
 namespace Hspi.Devices
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ADBShellLaunchPackageCommand : DeviceCommand
     {
         public ADBShellLaunchPackageCommand(string id, string packageName, string activityName)

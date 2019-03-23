@@ -587,9 +587,12 @@ namespace Hspi.Devices
 
             var deviceKeys2 = new Dictionary<int, int>();
 
-            foreach (var keyValuePair in deviceKeys)
+            var devices = deviceKeys.Keys.ToList();
+            devices.Sort();
+
+            foreach (var device in devices)
             {
-                var deviceValue = keyValuePair.Value.ToString();
+                var deviceValue = deviceKeys[device].ToString();
 
                 var keysSet = new HashSet<int>();
                 var matches = getEventKeysRegEx.Match(deviceValue);
@@ -609,7 +612,7 @@ namespace Hspi.Devices
                             {
                                 if (!deviceKeys2.ContainsKey(key))
                                 {
-                                    deviceKeys2.Add(key, keyValuePair.Key);
+                                    deviceKeys2.Add(key, device);
                                 }
                             }
                         }
@@ -617,7 +620,7 @@ namespace Hspi.Devices
                 }
             }
 
-            directKeysDevices = deviceKeys2.ToImmutableDictionary();
+            directKeysDevices = deviceKeys2.ToImmutableSortedDictionary();
         }
 
         private static readonly List<OutofOrderCommandDetector> adbOutofCommandDetectors = new List<OutofOrderCommandDetector>()
@@ -641,7 +644,7 @@ namespace Hspi.Devices
         private readonly AsyncLock connectionLock = new AsyncLock();
         private AdbClient adbClient;
         private CancellationTokenSource cursorCancelLoopSource;
-        private volatile ImmutableDictionary<int, int> directKeysDevices;
+        private volatile ImmutableSortedDictionary<int, int> directKeysDevices;
         private DeviceMonitor monitor;
         private CancellationTokenSource queryRunningApplicationTokenSource;
     }
