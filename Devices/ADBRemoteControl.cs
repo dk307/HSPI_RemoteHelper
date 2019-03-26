@@ -369,6 +369,7 @@ namespace Hspi.Devices
 
             monitor = new DeviceMonitor(new AdbSocket(adbClient.EndPoint));
             monitor.DeviceDisconnected += Monitor_DeviceDisconnected;
+            monitor.DeviceChanged += Monitor_DeviceChanged;
             monitor.Start();
 
             adbClient.Connect(DeviceIP);
@@ -400,10 +401,15 @@ namespace Hspi.Devices
             }
         }
 
+        private SharpAdbClient.DeviceData GetDevice()
+        {
+            return adbClient?.GetDevices()?.Where((x) =>
+                            x.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal)).SingleOrDefault();
+        }
+
         private SharpAdbClient.DeviceData GetOnlineDevice()
         {
-            SharpAdbClient.DeviceData device = adbClient?.GetDevices()?.Where((x) =>
-                            x.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal)).SingleOrDefault();
+            SharpAdbClient.DeviceData device = GetDevice();
 
             if (device != null)
             {
@@ -427,11 +433,24 @@ namespace Hspi.Devices
             MacroStartCommandLoop(commandId, ref cursorCancelLoopSource);
         }
 
+        private async void Monitor_DeviceChanged(object sender, DeviceDataEventArgs e)
+        {
+            if (e.Device.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal))
+            {
+                var device = GetDevice();
+                if (device.State != DeviceState.Online)
+                {
+                    Trace.TraceInformation(Invariant($"State for Connection to Andriod Device {Name} on {DeviceIP} changed to {device.State}"));
+                    await UpdateConnectedState(false, CancellationToken.None).ConfigureAwait(false);
+                }
+            }
+        }
+
         private async void Monitor_DeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
             if (e.Device.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal))
             {
-                Trace.WriteLine(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
+                Trace.TraceInformation(Invariant($"Lost Connection to Andriod Device {Name} on {DeviceIP}"));
                 await UpdateConnectedState(false, CancellationToken.None).ConfigureAwait(false);
             }
         }
