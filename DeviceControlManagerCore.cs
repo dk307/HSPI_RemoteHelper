@@ -83,7 +83,7 @@ namespace Hspi.Connector
             {
                 CheckConnection();
                 DeviceFeedback feedback = connector.GetFeedback(feedbackName);
-                await connector.ExecuteCommand(new FeedbackValue(feedback, value), finalToken);
+                await connector.ExecuteCommand(new FeedbackValue(feedback, value), finalToken).ConfigureAwait(false);
             }
         }
 

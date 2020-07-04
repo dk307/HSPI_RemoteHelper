@@ -1,5 +1,7 @@
-﻿using Nito.AsyncEx;
+﻿using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
+using Scheduler;
 using SharpAdbClient;
 using System;
 using System.Collections.Generic;
@@ -34,53 +36,43 @@ namespace Hspi.Devices
             }
 
             this.adbPath = adbPath;
-            AddCommand(new ADBShellKeyEventCommand(CommandName.AudioTrack, AdbShellKeys.KEYCODE_MEDIA_AUDIO_TRACK));
-            AddCommand(new ADBShellDDCommand(CommandName.CursorDown, DirectInputKeys.KEY_DOWN));
-            AddCommand(new ADBShellDDCommand(CommandName.CursorLeft, DirectInputKeys.KEY_LEFT));
-            AddCommand(new ADBShellDDCommand(CommandName.CursorRight, DirectInputKeys.KEY_RIGHT));
-            AddCommand(new ADBShellDDCommand(CommandName.CursorUp, DirectInputKeys.KEY_UP));
-            AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER));
-            AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO));
-            AddCommand(new ADBShellDDCommand(CommandName.MediaFastForward, DirectInputKeys.KEY_FASTFORWARD));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT));
-            AddCommand(new ADBShellDDCommand(CommandName.MediaPlayPause, DirectInputKeys.KEY_PLAYPAUSE));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaPrevious, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS));
-            AddCommand(new ADBShellDDCommand(CommandName.MediaRewind, DirectInputKeys.KEY_REWIND));
-            AddCommand(new ADBShellDDCommand(CommandName.MediaSkipBackward, DirectInputKeys.KEY_PREVIOUSSONG));
-            AddCommand(new ADBShellDDCommand(CommandName.MediaSkipForward, DirectInputKeys.KEY_NEXTSONG));
-            AddCommand(new ADBShellDDCommand(CommandName.MediaStop, DirectInputKeys.KEY_STOP));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP));
-            AddCommand(new DeviceCommand(CommandName.PowerQuery));
-            AddCommand(new ADBShellDDCommand(CommandName.Return, DirectInputKeys.KEY_BACK));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.AudioTrack, AdbShellKeys.KEYCODE_MEDIA_AUDIO_TRACK, -100));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorDown, DirectInputKeys.KEY_DOWN, -99));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorLeft, DirectInputKeys.KEY_LEFT, -98));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorRight, DirectInputKeys.KEY_RIGHT, -5));
+            AddCommand(new ADBShellDDCommand(CommandName.CursorUp, DirectInputKeys.KEY_UP, -96));
+            AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, -95));
+            AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE, -94));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO, -93));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaFastForward, DirectInputKeys.KEY_FASTFORWARD, -92));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaNext, AdbShellKeys.KEYCODE_MEDIA_NEXT, -91));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaPlayPause, DirectInputKeys.KEY_PLAYPAUSE, -90));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.MediaPrevious, AdbShellKeys.KEYCODE_MEDIA_PREVIOUS, -89));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaRewind, DirectInputKeys.KEY_REWIND, -88));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaSkipBackward, DirectInputKeys.KEY_PREVIOUSSONG, -87));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaSkipForward, DirectInputKeys.KEY_NEXTSONG, -86));
+            AddCommand(new ADBShellDDCommand(CommandName.MediaStop, DirectInputKeys.KEY_STOP, -85));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOff, AdbShellKeys.KEYCODE_SLEEP, -84));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.PowerOn, AdbShellKeys.KEYCODE_WAKEUP, -83));
+            AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue:-82));
+            AddCommand(new ADBShellDDCommand(CommandName.Return, DirectInputKeys.KEY_BACK, -81));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Subtitle, AdbShellKeys.KEYCODE_CAPTIONS, -80));
 
-            AddCommand(new DeviceCommand(CommandName.ScreenQuery));
-            AddCommand(new DeviceCommand(CommandName.ScreenSaveRunningQuery));
-            AddCommand(new DeviceCommand(CommandName.CurrentApplicationQuery));
+            AddCommand(new DeviceCommand(CommandName.ScreenQuery, fixedValue: -79));
+            AddCommand(new DeviceCommand(CommandName.ScreenSaveRunningQuery, fixedValue: -78));
+            AddCommand(new DeviceCommand(CommandName.CurrentStatusQuery, fixedValue: -77));
 
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchNetflix, @"com.netflix.ninja"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchYoutube, @"com.google.android.youtube.tv"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchPlex, @"com.plexapp.android"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchAmazonVideo,
-                                                 @"com.amazon.amazonvideo.livingroom.nvidia", @"com.amazon.ignition.IgnitionActivity"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchPBSKids, @"org.pbskids.video"));
+            AddCommand(new DeviceCommand(CommandName.CursorUpEventDown, fixedValue: -71));
+            AddCommand(new DeviceCommand(CommandName.CursorUpEventUp, fixedValue: -70));
+            AddCommand(new DeviceCommand(CommandName.CursorDownEventDown, fixedValue: -69));
+            AddCommand(new DeviceCommand(CommandName.CursorDownEventUp, fixedValue: -68));
+            AddCommand(new DeviceCommand(CommandName.CursorRightEventDown, fixedValue: -67));
+            AddCommand(new DeviceCommand(CommandName.CursorRightEventUp, fixedValue: -66));
+            AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown, fixedValue: -65));
+            AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp, fixedValue: -64));
 
-            AddCommand(new DeviceCommand(CommandName.CursorUpEventDown));
-            AddCommand(new DeviceCommand(CommandName.CursorUpEventUp));
-            AddCommand(new DeviceCommand(CommandName.CursorDownEventDown));
-            AddCommand(new DeviceCommand(CommandName.CursorDownEventUp));
-            AddCommand(new DeviceCommand(CommandName.CursorRightEventDown));
-            AddCommand(new DeviceCommand(CommandName.CursorRightEventUp));
-            AddCommand(new DeviceCommand(CommandName.CursorLeftEventDown));
-            AddCommand(new DeviceCommand(CommandName.CursorLeftEventUp));
-
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchSling, @"com.sling"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchKodi, @"org.xbmc.kodi"));
-
-            AddCommand(new DeviceCommand(CommandName.BackspaceEventUp));
-            AddCommand(new DeviceCommand(CommandName.BackspaceEventDown));
+            AddCommand(new DeviceCommand(CommandName.BackspaceEventUp, fixedValue: -61));
+            AddCommand(new DeviceCommand(CommandName.BackspaceEventDown, fixedValue: -60));
 
             AddKeyboardCommands(1000);
 
@@ -88,9 +80,9 @@ namespace Hspi.Devices
             AddFeedback(new DeviceFeedback(FeedbackName.Screen, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.ScreenSaverRunning, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.CurrentApplication, TypeCode.String));
-
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchYouTubeKids, @"com.google.android.youtube.tvkids"));
-            AddCommand(new ADBShellLaunchPackageCommand(CommandName.LaunchHulu, @"com.hulu.livingroomplus"));
+            AddFeedback(new MediaStateDeviceFeedback(FeedbackName.MediaState));
+            AddFeedback(new DeviceFeedback(FeedbackName.MediaTitle, TypeCode.String));
+ 
             StartServer();
         }
 
@@ -115,7 +107,7 @@ namespace Hspi.Devices
 
         public override async Task Refresh(CancellationToken token)
         {
-            await ExecuteCommand(GetCommand(CommandName.CurrentApplicationQuery), token).ConfigureAwait(false);
+            await ExecuteCommand(GetCommand(CommandName.CurrentStatusQuery), token).ConfigureAwait(false);
             await ExecuteCommand(GetCommand(CommandName.ScreenSaveRunningQuery), token).ConfigureAwait(false);
             await ExecuteCommand(GetCommand(CommandName.ScreenQuery), token).ConfigureAwait(false);
             await UpdateDirectKeyDevices(true, token).ConfigureAwait(false);
@@ -195,27 +187,20 @@ namespace Hspi.Devices
                         await UpdateFeedback(FeedbackName.ScreenSaverRunning, !output.Contains("Awake"), token).ConfigureAwait(false);
                         break;
 
-                    case CommandName.CurrentApplicationQuery:
-                        await QueryCurrentApplication(token).ConfigureAwait(false);
+                    case CommandName.CurrentStatusQuery:
+                        await QueryCurrentStatus(token).ConfigureAwait(false);
                         break;
 
+                    case CommandName.MediaPlay:
+                    case CommandName.MediaPause:
+                    case CommandName.MediaPlayPause:
                     case CommandName.Home:
-                    case CommandName.LaunchAmazonVideo:
-                    case CommandName.LaunchNetflix:
-                    case CommandName.LaunchPBSKids:
-                    case CommandName.LaunchPlex:
-                    case CommandName.LaunchYoutube:
-                    case CommandName.LaunchKodi:
-                    case CommandName.LaunchYouTubeKids:
                         await SendCommandCore(command, token).ConfigureAwait(false);
 
                         // set a loop to update current application
-                        queryRunningApplicationTokenSource?.Cancel();
-                        queryRunningApplicationTokenSource = new CancellationTokenSource();
-                        queryRunningApplicationTokenSource.CancelAfter(10000);
-                        StartCommandLoop(GetCommand(CommandName.CurrentApplicationQuery),
-                                             TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
+                        UpdateStatusInLoop();
                         break;
+
 
                     default:
                         await SendCommandCore(command, token).ConfigureAwait(false);
@@ -229,6 +214,15 @@ namespace Hspi.Devices
                 DisposeConnection();
                 throw;
             }
+        }
+
+        private void UpdateStatusInLoop()
+        {
+            queryRunningApplicationTokenSource?.Cancel();
+            queryRunningApplicationTokenSource = new CancellationTokenSource();
+            queryRunningApplicationTokenSource.CancelAfter(10000);
+            StartCommandLoop(GetCommand(CommandName.CurrentStatusQuery),
+                                 TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
         }
 
         protected override async Task UpdateConnectedState(bool value, CancellationToken token)
@@ -259,7 +253,7 @@ namespace Hspi.Devices
 
             for (char c = '0'; c <= '9'; c++)
             {
-                AddCommand(new ADBShellDDCommand(c.ToString(), numberKeys[c - '0'], start++));
+                AddCommand(new ADBShellDDCommand(c.ToString(CultureInfo.InvariantCulture), numberKeys[c - '0'], start++));
             }
 
             DirectInputKeys[] charKeys = new DirectInputKeys[]
@@ -294,12 +288,12 @@ namespace Hspi.Devices
 
             for (char c = 'a'; c <= 'z'; c++)
             {
-                AddCommand(new ADBShellDDCommand(c.ToString(), charKeys[c - 'a'], start++));
+                AddCommand(new ADBShellDDCommand(c.ToString(CultureInfo.InvariantCulture), charKeys[c - 'a'], start++));
             }
 
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                AddCommand(new ADBShellDDCommand(c.ToString(), charKeys[c - 'A'], start++, DirectInputKeys.KEY_LEFTSHIFT));
+                AddCommand(new ADBShellDDCommand(c.ToString(CultureInfo.InvariantCulture), charKeys[c - 'A'], start++, DirectInputKeys.KEY_LEFTSHIFT));
             }
 
             AddCommand(new ADBShellDDCommand("Space", DirectInputKeys.KEY_SPACE, start++));
@@ -455,25 +449,94 @@ namespace Hspi.Devices
             }
         }
 
-        private async Task QueryCurrentApplication(CancellationToken token)
+        private async Task QueryCurrentStatus(CancellationToken token)
         {
-            string output = await SendCommandCore("dumpsys window windows | grep mCurrentFocus", token).ConfigureAwait(false);
 
-            bool found = false;
-            Match matches = windowRegEx.Match(output);
+            string[] commands = new string[] { @"CURRENT_APP=$(dumpsys window windows | grep mCurrentFocus) && CURRENT_APP=${CURRENT_APP#*{* * } && CURRENT_APP=${CURRENT_APP%%/*} && echo $CURRENT_APP",
+                                               @"dumpsys media_session | grep -A 100 'Sessions Stack' | grep -A 100 $CURRENT_APP | grep -m 1 'state=PlaybackState {'",
+                                               @"dumpsys media_session | grep -A 100 'Sessions Stack' | grep -A 100 $CURRENT_APP | grep -m 1 'metadata:'" };
+
+            string output = await SendCommandCore(string.Join( @" && ", commands), token).ConfigureAwait(false);
+
+            var lines = output.Split( new char[] {'\r'});
+
+            string application = string.Empty;
+            string applicationName = null;
+            if (lines.Length > 0)
+            {
+                application = lines[0].Trim();
+                if (!androidApplicationNames.TryGetValue(application, out applicationName))
+                {
+                    applicationName = application;
+                }
+        
+            }
+
+            await UpdateFeedback(FeedbackName.CurrentApplication, applicationName, token).ConfigureAwait(false);
+
+            string input = (lines.Length > 1) ? lines[1] : string.Empty;
+            var mediaState = DetermineMediaState(application, input);
+            await UpdateFeedback(FeedbackName.MediaState, (double)mediaState, token).ConfigureAwait(false);
+
+
+            string title = string.Empty;
+            string titleReturn = (lines.Length > 2) ? lines[2] : string.Empty;
+
+            var matches = getMediaTitleRegEx.Match(titleReturn);
             if (matches.Success)
             {
-                Group packageGroup = matches.Groups["package"];
-                if (packageGroup.Success)
+                var value = matches.Groups["description"];
+                if (value.Success)
                 {
-                    found = true;
-                    await UpdateFeedback(FeedbackName.CurrentApplication, packageGroup.Value, token).ConfigureAwait(false);
+                    title = value.Value != "null" ? value.Value : string.Empty;
                 }
             }
-            if (!found)
+
+            await UpdateFeedback(FeedbackName.MediaTitle, title, token).ConfigureAwait(false);
+        }
+
+        private static MediaStateDeviceFeedback.State DetermineMediaState(string application, 
+                                                                          string input)
+        {
+            switch (application)
             {
-                await UpdateFeedback(FeedbackName.CurrentApplication, string.Empty, token).ConfigureAwait(false);
+                case launcherApplication:
+                case settingApplication:
+                    return MediaStateDeviceFeedback.State.Stopped;  
             }
+
+            var mediaState = Hspi.Devices.MediaStateDeviceFeedback.State.Unknown;
+            var matches = getMediaStateRegEx.Match(input);
+
+            if (matches.Success)
+            {
+                var stateGroup = matches.Groups["state"];
+                if (stateGroup.Success)
+                {
+                    if (int.TryParse(stateGroup.Value, out int state))
+                    {
+                        switch (application)
+                        {
+                            case netflixApplication:
+                            case kodiApplication:
+                            case youtubeApplication:
+                            case amazonVideoApplication:
+                            case disneyPlusApplication:
+                            case hotstarApplication:
+                            switch (state)
+                            {
+                                case 2: mediaState = MediaStateDeviceFeedback.State.Paused; break;
+                                case 3: mediaState = MediaStateDeviceFeedback.State.Playing; break;
+                                default:
+                                    mediaState = MediaStateDeviceFeedback.State.Stopped; break;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return mediaState;
         }
 
         private async Task SendCommandCore(DeviceCommand command, CancellationToken token)
@@ -548,7 +611,7 @@ namespace Hspi.Devices
                 string command = await commandData(token).ConfigureAwait(false);
                 Trace.WriteLine(Invariant($"Sending {command} to Andriod Device {Name}"));
 
-                await adbClient.ExecuteRemoteCommandAsync(command, device, receiver, timedCancel.Token, 1000).ConfigureAwait(false);
+                await adbClient.ExecuteRemoteCommandAsync(command, device, receiver, timedCancel.Token).ConfigureAwait(false);
             }
             token.ThrowIfCancellationRequested();
             string output = receiver.ToString();
@@ -642,6 +705,14 @@ namespace Hspi.Devices
             directKeysDevices = deviceKeys2.ToImmutableSortedDictionary();
         }
 
+        private const string netflixApplication = "com.netflix.ninja";
+        private const string kodiApplication = "org.xbmc.kodi";
+        private const string launcherApplication = "com.google.android.tvlauncher";
+        private const string settingApplication = "com.android.tv.settings";
+        private const string youtubeApplication = "com.google.android.youtube.tv";
+        private const string amazonVideoApplication = "com.amazon.amazonvideo.livingroom";
+        private const string disneyPlusApplication = "com.disney.disneyplus";
+        private const string hotstarApplication = "in.startv.hotstar";
         private static readonly List<OutofOrderCommandDetector> adbOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
             new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
@@ -656,8 +727,11 @@ namespace Hspi.Devices
         private static readonly Regex getEventKeysRegEx = new Regex(@"^.*events:\s*KEY\s*\(\d*\):(?<keys>[0-9|A-F|\s]*).*$",
                                                             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-        private static readonly Regex windowRegEx = new Regex(@"mCurrentFocus=Window{(?<id>.+?) (?<user>.+) (?<package>.+?)(?:\/(?<activity>.+?))?}",
-                                                                      RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
+        private static readonly Regex getMediaStateRegEx = new Regex(@"state=(?<state>[0-9]+)",
+                                                            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+
+        private static readonly Regex getMediaTitleRegEx = new Regex(@", description=(?<description>.*),.*,.*$",
+                                                            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
 
         private readonly string adbPath;
         private readonly AsyncLock connectionLock = new AsyncLock();
@@ -666,5 +740,21 @@ namespace Hspi.Devices
         private volatile ImmutableSortedDictionary<int, int> directKeysDevices;
         private DeviceMonitor monitor;
         private CancellationTokenSource queryRunningApplicationTokenSource;
+        private readonly ImmutableDictionary<string, string> androidApplicationNames = new Dictionary<string, string>() { 
+                {launcherApplication, "Launcher"},
+                {settingApplication, "Settings"},
+                {"com.google.android.apps.mediashell", "Google Cast"},
+                {"com.hulu.plus", "Hulu"},
+                {kodiApplication, "Kodi"},
+                {netflixApplication, "Netflix"},
+                {"com.plexapp.android", "Plex"},
+                {"org.videolan.vlc", "VLC"},
+                {youtubeApplication, "Youtube"},
+                {hotstarApplication, "Hotstar"},
+                {disneyPlusApplication, "Disney+"},
+                {"com.google.android.youtube.tvkids", "Youtube Kids"},
+                {amazonVideoApplication, "Amazon Prime"},
+        }.ToImmutableDictionary();
+
     }
 }

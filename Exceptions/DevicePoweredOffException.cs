@@ -13,5 +13,13 @@ namespace Hspi.Devices
         protected DevicePoweredOffException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+
+        public DevicePoweredOffException()
+        {
+        }
+
+        public DevicePoweredOffException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

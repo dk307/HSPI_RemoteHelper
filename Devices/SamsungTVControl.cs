@@ -1,4 +1,5 @@
-﻿using Nito.AsyncEx;
+﻿using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Diagnostics;

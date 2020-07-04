@@ -93,6 +93,9 @@ namespace Hspi.DeviceData
                 case SettableRangedDeviceFeedback rangeFeedback:
                     return new SettableRangedFeedbackDeviceData(refId, rangeFeedback);
 
+                case MediaStateDeviceFeedback mediaStateDeviceFeedback:
+                    return new MediaStateFeedbackDeviceData(refId);
+
                 default:
                     switch (feedback.Typecode)
                     {

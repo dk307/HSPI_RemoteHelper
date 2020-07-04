@@ -7,7 +7,7 @@
         public const string AudysseyQuery = "Audyssesy Query";
         public const string ChangeInputMPLAY = "Change Input - MPLAY";
         public const string ConnectedState = "Connected";
-        public const string CurrentApplicationQuery = "Current Application Query";
+        public const string CurrentStatusQuery = "Current Status Query";
         public const string CursorDown = "Cursor Down";
         public const string CursorDownEventDown = "Cursor Down - Event Down";
         public const string CursorDownEventUp = "Cursor Down - Event Up";
@@ -30,15 +30,6 @@
         public const string Home = "Home";
         public const string Info = "Info";
         public const string InputStatusQuery = "Input Status Query";
-        public const string LaunchAmazonVideo = "Launch Amazon Video";
-        public const string LaunchNetflix = "Launch Netflix";
-        public const string LaunchPBSKids = "Launch PBS Kids";
-        public const string LaunchPlex = "Launch Plex";
-        public const string LaunchYoutube = "Launch Youtube";
-        public const string LaunchSling = "Launch Sling";
-        public const string LaunchKodi = "Launch Kodi";
-        public const string LaunchYouTubeKids = "Launch You Tube Kids";
-        public const string LaunchHulu = "Launch Hulu";
         public const string MacroGameModeOff = "Macro - Game Mode Off";
         public const string MacroGameModeOn = "Macro - Game Mode On";
         public const string MacroStartDialogEnhancerDownLoop = "Macro - Start Dialog Enhancer Down Loop";

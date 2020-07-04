@@ -36,7 +36,7 @@ namespace Hspi.DeviceData
 
         public override async Task HandleCommand(DeviceControl connector, double value, CancellationToken token)
         {
-            await connector.ExecuteCommand(new FeedbackValue(feedback, value), token);
+            await connector.ExecuteCommand(new FeedbackValue(feedback, value), token).ConfigureAwait(false);
         }
 
         public override bool StatusDevice => false;

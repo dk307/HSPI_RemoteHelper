@@ -304,7 +304,7 @@ namespace Rssdp.Infrastructure
 
         private IEnumerable<SsdpDevice> GetAllDevicesAsFlatEnumerable()
         {
-            return _Devices.Union(_Devices.SelectManyRecursive<SsdpDevice>((d) => new SsdpDevice[0]));
+            return _Devices.Union(_Devices.SelectManyRecursive<SsdpDevice>((d) => Array.Empty<SsdpDevice>()));
         }
 
         private void SendSearchResponses(string searchTarget, UdpEndPoint endPoint, IEnumerable<SsdpDevice> devices)

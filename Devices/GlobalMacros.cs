@@ -1,4 +1,5 @@
 ﻿using Hspi.Connector;
+using Hspi.Devices;
 using Hspi.Utils;
 using Nito.AsyncEx;
 using NullGuard;

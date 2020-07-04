@@ -91,21 +91,21 @@ namespace Hspi.Roku
             [WebApiHandler(HttpVerbs.Get, @"/query/active-app")]
             public async Task<bool> ActiveApp()
             {
-                return await XmlResponse(Resources.ActiveAppTemplate);
+                return await XmlResponse(Resources.ActiveAppTemplate).ConfigureAwait(false);
             }
 
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/query/apps")]
             public async Task<bool> AllApps()
             {
-                return await XmlResponse(Resources.AppsTemplate);
+                return await XmlResponse(Resources.AppsTemplate).ConfigureAwait(false);
             }
 
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/query/device-info")]
             public async Task<bool> DeviceInfo()
             {
-                return await XmlResponse(rokuDeviceInfo);
+                return await XmlResponse(rokuDeviceInfo).ConfigureAwait(false);
             }
 
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
@@ -182,8 +182,6 @@ namespace Hspi.Roku
             {
                 return true;
             }
-
-            public override void SetDefaultHeaders() => this.NoCache();
 
             private async Task<bool> XmlResponse(string xml)
             {

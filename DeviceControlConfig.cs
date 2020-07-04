@@ -79,7 +79,7 @@ namespace Hspi
                     return new string[] { DefaultCommandDelayId, DefaultPowerOnDelayId };
 
                 case DeviceType.GlobalMacros:
-                    return new string[] { };
+                    return Array.Empty<string>();
 
                 case DeviceType.IP2IR:
                     return new string[] { DefaultCommandDelayId, IP2IRFileNameId };
@@ -91,7 +91,7 @@ namespace Hspi
                     return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId, WolBroadCastAddressId };
 
                 case DeviceType.PS3:
-                    return new string[] { };
+                    return Array.Empty<string>();
             }
 
             throw new KeyNotFoundException();

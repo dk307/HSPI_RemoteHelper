@@ -1,4 +1,5 @@
-﻿using Nito.AsyncEx;
+﻿using Hspi.Devices;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Generic;
@@ -63,7 +64,7 @@ namespace Hspi.Devices
 
         public virtual async Task Refresh(CancellationToken token)
         {
-            await Task.CompletedTask;
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         internal DeviceFeedback GetFeedback(string feedbackName)

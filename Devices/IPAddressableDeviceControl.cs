@@ -39,7 +39,7 @@ namespace Hspi.Devices
         {
             if (canIgnore && ShouldIgnoreCommand(command.Id))
             {
-                Trace.WriteLine(Invariant($"Ignoring Command for IP2IR {Name} {command.Id} as it is out of order"));
+                Trace.WriteLine(Invariant($"Ignoring Command for {Name} {command.Id} as it is out of order"));
                 return;
             }
 

@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Hspi</RootNamespace>
     <AssemblyName>HSPI_RemoteHelper</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -41,7 +41,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>HSPI_RemoteHelper.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Prefer32Bit>false</Prefer32Bit>
@@ -56,7 +56,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>HSPI_RemoteHelper.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -88,6 +88,7 @@
     <Compile Include="DeviceData\DoubleFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\DoubleFeedbackDeviceDataBase.cs" />
     <Compile Include="DeviceData\FeedbackDeviceData.cs" />
+    <Compile Include="DeviceData\MediaStateFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\RootDeviceData.cs" />
     <Compile Include="DeviceData\SettableRangedFeedbackDeviceData.cs" />
     <Compile Include="DeviceData\StringFeedbackDeviceData.cs" />
@@ -105,6 +106,7 @@
     <Compile Include="Devices\DirectInputKeys.cs" />
     <Compile Include="Devices\IDeviceCommandHandlerExtension.cs" />
     <Compile Include="Devices\IP2IRDeviceControl.cs" />
+    <Compile Include="Devices\MediaStateDeviceFeedback.cs" />
     <Compile Include="Devices\OutofOrderCommandDetector.cs" />
     <Compile Include="Devices\PS3FakeControlDevice.cs" />
     <Compile Include="Devices\SonyBluRayControl.cs" />
@@ -209,10 +211,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="EmbedIO">
-      <Version>2.2.9</Version>
+      <Version>2.9.2</Version>
     </PackageReference>
     <PackageReference Include="Fody">
-      <Version>4.0.0-beta.2</Version>
+      <Version>6.2.0</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -220,28 +222,33 @@
       <Version>1.2.8</Version>
     </PackageReference>
     <PackageReference Include="ILMerge">
-      <Version>3.0.21</Version>
+      <Version>3.0.40</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers">
+      <Version>3.0.0</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Nito.AsyncEx.Coordination">
-      <Version>5.0.0-pre-06</Version>
+      <Version>5.0.0</Version>
     </PackageReference>
     <PackageReference Include="Nito.AsyncEx.Tasks">
-      <Version>5.0.0-pre-06</Version>
+      <Version>5.0.0</Version>
     </PackageReference>
     <PackageReference Include="Nito.Collections.Deque">
       <Version>1.0.4</Version>
     </PackageReference>
     <PackageReference Include="Nito.Disposables">
-      <Version>2.0.0</Version>
+      <Version>2.1.0</Version>
     </PackageReference>
     <PackageReference Include="NullGuard.Fody">
-      <Version>1.8.7</Version>
+      <Version>2.2.0</Version>
     </PackageReference>
     <PackageReference Include="SharpAdbClient">
-      <Version>2.2.27</Version>
+      <Version>2.3.22</Version>
     </PackageReference>
     <PackageReference Include="System.Collections.Immutable">
-      <Version>1.5.0</Version>
+      <Version>1.7.1</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
@@ -272,6 +279,11 @@
       <InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
       <InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
       <InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
+      <InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.Logging.Abstractions.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Buffers.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Drawing.Common.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Memory.dll" />
+      <InputAssemblies Include="$(OutputPath)\System.Numerics.Vectors.dll" />
     </ItemGroup>
     <Message Importance="high" Text="Executing ILMerge in $(ProjectDir)..." />
     <Exec WorkingDirectory="$(ProjectDir)" Command="&quot;$(ILMergeConsolePath)&quot; /ndebug /target:winexe /out:@(MainAssembly) /internalize /targetplatform:v4 @(InputAssemblies->'&quot;%(FullPath)&quot;', ' ')" />

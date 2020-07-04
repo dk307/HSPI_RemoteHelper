@@ -5,6 +5,8 @@
         public const string DynamicVolume = "Dynamic Volume";
         public const string Audyssey = "Audyssey";
         public const string CurrentApplication = "Current Application";
+        public const string MediaState = "Media State";
+        public const string MediaTitle = "Media Title";
         public const string DialogEnhancementLevel = "Dialog Enhancement Level";
         public const string DialogEnhancementMode = "Dialog Enhancement Mode";
         public const string Input = "Input Status";
@@ -22,4 +24,5 @@
         public const string Zone1Status = "Zone 1 Power Status";
         public const string Zone2Status = "Zone 2 Power Status";
     }
+
 }

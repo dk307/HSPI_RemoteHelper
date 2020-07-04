@@ -1,4 +1,5 @@
-﻿using NullGuard;
+﻿using Hspi.Devices;
+using NullGuard;
 
 namespace Hspi.Devices
 {

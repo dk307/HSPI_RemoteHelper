@@ -1,14 +1,14 @@
-﻿using NullGuard;
+﻿using Nito.AsyncEx;
+using NullGuard;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
+
 
 namespace Hspi.Devices
 {
-    using Nito.AsyncEx;
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class PS3FakeControlDevice : DeviceControl
     {

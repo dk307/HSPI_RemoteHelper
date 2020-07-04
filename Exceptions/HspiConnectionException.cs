@@ -17,5 +17,9 @@ namespace Hspi.Exceptions
         protected HspiConnectionException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+
+        public HspiConnectionException(string message) : base(message)
+        {
+        }
     }
 }

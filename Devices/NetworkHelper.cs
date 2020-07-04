@@ -69,7 +69,7 @@ namespace Hspi.Devices
 
                     CancellationTokenSource source = new CancellationTokenSource();
                     source.CancelAfter(timeout);
-                    var finishedTask = await Task.WhenAny(connectTask, Task.Delay(-1, source.Token));
+                    var finishedTask = await Task.WhenAny(connectTask, Task.Delay(-1, source.Token)).ConfigureAwait(false);
 
                     if (connectTask == finishedTask)
                     {
@@ -122,7 +122,7 @@ namespace Hspi.Devices
             if (macAddress.Length != 6)
                 throw new ArgumentException("Invalid Mac Address Length");
 
-            var password = new byte[0];
+            var password = Array.Empty<byte>();
             var packet = new byte[17 * 6 + password.Length];
 
             int offset, i;

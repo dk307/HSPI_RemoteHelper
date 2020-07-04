@@ -1,4 +1,5 @@
-﻿using Hspi.Utils;
+﻿using Hspi.Devices;
+using Hspi.Utils;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;

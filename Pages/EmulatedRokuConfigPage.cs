@@ -306,7 +306,6 @@ namespace Hspi.Pages
         private const string DeleteDeviceName = "DeleteDeviceName";
         private const string DeviceIdId = "DeviceIdId";
         private const string EditDevicePageType = "addNew";
-        private const string IdPrefix = "id_";
         private const string RokuAddressAddressId = nameof(EmulatedRokuSettings.RokuAddress) + nameof(IPEndPoint.Address);
         private const string RokuAddressPortId = nameof(EmulatedRokuSettings.RokuAddress) + nameof(IPEndPoint.Port);
         private const string SaveDeviceName = "SaveDeviceName";

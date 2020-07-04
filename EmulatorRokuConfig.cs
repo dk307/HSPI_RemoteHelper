@@ -223,7 +223,6 @@ namespace Hspi
             HS.SaveINISetting(section, key, stringValue, FileName);
         }
 
-        private const string DebugLoggingKey = "DebugLogging";
         private const string DefaultSection = "Settings";
         private const string DeviceIds = "DevicesIds";
         private const char DeviceIdsSeparator = '|';
