@@ -82,7 +82,7 @@ namespace Hspi.Devices
 
         protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
         {
-            using (await connectionLock.LockAsync().ConfigureAwait(false))
+            using (var _ = await connectionLock.LockAsync(token).ConfigureAwait(false))
             {
                 Trace.WriteLine(Invariant($"Sending {command.Id} to IP2IR {Name} on {DeviceIP}"));
 
@@ -97,12 +97,14 @@ namespace Hspi.Devices
                 byte[] bytes = encoding.GetBytes(data);
                 TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
                 commandResponseWaitQueue[irCounter] = taskCompletionSource;
-                await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+                await stream.WriteAsync(bytes, 0, bytes.Length, token).ConfigureAwait(false);
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
                 CancellationTokenSource delay = new CancellationTokenSource(DefaultCommandDelay + DefaultCommandDelay);
                 await taskCompletionSource.Task
-                                          .WaitAsync(CancellationTokenSource.CreateLinkedTokenSource(token, delay.Token).Token)
+                                           .WaitAsync(CancellationTokenSource.CreateLinkedTokenSource(token, delay.Token).Token)
                                           .ConfigureAwait(false);
+#pragma warning restore CA2000 // Dispose objects before losing scope
             }
         }
 
@@ -333,7 +335,7 @@ namespace Hspi.Devices
         private static readonly Regex iTachErrorResponse = new Regex(@"ERR_(?<mod>[0-9]):(?<con>[0-3]),(?<error>\d+)",
                                                      RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static volatile int counter = 0;
+        private static volatile int counter;
 
         private readonly ConcurrentDictionary<int, TaskCompletionSource<bool>> commandResponseWaitQueue
                                                = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
@@ -344,7 +346,9 @@ namespace Hspi.Devices
 
         private TcpClient client;
 
+#pragma warning disable CA2213 // Disposable fields should be disposed
         private CancellationTokenSource stopTokenSource;
+#pragma warning restore CA2213 // Disposable fields should be disposed
 
         private NetworkStream stream;
 

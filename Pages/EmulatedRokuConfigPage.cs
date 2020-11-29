@@ -162,18 +162,18 @@ namespace Hspi.Pages
 
                     pluginConfig.AddDevice(device);
                     pluginConfig.FireConfigChanged();
-                    divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(EmulatedRokuConfigPage.Name)}")));
+                    divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(EmulatedRokuConfigPage.Name)}")));
                 }
             }
             else if (form == NameToIdWithPrefix(CancelDeviceName))
             {
-                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(EmulatedRokuConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(EmulatedRokuConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(DeleteDeviceName))
             {
                 pluginConfig.RemoveDevice(Guid.Parse(parts[DeviceIdId]));
                 pluginConfig.FireConfigChanged();
-                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(EmulatedRokuConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(EmulatedRokuConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(nameof(EmulatorRokuConfig.SSDAdvertiseAddress)))
             {

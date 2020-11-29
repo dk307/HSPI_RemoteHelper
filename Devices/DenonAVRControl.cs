@@ -579,7 +579,9 @@ namespace Hspi.Devices
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly Encoding encoding = Encoding.ASCII;
         private TcpClient client;
+#pragma warning disable CA2213 // Disposable fields should be disposed
         private CancellationTokenSource stopTokenSource;
+#pragma warning restore CA2213 // Disposable fields should be disposed
         private NetworkStream stream;
         private CancellationTokenSource volumeCancelSource;
     }

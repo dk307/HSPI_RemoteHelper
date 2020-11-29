@@ -159,7 +159,7 @@ namespace Hspi.Pages
                                                        new AsyncProducerConsumerQueue<Devices.FeedbackValue>())) { }
                         pluginConfig.UpdateDevice(device);
                         pluginConfig.FireConfigChanged();
-                        divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}")));
+                        divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}")));
                     }
                     catch (Exception ex)
                     {
@@ -169,7 +169,7 @@ namespace Hspi.Pages
             }
             else if (form == NameToIdWithPrefix(CancelDeviceName))
             {
-                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(RemoteHelperConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(DebugLoggingId))
             {
@@ -285,7 +285,6 @@ namespace Hspi.Pages
         private const string DeviceIPId = "DeviceIPId";
         private const string EditDevicePageType = "addNew";
         private const string EnabledId = "EnabledId";
-        private const string IdPrefix = "id_";
         private const string NameId = "NameId";
         private const int PortsMax = 8;
         private const string SaveDeviceName = "SaveButton";

@@ -97,8 +97,8 @@ namespace Rssdp.Infrastructure
         /// <exception cref="System.ArgumentOutOfRangeException">The <paramref name="multicastTimeToLive"/> argument is less than or equal to zero.</exception>
         public SsdpCommunicationsServer(ISocketFactory socketFactory, int localPort, int multicastTimeToLive)
         {
-            if (socketFactory == null) throw new ArgumentNullException("socketFactory");
-            if (multicastTimeToLive <= 0) throw new ArgumentOutOfRangeException("multicastTimeToLive", "multicastTimeToLive must be greater than zero.");
+            if (socketFactory == null) throw new ArgumentNullException(nameof(socketFactory));
+            if (multicastTimeToLive <= 0) throw new ArgumentOutOfRangeException(nameof(multicastTimeToLive), "multicastTimeToLive must be greater than zero.");
 
             _BroadcastListenSocketSynchroniser = new object();
             _SendSocketSynchroniser = new object();
@@ -161,7 +161,7 @@ namespace Rssdp.Infrastructure
         /// <exception cref="System.ObjectDisposedException">Thrown if the <see cref="DisposableManagedObjectBase.IsDisposed"/> property is true (because <seealso cref="DisposableManagedObjectBase.Dispose()" /> has been called previously).</exception>
         public void SendMessage(byte[] messageData, UdpEndPoint destination)
         {
-            if (messageData == null) throw new ArgumentNullException("messageData");
+            if (messageData == null) throw new ArgumentNullException(nameof(messageData));
 
             ThrowIfDisposed();
 
@@ -307,7 +307,7 @@ namespace Rssdp.Infrastructure
                                 // Strange cannot convert compiler error here if I don't explicitly
                                 // assign or cast to Action first. Assignment is easier to read,
                                 // so went with that.
-                                Action processWork = () => ProcessMessage(System.Text.UTF8Encoding.UTF8.GetString(result.Buffer, 0, result.ReceivedBytes), result.ReceivedFrom);
+                                Action processWork = () => ProcessMessage(System.Text.Encoding.UTF8.GetString(result.Buffer, 0, result.ReceivedBytes), result.ReceivedFrom);
                                 var processTask = TaskEx.Run(processWork);
                             }
                         }
@@ -315,7 +315,7 @@ namespace Rssdp.Infrastructure
                         {
                             if (IsDisposed) return; //No error or reconnect if we're shutdown.
 
-                            await ReconnectBroadcastListeningSocket();
+                            await ReconnectBroadcastListeningSocket().ConfigureAwait(false);
                             cancelled = true;
                             break;
                         }
@@ -324,13 +324,13 @@ namespace Rssdp.Infrastructure
                             cancelled = true;
                         }
                     }
-                });
+                }).ConfigureAwait(false);
             }
             catch
             {
                 if (IsDisposed) return;
 
-                await ReconnectBroadcastListeningSocket();
+                await ReconnectBroadcastListeningSocket().ConfigureAwait(false);
             }
         }
 
@@ -358,7 +358,7 @@ namespace Rssdp.Infrastructure
                 }
                 catch
                 {
-                    await TaskEx.Delay(30000);
+                    await TaskEx.Delay(30000).ConfigureAwait(false);
                 }
             }
         }

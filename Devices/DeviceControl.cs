@@ -33,7 +33,7 @@ namespace Hspi.Devices
         }
 
         public IEnumerable<DeviceCommand> Commands => commands;
-        public bool Connected { get; private set; } = false;
+        public bool Connected { get; private set; }
         public IEnumerable<DeviceFeedback> Feedbacks => feedbacks;
         public abstract bool InvalidState { get; }
         public string Name { get; }
@@ -151,7 +151,7 @@ namespace Hspi.Devices
         private readonly DeviceFeedbackCollection feedbacks = new DeviceFeedbackCollection();
         private readonly AsyncProducerConsumerQueue<DeviceCommand> commandQueue;
         private readonly AsyncProducerConsumerQueue<FeedbackValue> feedbackQueue;
-        private bool disposedValue = false;
+        private bool disposedValue;
 
         [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
         internal class DeviceCommandCollection : KeyedCollection<string, DeviceCommand>

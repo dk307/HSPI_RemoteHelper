@@ -92,7 +92,7 @@ namespace Hspi.Devices
                         await Task.Delay(delay, token).ConfigureAwait(false);
                     }
                 } while ((!token.IsCancellationRequested));
-            });
+            }, cancelToken);
         }
 
         private bool ShouldIgnoreCommand(string commandId)

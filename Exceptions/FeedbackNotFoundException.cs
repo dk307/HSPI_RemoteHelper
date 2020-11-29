@@ -17,5 +17,9 @@ namespace Hspi.Devices
         protected FeedbackNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+
+        public FeedbackNotFoundException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

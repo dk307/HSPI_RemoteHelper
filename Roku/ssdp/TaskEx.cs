@@ -36,6 +36,7 @@ namespace Rssdp
             if (millisecondsDelay < -1) throw new ArgumentOutOfRangeException(nameof(millisecondsDelay), "millisecondsDelay must be -1 or greater.");
 
             var tcs = new TaskCompletionSource<object>();
+#pragma warning disable CA2000 // Dispose objects before losing scope
             var timer = new Timer((state) =>
                 {
                     tcs.SetResult(null);
@@ -43,6 +44,7 @@ namespace Rssdp
                 null,
                 millisecondsDelay,
                 System.Threading.Timeout.Infinite);
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
             return tcs.Task.ContinueWith((t) => timer.Dispose());
         }

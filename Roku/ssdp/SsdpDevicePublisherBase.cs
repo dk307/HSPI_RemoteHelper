@@ -30,9 +30,7 @@ namespace Rssdp.Infrastructure
         private TimeSpan _MinCacheTime;
         private TimeSpan _NotificationBroadcastInterval = TimeSpan.Zero;
 
-        private const string ServerVersion = "1.0";
-
-        #endregion Fields & Constants
+                #endregion Fields & Constants
 
         #region Constructors
 
@@ -45,7 +43,7 @@ namespace Rssdp.Infrastructure
         /// <param name="log">An implementation of <see cref="ISsdpLogger"/> to be used for logging activity. May be null, in which case no logging is performed.</param>
         protected SsdpDevicePublisherBase(ISsdpCommunicationsServer communicationsServer, ISsdpLogger log)
         {
-            if (communicationsServer == null) throw new ArgumentNullException("communicationsServer");
+            if (communicationsServer == null) throw new ArgumentNullException(nameof(communicationsServer));
 
             _Log = log ?? NullLogger.Instance;
             _Devices = new List<SsdpRootDevice>();
@@ -80,7 +78,7 @@ namespace Rssdp.Infrastructure
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "t", Justification = "Capture task to local variable supresses compiler warning, but task is not really needed.")]
         public void AddDevice(SsdpRootDevice device)
         {
-            if (device == null) throw new ArgumentNullException("device");
+            if (device == null) throw new ArgumentNullException(nameof(device));
 
             ThrowIfDisposed();
 
@@ -124,7 +122,7 @@ namespace Rssdp.Infrastructure
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "RemoveDevice")]
         public void RemoveDevice(SsdpRootDevice device)
         {
-            if (device == null) throw new ArgumentNullException("device");
+            if (device == null) throw new ArgumentNullException(nameof(device));
 
             ThrowIfDisposed();
 
@@ -248,7 +246,10 @@ namespace Rssdp.Infrastructure
             }
 
             //Do not block synchronously as that may tie up a threadpool thread for several seconds.
+#pragma warning disable CA5394 // Do not use insecure randomness
+#pragma warning disable CA2008 // Do not create tasks without passing a TaskScheduler
             TaskEx.Delay(_Random.Next(16, 1000)).ContinueWith((parentTask) =>
+#pragma warning restore CA5394 // Do not use insecure randomness
             {
                 //Copying devices to local array here to avoid threading issues/enumerator exceptions.
                 var devices = GetDevicesMatchingSearchTarget(searchTarget);
@@ -258,6 +259,7 @@ namespace Rssdp.Infrastructure
                 else
                     _Log.LogWarning("Sending search responses for 0 devices (no matching targets).");
             });
+#pragma warning restore CA2008 // Do not create tasks without passing a TaskScheduler
         }
 
         private IEnumerable<SsdpDevice> GetDevicesMatchingSearchTarget(string searchTarget)
@@ -284,7 +286,7 @@ namespace Rssdp.Infrastructure
                 {
                     if (searchTarget.Contains(":service:"))
                     {
-                        devices = new SsdpDevice[0];
+                        devices = Array.Empty<SsdpDevice>();
                     }
                     else
                     {
@@ -548,7 +550,9 @@ namespace Rssdp.Infrastructure
                 // which we broadcast notifications, to help with network congestion.
                 // Specs also advise to choose a random interval up to *half* the cache time.
                 // Here we do that, but using the minimum non-zero cache time of any device we are publishing.
+#pragma warning disable CA5394 // Do not use insecure randomness
                 rebroadCastInterval = new TimeSpan(Convert.ToInt64((_Random.Next(1, 50) / 100D) * (minCacheTime.Ticks / 2)));
+#pragma warning restore CA5394 // Do not use insecure randomness
             }
 
             DisposeRebroadcastTimer();

@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CA2008: Do not create tasks without passing a TaskScheduler
+dotnet_diagnostic.CA2008.severity = silent

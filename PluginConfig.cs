@@ -214,6 +214,6 @@ namespace Hspi
         private readonly IDictionary<DeviceType, DeviceControlConfig> devices = new Dictionary<DeviceType, DeviceControlConfig>();
         private readonly IHSApplication HS;
         private bool debugLogging;
-        private bool disposedValue = false;
+        private bool disposedValue;
     };
 }

@@ -361,7 +361,9 @@ namespace Hspi.Devices
 
             adbClient = new AdbClient();
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
             monitor = new DeviceMonitor(new AdbSocket(adbClient.EndPoint));
+#pragma warning restore CA2000 // Dispose objects before losing scope
             monitor.DeviceDisconnected += Monitor_DeviceDisconnected;
             monitor.DeviceChanged += Monitor_DeviceChanged;
             monitor.Start();
@@ -373,7 +375,7 @@ namespace Hspi.Devices
             int retries = 20;
             while ((device == null) && (retries > 0))
             {
-                await Task.Delay(50).ConfigureAwait(false);
+                await Task.Delay(50, token).ConfigureAwait(false);
                 device = GetOnlineDevice();
                 retries--;
             }
@@ -739,7 +741,9 @@ namespace Hspi.Devices
         private CancellationTokenSource cursorCancelLoopSource;
         private volatile ImmutableSortedDictionary<int, int> directKeysDevices;
         private DeviceMonitor monitor;
+#pragma warning disable CA2213 // Disposable fields should be disposed
         private CancellationTokenSource queryRunningApplicationTokenSource;
+#pragma warning restore CA2213 // Disposable fields should be disposed
         private readonly ImmutableDictionary<string, string> androidApplicationNames = new Dictionary<string, string>() { 
                 {launcherApplication, "Launcher"},
                 {settingApplication, "Settings"},

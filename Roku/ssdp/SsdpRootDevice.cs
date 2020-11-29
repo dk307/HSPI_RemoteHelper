@@ -29,7 +29,7 @@ namespace Rssdp
         public SsdpRootDevice(Uri location, TimeSpan cacheLifetime, string deviceDescriptionXml)
             : base(deviceDescriptionXml)
         {
-            if (location == null) throw new ArgumentNullException("location");
+            if (location == null) throw new ArgumentNullException(nameof(location));
 
             this.CacheLifetime = cacheLifetime;
             this.Location = location;
@@ -75,7 +75,9 @@ namespace Rssdp
             //target 4.0 :(
             using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
             {
-                System.Xml.XmlWriter writer = System.Xml.XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = System.Text.UTF8Encoding.UTF8, Indent = true, NamespaceHandling = NamespaceHandling.OmitDuplicates });
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                System.Xml.XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = System.Text.UTF8Encoding.UTF8, Indent = true, NamespaceHandling = NamespaceHandling.OmitDuplicates });
+#pragma warning restore CA2000 // Dispose objects before losing scope
                 writer.WriteStartDocument();
                 writer.WriteStartElement("root", SsdpConstants.SsdpDeviceDescriptionXmlNamespace);
 

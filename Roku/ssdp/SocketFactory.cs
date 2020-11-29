@@ -46,7 +46,7 @@ namespace Rssdp
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "The purpose of this method is to create and returns a disposable result, it is up to the caller to dispose it when they are done with it.")]
         public IUdpSocket CreateUdpSocket(int localPort)
         {
-            if (localPort < 0) throw new ArgumentException("localPort cannot be less than zero.", "localPort");
+            if (localPort < 0) throw new ArgumentException("localPort cannot be less than zero.", nameof(localPort));
 
             var retVal = new Socket(_LocalIP.AddressFamily, System.Net.Sockets.SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
             try
@@ -59,8 +59,7 @@ namespace Rssdp
             }
             catch
             {
-                if (retVal != null)
-                    retVal.Dispose();
+                retVal.Dispose();
 
                 throw;
             }
@@ -75,8 +74,8 @@ namespace Rssdp
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "ip"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "The purpose of this method is to create and returns a disposable result, it is up to the caller to dispose it when they are done with it.")]
         public IUdpSocket CreateUdpMulticastSocket(int multicastTimeToLive, int localPort)
         {
-            if (multicastTimeToLive <= 0) throw new ArgumentException("multicastTimeToLive cannot be zero or less.", "multicastTimeToLive");
-            if (localPort < 0) throw new ArgumentException("localPort cannot be less than zero.", "localPort");
+            if (multicastTimeToLive <= 0) throw new ArgumentException("multicastTimeToLive cannot be zero or less.", nameof(multicastTimeToLive));
+            if (localPort < 0) throw new ArgumentException("localPort cannot be less than zero.", nameof(localPort));
 
             var retVal = new Socket(_LocalIP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
@@ -102,8 +101,7 @@ namespace Rssdp
             }
             catch
             {
-                if (retVal != null)
-                    retVal.Dispose();
+                retVal.Dispose();
 
                 throw;
             }
@@ -176,7 +174,7 @@ namespace Rssdp
                         {
                             if (address.Address?.ToString() == ipAddress.ToString())
                             {
-                                var ipv6Properties = ipProperties?.GetIPv6Properties();
+                                var ipv6Properties = ipProperties.GetIPv6Properties();
                                 return ipv6Properties?.Index ?? -1;
                             }
                         }

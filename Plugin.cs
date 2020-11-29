@@ -217,7 +217,9 @@ namespace Hspi
                 {
                     if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connector))
                     {
+#pragma warning disable CA2000 // Dispose objects before losing scope
                         CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
+#pragma warning restore CA2000 // Dispose objects before losing scope
                         combinedCancel.CancelAfter(commandMaxTime);
                         await connector.HandleCommand(commandId, combinedCancel.Token).ConfigureAwait(false);
                     }
@@ -332,7 +334,7 @@ namespace Hspi
                                 = new ConcurrentDictionary<DeviceType, DeviceControlManagerCore>();
 
         private RemoteHelperConfigPage configPage;
-        private bool disposedValue = false;
+        private bool disposedValue;
         private PluginConfig pluginConfig;
     }
 }

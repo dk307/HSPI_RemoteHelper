@@ -67,7 +67,9 @@ namespace Hspi.Devices
                 {
                     var connectTask = client.ConnectAsync(address, port);
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
                     CancellationTokenSource source = new CancellationTokenSource();
+#pragma warning restore CA2000 // Dispose objects before losing scope
                     source.CancelAfter(timeout);
                     var finishedTask = await Task.WhenAny(connectTask, Task.Delay(-1, source.Token)).ConfigureAwait(false);
 
@@ -112,9 +114,6 @@ namespace Hspi.Devices
             }
         }
 
-        /// <exception cref="ArgumentNullException"><paramref name="macAddress"/> is null.</exception>
-        /// <exception cref="ArgumentException">The length of the <see cref="T:System.Byte" /> array <paramref name="macAddress"/> is not 6.</exception>
-        /// <exception cref="ArgumentException">The length of the <see cref="T:System.Byte" /> array <paramref name="password"/> is not 0 or 6.</exception>
         private static byte[] GetWolPacket(byte[] macAddress)
         {
             if (macAddress == null)

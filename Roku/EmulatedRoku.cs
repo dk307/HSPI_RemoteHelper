@@ -163,7 +163,9 @@ namespace Hspi.Roku
                 using (var stream = new MemoryStream(iconData))
                 {
                     Response.ContentLength64 = stream.Length;
+#pragma warning disable CS0618 // Type or member is obsolete
                     await Response.BinaryResponseAsync(stream).ConfigureAwait(false);
+#pragma warning restore CS0618 // Type or member is obsolete
                 }
                 return true;
             }
@@ -172,7 +174,7 @@ namespace Hspi.Roku
             [WebApiHandler(HttpVerbs.Get, @"/")]
             public async Task<bool> Root()
             {
-                return await XmlResponse(rokuInfo);
+                return await XmlResponse(rokuInfo).ConfigureAwait(false);
             }
 
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
@@ -186,7 +188,9 @@ namespace Hspi.Roku
             private async Task<bool> XmlResponse(string xml)
             {
                 Response.StatusCode = (int)System.Net.HttpStatusCode.OK;
+#pragma warning disable CS0618 // Type or member is obsolete
                 return await Response.StringResponseAsync(xml, @"text/xml").ConfigureAwait(false);
+#pragma warning restore CS0618 // Type or member is obsolete
             }
 
             private readonly string rokuDeviceInfo;

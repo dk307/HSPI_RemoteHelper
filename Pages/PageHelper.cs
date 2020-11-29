@@ -148,6 +148,15 @@ namespace Hspi.Pages
             AddScript(stb.ToString());
         }
 
+        protected static string RedirectPageJS(string url)
+        {
+            StringBuilder stb = new StringBuilder();
+            stb.AppendLine("<script type='text/javascript'>");
+            stb.AppendLine(Invariant($"$(document).ready(function() {{ location.assign('{url}'); }});"));
+            stb.AppendLine("</script>");
+            return stb.ToString();
+        }
+
         private static string NameToId(string name)
         {
             return name.Replace(' ', '_');

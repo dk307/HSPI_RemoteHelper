@@ -33,8 +33,8 @@ namespace Rssdp
         /// <exception cref="System.ArgumentException">Thrown if the <paramref name="deviceDescriptionXml"/> argument is empty.</exception>
         protected SsdpDevice(string deviceDescriptionXml)
         {
-            if (deviceDescriptionXml == null) throw new ArgumentNullException("deviceDescriptionXml");
-            if (deviceDescriptionXml.Length == 0) throw new ArgumentException("deviceDescriptionXml cannot be an empty string.", "deviceDescriptionXml");
+            if (deviceDescriptionXml == null) throw new ArgumentNullException(nameof(deviceDescriptionXml));
+            if (deviceDescriptionXml.Length == 0) throw new ArgumentException("deviceDescriptionXml cannot be an empty string.", nameof(deviceDescriptionXml));
 
             _DeviceType = SsdpConstants.UpnpDeviceTypeBasicDevice;
 
@@ -42,8 +42,10 @@ namespace Rssdp
 
             using (var ms = new System.IO.MemoryStream(System.Text.UTF8Encoding.UTF8.GetBytes(deviceDescriptionXml)))
             {
-                var reader = XmlReader.Create(ms);
-                LoadDeviceProperties(reader, this);
+                using (var reader = XmlReader.Create(ms))
+                {
+                    LoadDeviceProperties(reader, this);
+                }
             }
         }
 
@@ -138,8 +140,8 @@ namespace Rssdp
         /// <exception cref="System.ArgumentNullException">Thrown if the <paramref name="writer"/> or <paramref name="device"/> argument is null.</exception>
         protected virtual void WriteDeviceDescriptionXml(XmlWriter writer, SsdpDevice device)
         {
-            if (writer == null) throw new ArgumentNullException("writer");
-            if (device == null) throw new ArgumentNullException("device");
+            if (writer == null) throw new ArgumentNullException(nameof(writer));
+            if (device == null) throw new ArgumentNullException(nameof(device));
 
             writer.WriteRaw(deviceDescriptionXml);
         }

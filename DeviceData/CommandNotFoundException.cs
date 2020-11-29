@@ -17,5 +17,9 @@ namespace Hspi.Devices
         protected CommandNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+
+        public CommandNotFoundException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }
