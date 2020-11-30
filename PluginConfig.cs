@@ -33,6 +33,7 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.XboxOne);
             LoadDeviceConfig(DeviceType.SonyBluRay);
             LoadDeviceConfig(DeviceType.PS3);
+            LoadDeviceConfig(DeviceType.Hue);
         }
 
         public event EventHandler<EventArgs> ConfigChanged;

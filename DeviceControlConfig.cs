@@ -19,7 +19,8 @@ namespace Hspi
         IP2IR,
         XboxOne,
         SonyBluRay,
-        PS3
+        PS3,
+        Hue,
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -92,6 +93,9 @@ namespace Hspi
 
                 case DeviceType.PS3:
                     return Array.Empty<string>();
+
+                case DeviceType.Hue:
+                    return new string[] { UserNameId, DevicesId };
             }
 
             throw new KeyNotFoundException();
@@ -155,6 +159,15 @@ namespace Hspi
                                                     connectionProvider,
                                                     commandQueue,
                                                     feedbackQueue);
+
+                case DeviceType.Hue:
+                    return new PhilipsHueControl(Name, DeviceIP,
+                                                AdditionalValues[UserNameId],
+                                                AdditionalValues[DevicesId].Split(','),
+                                                DefaultCommandDelay,
+                                                connectionProvider,
+                                                commandQueue,
+                                                feedbackQueue);
             }
 
             throw new KeyNotFoundException();
@@ -176,6 +189,8 @@ namespace Hspi
             return same;
         }
 
+        public const string UserNameId = "Username";
+        public const string DevicesId = "Devices";
         public const string ADBPathId = "ADBPath";
         public const string DefaultCommandDelayId = "CommandDelay(ms)";
         public const string DefaultPowerOnDelayId = "PowerOnDelay(ms)";
