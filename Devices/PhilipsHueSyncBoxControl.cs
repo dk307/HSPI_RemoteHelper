@@ -63,7 +63,6 @@ namespace Hspi.Devices
 
                 switch (command.Id)
                 {
- 
                     case CommandName.PowerOff:
                         {
                             var syncBoxCommand = new ExecutionCommand()
@@ -139,7 +138,7 @@ namespace Hspi.Devices
 
         private async Task<bool> IsNetworkOn()
         {
-            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
+            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(1500);
             return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).ConfigureAwait(false);
         }
 
@@ -151,7 +150,6 @@ namespace Hspi.Devices
             await UpdateFeedback(FeedbackName.Input, state.Execution.HdmiSource?.ToString() ?? null, token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.HdmiActive, state.Execution.HdmiActive, token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.Mode, state.Execution.Mode?.ToString() ?? null, token).ConfigureAwait(false);
-
         }
 
         private readonly AsyncLock connectionLock = new AsyncLock();
