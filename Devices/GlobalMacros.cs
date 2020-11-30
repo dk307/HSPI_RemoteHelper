@@ -254,6 +254,15 @@ namespace Hspi.Devices
                 GetConnection(DeviceType.SonyBluRay),
                 GetConnection(DeviceType.PS3),
             };
+        } 
+        
+        private IDeviceCommandHandler[] GetHueDevices()
+        {
+            return new IDeviceCommandHandler[]
+            {
+                GetConnection(DeviceType.Hue),
+                GetConnection(DeviceType.HueSyncBox), 
+            };
         }
 
         private IDeviceCommandHandler GetConnection(DeviceType deviceType)
@@ -332,7 +341,8 @@ namespace Hspi.Devices
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
             IDeviceCommandHandler[] shutdownDevices = GetAllDevices();
-
+            
+            await ShutdownDevices(GetHueDevices(), timeoutToken).ConfigureAwait(false);
             await ShutdownDevices(shutdownDevices, timeoutToken).ConfigureAwait(false);
             await tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
             await avr.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
