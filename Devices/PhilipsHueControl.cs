@@ -91,7 +91,7 @@ namespace Hspi.Devices
 
         private async Task Connect(CancellationToken token)
         {
-            if (!await IsNetworkOn(token).ConfigureAwait(false))
+            if (!await IsNetworkOn().ConfigureAwait(false))
             {
                 throw new DevicePoweredOffException($"Hue {Name} on {DeviceIP} not powered On");
             }
@@ -101,10 +101,10 @@ namespace Hspi.Devices
             await UpdateConnectedState(true, token).ConfigureAwait(false);
         }
 
-        private async Task<bool> IsNetworkOn(CancellationToken token)
+        private async Task<bool> IsNetworkOn()
         {
             TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingHost(DeviceIP, 80, networkPingTimeout, token).ConfigureAwait(false);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).ConfigureAwait(false);
         }
 
         private async Task UpdatePowerStatus(CancellationToken token)

@@ -23,6 +23,14 @@
         public const string Volume = "Volume Status";
         public const string Zone1Status = "Zone 1 Power Status";
         public const string Zone2Status = "Zone 2 Power Status";
+
+
+
+        // Hue Box sync
+        public const string SyncActiveStatus = "Sync Active Status";
+        public const string HdmiActive = "HDMI Active";
+        public const string Mode = "Mode";
+
     }
 
 }

@@ -34,6 +34,7 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.SonyBluRay);
             LoadDeviceConfig(DeviceType.PS3);
             LoadDeviceConfig(DeviceType.Hue);
+            LoadDeviceConfig(DeviceType.HueSyncBox);
         }
 
         public event EventHandler<EventArgs> ConfigChanged;

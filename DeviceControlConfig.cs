@@ -21,6 +21,7 @@ namespace Hspi
         SonyBluRay,
         PS3,
         Hue,
+        HueSyncBox,
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -96,6 +97,9 @@ namespace Hspi
 
                 case DeviceType.Hue:
                     return new string[] { UserNameId, DevicesId };
+
+                case DeviceType.HueSyncBox:
+                    return new string[] { UserNameId };
             }
 
             throw new KeyNotFoundException();
@@ -164,6 +168,13 @@ namespace Hspi
                     return new PhilipsHueControl(Name, DeviceIP,
                                                 AdditionalValues[UserNameId],
                                                 AdditionalValues[DevicesId].Split(','),
+                                                DefaultCommandDelay,
+                                                connectionProvider,
+                                                commandQueue,
+                                                feedbackQueue);
+                case DeviceType.HueSyncBox:
+                    return new PhilipsHueSyncBoxControl(Name, DeviceIP,
+                                                AdditionalValues[UserNameId],                                        
                                                 DefaultCommandDelay,
                                                 connectionProvider,
                                                 commandQueue,

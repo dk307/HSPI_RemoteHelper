@@ -103,5 +103,11 @@
         public const string Zone2Off = "Zone 2 Off";
         public const string Zone1PowerStatusQuery = "Zone 1 Power Status Query";
         public const string Zone2PowerStatusQuery = "Zone 2 Power Status Query";
+
+
+        // Hue Box Sync
+        public const string StartSyncModeVideo = "Start Sync Mode Video";
+        public const string StartSyncModeGame = "Start Sync Mode Game";
+        public const string EndSyncMode = "End Sync";
     }
 }
