@@ -15,7 +15,9 @@ namespace Hspi.Utils
         /// <returns></returns>
         public static string GetDescription(System.Enum value)
         {
+#pragma warning disable CA1062 // Validate arguments of public methods
             FieldInfo fi = value.GetType().GetField(value.ToString());
+#pragma warning restore CA1062 // Validate arguments of public methods
             DescriptionAttribute[] attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
             if (attributes.Length > 0)
                 return attributes[0].Description;

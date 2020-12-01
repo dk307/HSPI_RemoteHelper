@@ -1,5 +1,4 @@
-﻿using Hspi.Devices;
-using Hspi.Utils;
+﻿using Hspi.Utils;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
@@ -49,6 +48,8 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.Zone2Off, "Z2OFF", fixedValue: -67));
             AddCommand(new DeviceCommand(CommandName.Zone1PowerStatusQuery, "ZM?", fixedValue: -66));
             AddCommand(new DeviceCommand(CommandName.Zone2PowerStatusQuery, "Z2?", fixedValue: -65));
+
+            AddCommand(new DeviceCommand(CommandName.Zone2SameSource, "Z2SOURCE", fixedValue: -64));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Mute, TypeCode.Boolean));

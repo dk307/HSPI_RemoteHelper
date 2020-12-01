@@ -103,6 +103,7 @@
         public const string Zone2Off = "Zone 2 Off";
         public const string Zone1PowerStatusQuery = "Zone 1 Power Status Query";
         public const string Zone2PowerStatusQuery = "Zone 2 Power Status Query";
+        public const string Zone2SameSource = "Zone 2 Same Source";
 
 
         // Hue Box Sync

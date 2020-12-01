@@ -1,5 +1,4 @@
 ﻿using Hspi.Connector;
-using Hspi.Devices;
 using Hspi.Utils;
 using Nito.AsyncEx;
 using NullGuard;
@@ -254,14 +253,14 @@ namespace Hspi.Devices
                 GetConnection(DeviceType.SonyBluRay),
                 GetConnection(DeviceType.PS3),
             };
-        } 
-        
+        }
+
         private IDeviceCommandHandler[] GetHueDevices()
         {
             return new IDeviceCommandHandler[]
             {
                 GetConnection(DeviceType.Hue),
-                GetConnection(DeviceType.HueSyncBox), 
+                GetConnection(DeviceType.HueSyncBox),
             };
         }
 
@@ -341,7 +340,7 @@ namespace Hspi.Devices
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
             IDeviceCommandHandler[] shutdownDevices = GetAllDevices();
-            
+
             await ShutdownDevices(GetHueDevices(), timeoutToken).ConfigureAwait(false);
             await ShutdownDevices(shutdownDevices, timeoutToken).ConfigureAwait(false);
             await tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
@@ -476,6 +475,7 @@ namespace Hspi.Devices
                                         bool gameMode,
                                         CancellationToken timeoutToken)
         {
+            IDeviceCommandHandler lightStrip = GetConnection(DeviceType.Hue);
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
 
@@ -484,7 +484,8 @@ namespace Hspi.Devices
             List<Task> tasks = new List<Task>
             {
                 avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
-                device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken)
+                device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
+                lightStrip.HandleCommandIgnoreException(CommandName.PowerOn, timeoutToken),
             };
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
             tasks.Clear();
@@ -534,11 +535,29 @@ namespace Hspi.Devices
                 tasks.Add(SetAVRDefaultState(avr, timeoutToken).IgnoreException());
             }
 
+            await SetupHueSyncBox(gameMode, avr, timeoutToken).ConfigureAwait(false);
+
             //shutdown Devices
             tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken).IgnoreException());
 
             await tasks.WhenAll().ConfigureAwait(false);
             tasks.Clear();
+        }
+
+        private async Task SetupHueSyncBox(bool gameMode,
+                                           IDeviceCommandHandler avr, CancellationToken timeoutToken)
+        {
+            // power on zone 2
+            await EnsureAVRState(avr, true, CommandName.Zone2PowerStatusQuery,
+                                 CommandName.Zone2On, FeedbackName.Zone2Status, int.MaxValue, timeoutToken).ConfigureAwait(false);
+
+            // set zone 2 status same as 1
+            await avr.HandleCommandIgnoreException(CommandName.Zone2SameSource, timeoutToken).ConfigureAwait(false);
+
+            // turn on syncing
+            var hueSync = GetConnection(DeviceType.HueSyncBox);
+            await hueSync.HandleCommandIgnoreException(gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo,
+                                                       timeoutToken).ConfigureAwait(false);
         }
 
         private async Task UpdateStatus(string value, CancellationToken token)

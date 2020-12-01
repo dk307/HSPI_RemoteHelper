@@ -1,4 +1,4 @@
-﻿using Hspi.Devices;
+﻿using Hspi.Utils;
 using Nito.AsyncEx;
 using NullGuard;
 using System;
@@ -153,6 +153,30 @@ namespace Hspi.Devices
                     MacroStopCommandLoop(ref cursorCancelLoopSource);
                     break;
 
+                case CommandName.PowerOff:
+                    try
+                    {
+                        await SendCommandCore(command.Data, token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.IsCancelException())
+                        {
+                            throw;
+                        }
+
+                        if (await IsOnNetwork().ConfigureAwait(false) &&
+                            !await IsPoweredOn(token).ConfigureAwait(false))
+                        {
+                            // ignore as device is in deep sleep
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
+                    break;
+
                 default:
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
@@ -161,7 +185,7 @@ namespace Hspi.Devices
 
         private async Task Connect(CancellationToken token)
         {
-            if (!await IsPoweredOn(token).ConfigureAwait(false))
+            if (!await IsOnNetwork().ConfigureAwait(false))
             {
                 throw new DevicePoweredOffException($"Sony Blu Ray {Name} on {DeviceIP} not powered On");
             }
@@ -171,10 +195,10 @@ namespace Hspi.Devices
             await UpdateConnectedState(true, token).ConfigureAwait(false);
         }
 
-        private async Task<bool> IsPoweredOn(CancellationToken token)
+        private async Task<bool> IsOnNetwork()
         {
-            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
-            return await NetworkHelper.PingHost(DeviceIP, Port, networkPingTimeout, token).ConfigureAwait(false);
+            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(1000);
+            return await NetworkHelper.PingAddress(DeviceIP, networkPingTimeout).ConfigureAwait(false);
         }
 
         private void MacroStartCommandLoop(string commandId)
@@ -209,6 +233,12 @@ namespace Hspi.Devices
                     }
                 }
             }
+        }
+
+        private async Task<bool> IsPoweredOn(CancellationToken token)
+        {
+            TimeSpan networkPingTimeout = TimeSpan.FromMilliseconds(500);
+            return await NetworkHelper.PingHost(DeviceIP, Port, networkPingTimeout, token).ConfigureAwait(false);
         }
 
         private async Task UpdatePowerFeedbackState(CancellationToken token)
