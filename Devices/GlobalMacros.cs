@@ -259,8 +259,8 @@ namespace Hspi.Devices
         {
             return new IDeviceCommandHandler[]
             {
-                GetConnection(DeviceType.Hue),
                 GetConnection(DeviceType.HueSyncBox),
+                GetConnection(DeviceType.Hue),
             };
         }
 
@@ -337,12 +337,11 @@ namespace Hspi.Devices
         {
             await UpdateStatus($"Turning Off Devices", timeoutToken).ConfigureAwait(false);
 
-            IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
-            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
-            IDeviceCommandHandler[] shutdownDevices = GetAllDevices();
+            var tv = GetConnection(DeviceType.SamsungTV);
+            var avr = GetConnection(DeviceType.DenonAVR);
 
             await ShutdownDevices(GetHueDevices(), timeoutToken).ConfigureAwait(false);
-            await ShutdownDevices(shutdownDevices, timeoutToken).ConfigureAwait(false);
+            await ShutdownDevices(GetAllDevices(), timeoutToken).ConfigureAwait(false);
             await tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
             await avr.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
         }
@@ -476,6 +475,7 @@ namespace Hspi.Devices
                                         CancellationToken timeoutToken)
         {
             IDeviceCommandHandler lightStrip = GetConnection(DeviceType.Hue);
+            IDeviceCommandHandler hueSyncBox = GetConnection(DeviceType.HueSyncBox);
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
 
@@ -486,7 +486,9 @@ namespace Hspi.Devices
                 avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
                 device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
                 lightStrip.HandleCommandIgnoreException(CommandName.PowerOn, timeoutToken),
+                hueSyncBox.HandleCommandIgnoreException(CommandName.PassThrough, timeoutToken),
             };
+
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
             tasks.Clear();
 
@@ -501,20 +503,27 @@ namespace Hspi.Devices
                                                     CommandName.Zone1PowerStatusQuery,
                                                     FeedbackName.Zone1Status).ConfigureAwait(false);
 
+            
+
+            await UpdateStatus($"Turning On TV", timeoutToken).ConfigureAwait(false);
+            await TurnDeviceOn(tv, timeoutToken).IgnoreException().ConfigureAwait(false); // tv power query is not reliable
+
             await UpdateStatus($"Switching {avr.Name} to {input}", timeoutToken).ConfigureAwait(false);
             bool inputChanged = await EnsureAVRState(avr, input, CommandName.InputStatusQuery,
                                  inputSwitchCommand, FeedbackName.Input, int.MaxValue, timeoutToken).ConfigureAwait(false);
 
-            await UpdateStatus($"Turning On TV", timeoutToken).ConfigureAwait(false);
-
-            await TurnDeviceOn(tv, timeoutToken).IgnoreException().ConfigureAwait(false); // tv power query is not reliable
-
             await UpdateStatus($"Switching {tv.Name} Input", timeoutToken).ConfigureAwait(false);
             await tv.HandleCommandIgnoreException(CommandName.TVAVRInput, timeoutToken).ConfigureAwait(false);
-            await DelayDefaultCommandTime(timeoutToken, tv).ConfigureAwait(false);
+            await DelayDefaultCommandTime(timeoutToken, avr).ConfigureAwait(false);
+
+            //wait for hue passthrough to stablize
+            if (turnedOnAVR)
+            {
+                await UpdateStatus($"Waiting for stablization of {avr.Name}", timeoutToken).ConfigureAwait(false);
+                await Task.Delay(5000, timeoutToken).ConfigureAwait(false);
+            }
 
             await UpdateStatus($"Turning on {device.Name}", timeoutToken).ConfigureAwait(false);
-
             bool deviceOn = await TurnDeviceOnIfOff(device, false, timeoutToken).ConfigureAwait(false);
 
             await UpdateStatus($"Setting up rest...", timeoutToken).ConfigureAwait(false);
@@ -535,29 +544,14 @@ namespace Hspi.Devices
                 tasks.Add(SetAVRDefaultState(avr, timeoutToken).IgnoreException());
             }
 
-            await SetupHueSyncBox(gameMode, avr, timeoutToken).ConfigureAwait(false);
+            tasks.Add(hueSyncBox.HandleCommandIgnoreException(gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo,
+                                           timeoutToken).IgnoreException());
 
             //shutdown Devices
             tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken).IgnoreException());
 
             await tasks.WhenAll().ConfigureAwait(false);
             tasks.Clear();
-        }
-
-        private async Task SetupHueSyncBox(bool gameMode,
-                                           IDeviceCommandHandler avr, CancellationToken timeoutToken)
-        {
-            // power on zone 2
-            await EnsureAVRState(avr, true, CommandName.Zone2PowerStatusQuery,
-                                 CommandName.Zone2On, FeedbackName.Zone2Status, int.MaxValue, timeoutToken).ConfigureAwait(false);
-
-            // set zone 2 status same as 1
-            await avr.HandleCommandIgnoreException(CommandName.Zone2SameSource, timeoutToken).ConfigureAwait(false);
-
-            // turn on syncing
-            var hueSync = GetConnection(DeviceType.HueSyncBox);
-            await hueSync.HandleCommandIgnoreException(gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo,
-                                                       timeoutToken).ConfigureAwait(false);
         }
 
         private async Task UpdateStatus(string value, CancellationToken token)

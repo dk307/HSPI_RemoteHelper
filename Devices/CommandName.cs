@@ -109,6 +109,6 @@
         // Hue Box Sync
         public const string StartSyncModeVideo = "Start Sync Mode Video";
         public const string StartSyncModeGame = "Start Sync Mode Game";
-        public const string EndSyncMode = "End Sync";
+        public const string PassThrough = "End Sync with Passthrough";
     }
 }

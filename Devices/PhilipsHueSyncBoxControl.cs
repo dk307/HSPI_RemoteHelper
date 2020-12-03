@@ -29,12 +29,14 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.PowerOff, fixedValue: -98));
             AddCommand(new DeviceCommand(CommandName.StartSyncModeVideo, fixedValue: -97));
             AddCommand(new DeviceCommand(CommandName.StartSyncModeGame, fixedValue: -96));
-            AddCommand(new DeviceCommand(CommandName.EndSyncMode, fixedValue: -95));
+            AddCommand(new DeviceCommand(CommandName.PassThrough, fixedValue: -95));
+            AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue: -94 ));
 
             AddFeedback(new DeviceFeedback(FeedbackName.SyncActiveStatus, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Input, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.HdmiActive, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Mode, TypeCode.String));
+            AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
         }
 
         public override bool InvalidState
@@ -75,11 +77,12 @@ namespace Hspi.Devices
                         }
                         break;
 
-                    case CommandName.EndSyncMode:
+                    case CommandName.PassThrough:
                         {
                             var syncBoxCommand = new ExecutionCommand()
                             {
                                 SyncActive = false,
+                                HdmiSource = HdmiSource.Input1,
                                 Mode = Mode.Passthrough,
                             };
                             await client.ApplyExecutionCommandAsync(syncBoxCommand).ConfigureAwait(false);
@@ -115,6 +118,7 @@ namespace Hspi.Devices
                         }
                         break;
 
+                    case CommandName.PowerQuery:
                     case CommandName.AllStatusQuery:
                         {
                             await UpdateStatus(token).ConfigureAwait(false);
@@ -150,6 +154,8 @@ namespace Hspi.Devices
             await UpdateFeedback(FeedbackName.Input, state.Execution.HdmiSource?.ToString() ?? null, token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.HdmiActive, state.Execution.HdmiActive, token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.Mode, state.Execution.Mode?.ToString() ?? null, token).ConfigureAwait(false);
+            await UpdateFeedback(FeedbackName.Power, state.Execution.Mode != Mode.PowerSave, token).ConfigureAwait(false);
+
         }
 
         private readonly AsyncLock connectionLock = new AsyncLock();
