@@ -157,6 +157,7 @@ namespace Hspi.Devices
                 client.CloseConnection();
                 client.Dispose();
             }
+            stream?.Dispose();
         }
 
         private async Task<bool> IsNetworkOn(CancellationToken token)

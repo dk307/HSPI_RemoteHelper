@@ -257,7 +257,7 @@ namespace Hspi.Pages
                 stb.Append(@"<td class='tablecell'>");
                 foreach (var item in device.Value.AdditionalValues)
                 {
-                    stb.Append(Invariant($"{item.Key}:{item.Value}<br>"));
+                    stb.Append(Invariant($"<B>{item.Key}</B>:{item.Value}<br>"));
                 }
 
                 stb.Append("</td>");
