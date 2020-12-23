@@ -105,7 +105,6 @@
         public const string Zone2PowerStatusQuery = "Zone 2 Power Status Query";
         public const string Zone2SameSource = "Zone 2 Same Source";
 
-
         // Hue/Hue Box Sync
         public const string AlertWhite = "Alert in White Color";
         public const string StartSyncModeVideo = "Start Sync Mode Video";

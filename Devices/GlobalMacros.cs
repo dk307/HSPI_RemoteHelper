@@ -187,6 +187,16 @@ namespace Hspi.Devices
             }
         }
 
+        private static async Task ShutdownAndPowerQuery(IDeviceCommandHandler shutdownDevice,
+                                                   CancellationToken timeoutToken,
+                                                   string command = CommandName.PowerOff)
+        {
+            await shutdownDevice.HandleCommandIgnoreException(command, timeoutToken)
+                              .ContinueWith((x) => Task.Delay(shutdownDevice.DefaultCommandDelay, timeoutToken))
+                              .ContinueWith((x) => shutdownDevice.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken))
+                              .ContinueWith((x) => Task.Delay(shutdownDevice.DefaultCommandDelay, timeoutToken)).ConfigureAwait(false);
+        }
+
         private static async Task ShutdownDevices(IEnumerable<IDeviceCommandHandler> shutdownDevices,
                                                   CancellationToken timeoutToken)
         {
@@ -194,10 +204,7 @@ namespace Hspi.Devices
 
             foreach (IDeviceCommandHandler shutdownDevice in shutdownDevices)
             {
-                shutdownTasks.Add(shutdownDevice.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken)
-                                  .ContinueWith((x) => Task.Delay(shutdownDevice.DefaultCommandDelay, timeoutToken))
-                                  .ContinueWith((x) => shutdownDevice.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken))
-                                  .ContinueWith((x) => Task.Delay(shutdownDevice.DefaultCommandDelay, timeoutToken)));
+                shutdownTasks.Add(ShutdownAndPowerQuery(shutdownDevice, timeoutToken));
             }
 
             await shutdownTasks.WhenAll().ConfigureAwait(false);
@@ -252,15 +259,6 @@ namespace Hspi.Devices
                 GetConnection(DeviceType.ADBRemoteControl),
                 GetConnection(DeviceType.SonyBluRay),
                 GetConnection(DeviceType.PS3),
-            };
-        }
-
-        private IDeviceCommandHandler[] GetHueDevices()
-        {
-            return new IDeviceCommandHandler[]
-            {
-                GetConnection(DeviceType.HueSyncBox),
-                GetConnection(DeviceType.Hue),
             };
         }
 
@@ -340,10 +338,21 @@ namespace Hspi.Devices
             var tv = GetConnection(DeviceType.SamsungTV);
             var avr = GetConnection(DeviceType.DenonAVR);
 
-            await ShutdownDevices(GetHueDevices(), timeoutToken).ConfigureAwait(false);
-            await ShutdownDevices(GetAllDevices(), timeoutToken).ConfigureAwait(false);
-            await tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
-            await avr.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken).ConfigureAwait(false);
+            var tasks = new List<Task>();
+
+            tasks.Add(ShutdownDevices(GetAllDevices(), timeoutToken));
+
+            foreach (var shutdownDevice in GetAllDevices())
+            {
+                tasks.Add(ShutdownAndPowerQuery(shutdownDevice, timeoutToken));
+            }
+
+            tasks.Add(ShutdownAndPowerQuery(GetConnection(DeviceType.HueSyncBox), timeoutToken, CommandName.PassThrough));
+            tasks.Add(ShutdownAndPowerQuery(GetConnection(DeviceType.Hue), timeoutToken));
+            tasks.Add(tv.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken));
+            tasks.Add(avr.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken));
+
+            await tasks.WhenAll().ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnNvidiaShield(CancellationToken timeoutToken)
@@ -548,9 +557,12 @@ namespace Hspi.Devices
                 tasks.Add(SetAVRDefaultState(avr, timeoutToken).IgnoreException());
             }
 
-            var hueSyncTask = lightStrip.HandleCommandIgnoreException(CommandName.AlertWhite, timeoutToken)
-                                .ContinueWith((x) => hueSyncBox.HandleCommandIgnoreException(gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo,
-                                                              timeoutToken));
+            var hueSyncTask = lightStrip.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken)
+                                .ContinueWith((x) =>
+                                {
+                                    string syncModeCommand = gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo;
+                                    return hueSyncBox.HandleCommandIgnoreException(syncModeCommand, timeoutToken);
+                                });
 
             tasks.Add(hueSyncTask);
 
