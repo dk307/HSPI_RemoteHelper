@@ -485,7 +485,7 @@ namespace Hspi.Devices
             {
                 avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
                 device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
-                lightStrip.HandleCommandIgnoreException(CommandName.PowerOn, timeoutToken),
+                lightStrip.HandleCommandIgnoreException(CommandName.AlertWhite, timeoutToken),
                 hueSyncBox.HandleCommandIgnoreException(CommandName.PassThrough, timeoutToken),
             };
 
@@ -548,8 +548,11 @@ namespace Hspi.Devices
                 tasks.Add(SetAVRDefaultState(avr, timeoutToken).IgnoreException());
             }
 
-            tasks.Add(hueSyncBox.HandleCommandIgnoreException(gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo,
+            var hueSyncTask = lightStrip.HandleCommandIgnoreException(CommandName.AlertWhite, timeoutToken)
+                                .ContinueWith((x) => hueSyncBox.HandleCommandIgnoreException(gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo,
                                                               timeoutToken));
+
+            tasks.Add(hueSyncTask);
 
             if (!othersShutdown)
             {

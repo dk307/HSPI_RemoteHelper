@@ -106,7 +106,8 @@
         public const string Zone2SameSource = "Zone 2 Same Source";
 
 
-        // Hue Box Sync
+        // Hue/Hue Box Sync
+        public const string AlertWhite = "Alert in White Color";
         public const string StartSyncModeVideo = "Start Sync Mode Video";
         public const string StartSyncModeGame = "Start Sync Mode Game";
         public const string PassThrough = "End Sync with Passthrough";

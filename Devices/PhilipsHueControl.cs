@@ -1,6 +1,8 @@
 ﻿using Nito.AsyncEx;
 using NullGuard;
 using Q42.HueApi;
+using Q42.HueApi.ColorConverters;
+using Q42.HueApi.ColorConverters.HSB;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -30,6 +32,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.PowerOff, fixedValue: -96));
             AddCommand(new DeviceCommand(CommandName.PowerOn, fixedValue: -95));
             AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue: -94));
+            AddCommand(new DeviceCommand(CommandName.AlertWhite, fixedValue: -93));
 
             AddFeedback(new DeviceFeedback(FeedbackName.Power, TypeCode.Boolean));
         }
@@ -68,7 +71,16 @@ namespace Hspi.Devices
                             await client.SendCommandAsync(hueCommand, this.devices).ConfigureAwait(false);
                             await UpdatePowerStatus(token).ConfigureAwait(false);
                         }
+                        break;
 
+                    case CommandName.AlertWhite:
+                        {
+                            var hueCommand = new LightCommand();
+                            hueCommand.TurnOn().SetColor(new RGBColor("FFFFFF"));
+                            hueCommand.Alert = Alert.Multiple;                     
+                            await client.SendCommandAsync(hueCommand, this.devices).ConfigureAwait(false);
+                            await UpdatePowerStatus(token).ConfigureAwait(false);
+                        }
                         break;
 
                     case CommandName.PowerOn:
