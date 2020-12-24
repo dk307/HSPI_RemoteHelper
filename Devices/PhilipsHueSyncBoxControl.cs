@@ -82,7 +82,7 @@ namespace Hspi.Devices
                             var syncBoxCommand = new ExecutionCommand()
                             {
                                 SyncActive = false,
-                                HdmiSource = HdmiSource.Input1,
+                                HdmiSource = HdmiSource.Input2,
                                 Mode = Mode.Passthrough,
                             };
                             await client.ApplyExecutionCommandAsync(syncBoxCommand).ConfigureAwait(false);
@@ -95,10 +95,11 @@ namespace Hspi.Devices
                             var syncBoxCommand = new ExecutionCommand()
                             {
                                 SyncActive = true,
-                                HdmiSource = HdmiSource.Input1,
+                                HdmiSource = HdmiSource.Input2,
                                 HdmiActive = true,
                                 Mode = Mode.Video,
                             };
+
                             await client.ApplyExecutionCommandAsync(syncBoxCommand).ConfigureAwait(false);
                             await UpdateStatus(token).ConfigureAwait(false);
                         }
@@ -109,7 +110,7 @@ namespace Hspi.Devices
                             var syncBoxCommand = new ExecutionCommand()
                             {
                                 SyncActive = true,
-                                HdmiSource = HdmiSource.Input1,
+                                HdmiSource = HdmiSource.Input2,
                                 HdmiActive = true,
                                 Mode = Mode.Game,
                             };

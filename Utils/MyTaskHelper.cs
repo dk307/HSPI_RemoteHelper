@@ -36,10 +36,9 @@ namespace Hspi.Utils
             Task.Run(() => @this).Wait();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "task")]
         public static void StartAsync(Func<Task> taskAction, CancellationToken token)
         {
-            Task<Task> task = Task.Factory.StartNew(() => taskAction(), token,
+           _ = Task.Factory.StartNew(() => taskAction(), token,
                                           TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
                                           TaskScheduler.Current);
         }
