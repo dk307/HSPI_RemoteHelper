@@ -29,7 +29,6 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroToggleMute, type: DeviceCommandType.Both, fixedValue: -96));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnXBoxOne, type: DeviceCommandType.Both, fixedValue: -95));
             AddCommand(new DeviceCommand(CommandName.MacroTurnOnSonyBluRay, type: DeviceCommandType.Both, fixedValue: -94));
-            AddCommand(new DeviceCommand(CommandName.MacroTurnOnPS3, type: DeviceCommandType.Both, fixedValue: -93));
             AddCommand(new DeviceCommand(CommandName.MediaPlayPause, type: DeviceCommandType.Both, fixedValue: -92));
             AddCommand(new DeviceCommand(CommandName.CursorUp, type: DeviceCommandType.Both, fixedValue: -91));
             AddCommand(new DeviceCommand(CommandName.CursorDown, type: DeviceCommandType.Both, fixedValue: -90));
@@ -83,10 +82,6 @@ namespace Hspi.Devices
 
                     case CommandName.MacroTurnOnXBoxOne:
                         await MacroTurnOnXboxOne(token).ConfigureAwait(false);
-                        break;
-
-                    case CommandName.MacroTurnOnPS3:
-                        await MacroTurnOnPS3(token).ConfigureAwait(false);
                         break;
 
                     case CommandName.MacroTurnOffEverything:
@@ -180,7 +175,6 @@ namespace Hspi.Devices
             {
                 case CommandName.MacroTurnOnNvidiaShield:
                 case CommandName.MacroTurnOnXBoxOne:
-                case CommandName.MacroTurnOnPS3:
                 case CommandName.MacroTurnOffEverything:
                 case CommandName.MacroTurnOnSonyBluRay:
                 case CommandName.MacroGameModeOn:
@@ -264,7 +258,6 @@ namespace Hspi.Devices
                 GetConnection(DeviceType.XboxOne),
                 GetConnection(DeviceType.ADBRemoteControl),
                 GetConnection(DeviceType.SonyBluRay),
-                GetConnection(DeviceType.PS3),
             };
         }
 
@@ -371,15 +364,6 @@ namespace Hspi.Devices
             IDeviceCommandHandler device = GetConnection(DeviceType.ADBRemoteControl);
             IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.ADBRemoteControl);
             await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
-        }
-
-        private async Task MacroTurnOnPS3(CancellationToken timeoutToken)
-        {
-            string input = DenonAVRControl.PS3Input;
-            string inputSwitchCommand = CommandName.ChangeInputCD;
-            IDeviceCommandHandler device = GetConnection(DeviceType.PS3);
-            IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.PS3);
-            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnSonyBluRay(CancellationToken timeoutToken)

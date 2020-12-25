@@ -229,8 +229,6 @@ namespace Hspi.Devices
                 case "AUX2":
                     return XBoxOneInput;
 
-                case "CD":
-                    return PS3Input;
             }
             return base.TranslateStringFeedback(input);
         }
@@ -564,7 +562,6 @@ namespace Hspi.Devices
 
         public const string BlueRayPlayerInput = "Blu Ray Player";
         public const string NvidiaShieldInput = "Nvidia Shield";
-        public const string PS3Input = "PS3";
         public const string XBoxOneInput = "XBox One";
         private const int AVRPort = 23;
         private const char Seperator = '\r';

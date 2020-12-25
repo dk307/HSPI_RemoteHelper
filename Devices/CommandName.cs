@@ -86,7 +86,6 @@
         public const string DynamicVolumeOff = "Dynamic Volume - Off";
         public const string MacroTurnOnXBoxOne = "Macro - Turn On Xbox One";
         public const string MacroTurnOnSonyBluRay = "Macro - Turn On Sony Blu Ray";
-        public const string MacroTurnOnPS3 = "Macro - Turn On PS3";
         public const string ChangeInputGAME2 = "Change Input - GAME2";
         public const string ChangeInputBD = "Change Input - BD";
         public const string ChangeInputCD = "Change Input - CD";

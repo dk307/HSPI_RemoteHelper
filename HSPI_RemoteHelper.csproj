@@ -110,7 +110,6 @@
     <Compile Include="Devices\IP2IRDeviceControl.cs" />
     <Compile Include="Devices\MediaStateDeviceFeedback.cs" />
     <Compile Include="Devices\OutofOrderCommandDetector.cs" />
-    <Compile Include="Devices\PS3FakeControlDevice.cs" />
     <Compile Include="Devices\SonyBluRayControl.cs" />
     <Compile Include="Devices\XBoxIRControl.cs" />
     <Compile Include="EmulatorRokuConfig.cs" />

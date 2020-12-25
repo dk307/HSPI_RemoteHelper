@@ -19,7 +19,6 @@ namespace Hspi
         IP2IR,
         XboxOne,
         SonyBluRay,
-        PS3,
         Hue,
         HueSyncBox,
     }
@@ -92,10 +91,7 @@ namespace Hspi
                 case DeviceType.SonyBluRay:
                     return new string[] { PhysicalAddressId, DefaultCommandDelayId, DefaultPowerOnDelayId, WolBroadCastAddressId };
 
-                case DeviceType.PS3:
-                    return Array.Empty<string>();
-
-                case DeviceType.Hue:
+                 case DeviceType.Hue:
                     return new string[] { UserNameId, DevicesId };
 
                 case DeviceType.HueSyncBox:
@@ -158,12 +154,6 @@ namespace Hspi
                                                 commandQueue,
                                                 feedbackQueue);
 
-                case DeviceType.PS3:
-                    return new PS3FakeControlDevice(Name,
-                                                    connectionProvider,
-                                                    commandQueue,
-                                                    feedbackQueue);
-
                 case DeviceType.Hue:
                     return new PhilipsHueControl(Name, DeviceIP,
                                                 AdditionalValues[UserNameId],
@@ -172,9 +162,10 @@ namespace Hspi
                                                 connectionProvider,
                                                 commandQueue,
                                                 feedbackQueue);
+
                 case DeviceType.HueSyncBox:
                     return new PhilipsHueSyncBoxControl(Name, DeviceIP,
-                                                AdditionalValues[UserNameId],                                        
+                                                AdditionalValues[UserNameId],
                                                 DefaultCommandDelay,
                                                 connectionProvider,
                                                 commandQueue,

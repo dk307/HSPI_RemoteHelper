@@ -32,7 +32,6 @@ namespace Hspi
             LoadDeviceConfig(DeviceType.IP2IR);
             LoadDeviceConfig(DeviceType.XboxOne);
             LoadDeviceConfig(DeviceType.SonyBluRay);
-            LoadDeviceConfig(DeviceType.PS3);
             LoadDeviceConfig(DeviceType.Hue);
             LoadDeviceConfig(DeviceType.HueSyncBox);
         }
