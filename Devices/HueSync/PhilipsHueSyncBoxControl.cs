@@ -30,7 +30,8 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.StartSyncModeVideo, fixedValue: -97));
             AddCommand(new DeviceCommand(CommandName.StartSyncModeGame, fixedValue: -96));
             AddCommand(new DeviceCommand(CommandName.PassThrough, fixedValue: -95));
-            AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue: -94 ));
+            AddCommand(new DeviceCommand(CommandName.PowerQuery, fixedValue: -94));
+            AddCommand(new DeviceCommand(CommandName.RestartDevice, fixedValue: -93));
 
             AddFeedback(new DeviceFeedback(FeedbackName.SyncActiveStatus, TypeCode.Boolean));
             AddFeedback(new DeviceFeedback(FeedbackName.Input, TypeCode.String));
@@ -49,7 +50,7 @@ namespace Hspi.Devices
 
         public override Task Refresh(CancellationToken token)
         {
-            return Task.CompletedTask;
+            return ExecuteCommand(GetCommand(CommandName.PowerQuery), token);
         }
 
         protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
@@ -125,6 +126,16 @@ namespace Hspi.Devices
                             await UpdateStatus(token).ConfigureAwait(false);
                         }
                         break;
+
+                    case CommandName.RestartDevice:
+                        {
+                            var deviceCommand = new InnerCore.Api.HueSync.Models.Command.DeviceCommand()
+                            {
+                               Action = DeviceAction.Restart,
+                            };
+                            await client.ApplyDeviceCommandAsync(deviceCommand).ConfigureAwait(false);
+                        }
+                        break;
                 }
             }
         }
@@ -156,7 +167,6 @@ namespace Hspi.Devices
             await UpdateFeedback(FeedbackName.HdmiActive, state.Execution.HdmiActive, token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.Mode, state.Execution.Mode?.ToString() ?? null, token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.Power, state.Execution.Mode != Mode.PowerSave, token).ConfigureAwait(false);
-
         }
 
         private readonly AsyncLock connectionLock = new AsyncLock();

@@ -103,6 +103,7 @@
         public const string Zone1PowerStatusQuery = "Zone 1 Power Status Query";
         public const string Zone2PowerStatusQuery = "Zone 2 Power Status Query";
         public const string Zone2SameSource = "Zone 2 Same Source";
+        public const string RestartDevice = "Restart Device";
 
         // Hue/Hue Box Sync
         public const string AlertWhite = "Alert in White Color";

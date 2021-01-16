@@ -482,56 +482,62 @@ namespace Hspi.Devices
 
             var tasks = new List<Task>();
 
-            tasks.Add(UpdateStatus($"Turning On Hue Alert", timeoutToken));
+            tasks.Add(UpdateStatus($"Checking Device Power Status", timeoutToken));
             tasks.Add(lightStrip.HandleCommandIgnoreException(CommandName.AlertWhite, timeoutToken));
             tasks.Add(hueSyncBox.HandleCommandIgnoreException(CommandName.PassThrough, timeoutToken));
-            await RunTasks(tasks).ConfigureAwait(false);
+            tasks.Add(device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
+            tasks.Add(avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
 
-            // https://denon.custhelp.com/app/answers/detail/a_id/9/~/power-on-order-for-hdmi-connected-products
-            // Turn on AVR
-            await UpdateStatus($"Turning On AVR", timeoutToken).ConfigureAwait(false);
-            bool turnedOnAVR = await TurnDeviceOnIfOff(avr, timeoutToken,  // turn on zone 1
-                                    CommandName.Zone1On,
-                                    CommandName.Zone1PowerStatusQuery,
-                                    FeedbackName.Zone1Status).ConfigureAwait(false);
-
-            // Turn on TV
-            tasks.Add(UpdateStatus($"Turning On TV", timeoutToken));
-            tasks.Add(TurnDeviceOn(tv, timeoutToken).IgnoreException()); // tv power query is not reliable
-            await RunTasks(tasks).ConfigureAwait(false);
-
-            await UpdateStatus($"Switching Inputs", timeoutToken).ConfigureAwait(false);
-            bool inputChanged = await EnsureAVRState(avr, input, CommandName.InputStatusQuery,
-                                 inputSwitchCommand, FeedbackName.Input, int.MaxValue, timeoutToken).ConfigureAwait(false);
-
-            tasks.Add(tv.HandleCommandIgnoreException(CommandName.TVAVRInput, timeoutToken));
             await RunTasks(tasks).ConfigureAwait(false);
 
             await DelayDefaultCommandTime(timeoutToken, tv, avr).ConfigureAwait(false);
 
-            bool othersShutdown = false;
+            tasks.Add(UpdateStatus($"Turning On AVR & TV", timeoutToken));
+            // https://denon.custhelp.com/app/answers/detail/a_id/9/~/power-on-order-for-hdmi-connected-products
+            // Turn on AVR
+            var turnOnAVRTask = TurnDeviceOnIfOff(avr, timeoutToken,  // turn on zone 1
+                                   CommandName.Zone1On,
+                                   CommandName.Zone1PowerStatusQuery,
+                                   FeedbackName.Zone1Status);
 
-            //wait for hue passthrough to stablize
-            if (turnedOnAVR)
-            {
-                tasks.Add(UpdateStatus($"Waiting for stablization of Hue Sync Box & Inputs", timeoutToken));
-                tasks.Add(Task.Delay(6000, timeoutToken));
-                tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken).IgnoreException());
-                othersShutdown = true;
-            }
+            tasks.Add(turnOnAVRTask);
+            tasks.Add(TurnDeviceOn(tv, timeoutToken).IgnoreException()); // tv power query is not reliable
+            await RunTasks(tasks).ConfigureAwait(false);
 
-            if (turnedOnAVR || inputChanged)
-            {
-                tasks.Add(SetAVRDefaultState(avr, timeoutToken).IgnoreException());
-            }
+            await DelayDefaultCommandTime(timeoutToken, tv, avr).ConfigureAwait(false);
+
+            bool turnedOnAVR = turnOnAVRTask.Result;
+
+            tasks.Add(UpdateStatus($"Switching Inputs", timeoutToken));
+            var avrInputChangeTask = EnsureAVRState(avr, input, CommandName.InputStatusQuery,
+                                  inputSwitchCommand, FeedbackName.Input, int.MaxValue, timeoutToken);
+
+            tasks.Add(tv.HandleCommandIgnoreException(CommandName.TVAVRInput, timeoutToken));
+            await RunTasks(tasks).ConfigureAwait(false);
+
+            bool inputChanged = avrInputChangeTask.Result;
 
             await RunTasks(tasks).ConfigureAwait(false);
+
+            var shutDownOtherDevicesTask = ShutdownDevices(shutdownDevices, timeoutToken).IgnoreException();
+
+            await DelayDefaultCommandTime(timeoutToken, tv, avr).ConfigureAwait(false);
+
+            Task avrSetDefaultTask = null;
+            if (turnedOnAVR || inputChanged)
+            {
+                avrSetDefaultTask = SetAVRDefaultState(avr, timeoutToken).IgnoreException();
+            }
 
             // Turn on device in end
             tasks.Add(UpdateStatus($"Turning on {device.Name}", timeoutToken));
-            tasks.Add(TurnDeviceOnIfOff(device, timeoutToken));
+
+            Task<bool> turnOnTask = TurnDeviceOnIfOff(device, timeoutToken);
+            tasks.Add(turnOnTask);
+
             await RunTasks(tasks).ConfigureAwait(false);
 
+            bool deviveTurnedOn = turnOnTask.Result;
             tasks.Add(UpdateStatus($"Setting up rest...", timeoutToken));
 
             string syncModeCommand = gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo;
@@ -539,12 +545,6 @@ namespace Hspi.Devices
                                .ContinueWith((x) => hueSyncBox.HandleCommandIgnoreException(syncModeCommand, timeoutToken), TaskScheduler.Default);
 
             tasks.Add(hueSyncTask);
-
-            if (!othersShutdown)
-            {
-                //shutdown Devices
-                tasks.Add(ShutdownDevices(shutdownDevices, timeoutToken).IgnoreException());
-            }
 
             // Turn on/off Game Mode
             bool? currentGameMode = GetFeedbackAsBoolean(ConnectionProvider.GetFeedbackProvider(DeviceType.GlobalMacros),
@@ -557,6 +557,11 @@ namespace Hspi.Devices
                                                 timeoutToken).IgnoreException());
             }
 
+            if (avrSetDefaultTask != null)
+            {
+                tasks.Add(avrSetDefaultTask);
+            }
+            tasks.Add(shutDownOtherDevicesTask);
             await RunTasks(tasks).ConfigureAwait(false);
         }
 

@@ -47,7 +47,7 @@ namespace Hspi.Devices
 
         public override Task Refresh(CancellationToken token)
         {
-            return Task.CompletedTask;
+            return ExecuteCommand(GetCommand(CommandName.PowerQuery), token);
         }
 
         protected override async Task ExecuteCommandCore(DeviceCommand command, CancellationToken token)
