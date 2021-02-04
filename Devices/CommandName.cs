@@ -47,6 +47,7 @@
         public const string MacroToggleMute = "Macro - Toogle Mute";
         public const string MacroTurnOffEverything = "Macro - Turn Off Everything";
         public const string MacroTurnOnNvidiaShield = "Macro - Turn On Nvidia Shield";
+        public const string MacroHueSyncEnable = "Macro - Hue Sync Enable";
         public const string MediaFastForward = "Media Fast Forward";
         public const string MediaNext = "Media Next";
         public const string MediaPlayPause = "Media Play\\Pause";
@@ -86,7 +87,7 @@
         public const string DynamicVolumeOff = "Dynamic Volume - Off";
         public const string MacroTurnOnXBoxOne = "Macro - Turn On Xbox One";
         public const string MacroTurnOnSonyBluRay = "Macro - Turn On Sony Blu Ray";
-        public const string ChangeInputGAME2 = "Change Input - GAME2";
+        public const string ChangeInputAUX2 = "Change Input - AUX2";
         public const string ChangeInputBD = "Change Input - BD";
         public const string ChangeInputCD = "Change Input - CD";
         public const string TVAVRInput = "TV AVR Input";

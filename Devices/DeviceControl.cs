@@ -1,5 +1,4 @@
-﻿using Hspi.Devices;
-using Nito.AsyncEx;
+﻿using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Generic;
@@ -89,32 +88,6 @@ namespace Hspi.Devices
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
-        protected virtual string TranslateStringFeedback(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-            {
-                return input;
-            }
-
-            string[] words = input.Split(' ', ':');
-
-            List<string> newWords = new List<string>(words.Length);
-            foreach (string v in words)
-            {
-                if (v.Length > 1)
-                {
-                    newWords.Add(v[0].ToString().ToUpperInvariant() + v.Substring(1).ToLowerInvariant());
-                }
-                else
-                {
-                    newWords.Add(v);
-                }
-            }
-
-            return string.Join(" ", newWords);
-        }
-
         protected virtual async Task UpdateConnectedState(bool value, CancellationToken token)
         {
             Trace.TraceInformation(Invariant($"Updating Connected State for {Name} to {value}"));
@@ -130,7 +103,7 @@ namespace Hspi.Devices
             {
                 if ((value != null) && (value.GetType() == typeof(string)))
                 {
-                    value = TranslateStringFeedback((string)value);
+                    value = (string)value;
                 }
 
                 await feedbackQueue.EnqueueAsync(new FeedbackValue(feedback, value), token).ConfigureAwait(false);

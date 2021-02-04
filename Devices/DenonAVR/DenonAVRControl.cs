@@ -38,7 +38,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.AudysseyQuery, "PSMULTEQ: ?", fixedValue: -83));
             AddCommand(new DeviceCommand(CommandName.ChangeInputMPLAY, "SIMPLAY", fixedValue: -82));
             AddCommand(new DeviceCommand(CommandName.AllStatusQuery, string.Empty, fixedValue: -77));
-            AddCommand(new DeviceCommand(CommandName.ChangeInputGAME2, "SIGAME2", fixedValue: -76));
+            AddCommand(new DeviceCommand(CommandName.ChangeInputAUX2, "SIGAME2", fixedValue: -76));
             AddCommand(new DeviceCommand(CommandName.ChangeInputBD, "SIBD", fixedValue: -75));
             AddCommand(new DeviceCommand(CommandName.ChangeInputCD, "SICD", fixedValue: -74));
 
@@ -75,6 +75,18 @@ namespace Hspi.Devices
                     return !client.Connected;
                 }
                 return false;
+            }
+        }
+
+        public static string GetAVRInputChangeCommand(string input)
+        {
+            switch (input)
+            {
+                case "MPLAY": return CommandName.ChangeInputMPLAY;
+                case "BD": return CommandName.ChangeInputBD;
+                case "AUX2": return CommandName.ChangeInputAUX2;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(input));
             }
         }
 
@@ -199,38 +211,6 @@ namespace Hspi.Devices
                     await SendCommandCore(command.Data, token).ConfigureAwait(false);
                     break;
             }
-        }
-
-        protected override string TranslateStringFeedback(string input)
-        {
-            switch (input)
-            {
-                case "LIT":
-                    return "Low";
-
-                case "MED":
-                    return "Medium";
-
-                case "HEV":
-                    return "Heavy";
-
-                case "NEURAL:X":
-                    return "DTS Neural:X";
-
-                case "MCH STEREO":
-                    return "All Channel Stereo";
-
-                case "MPLAY":
-                    return NvidiaShieldInput;
-
-                case "BD":
-                    return BlueRayPlayerInput;
-
-                case "AUX2":
-                    return XBoxOneInput;
-
-            }
-            return base.TranslateStringFeedback(input);
         }
 
         private static string GetCommandForVolume(string commandData, FeedbackValue value)
@@ -560,9 +540,6 @@ namespace Hspi.Devices
             }
         }
 
-        public const string BlueRayPlayerInput = "Blu Ray Player";
-        public const string NvidiaShieldInput = "Nvidia Shield";
-        public const string XBoxOneInput = "XBox One";
         private const int AVRPort = 23;
         private const char Seperator = '\r';
 

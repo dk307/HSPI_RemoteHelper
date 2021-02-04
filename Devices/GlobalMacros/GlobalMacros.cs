@@ -49,6 +49,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MediaStop, type: DeviceCommandType.Both, fixedValue: -75));
             AddCommand(new DeviceCommand(CommandName.Info, type: DeviceCommandType.Both, fixedValue: -74));
             AddCommand(new DeviceCommand(CommandName.Menu, type: DeviceCommandType.Both, fixedValue: -73));
+            AddCommand(new DeviceCommand(CommandName.MacroHueSyncEnable, type: DeviceCommandType.Both, fixedValue: -72));
 
             AddFeedback(new DeviceFeedback(FeedbackName.RunningMacro, TypeCode.String));
             AddFeedback(new DeviceFeedback(FeedbackName.MacroStatus, TypeCode.String));
@@ -104,6 +105,27 @@ namespace Hspi.Devices
                         await MacroToggleMute(token).ConfigureAwait(false);
                         break;
 
+                    case CommandName.MediaPlayPause:
+                        {
+                            var deviceType = await SendCommandToAVRInputDevice(command.Id, token).ConfigureAwait(false);
+                            if (deviceType.HasValue)
+                            {
+                                await EnableHueSyncMode(deviceType.Value, token).ConfigureAwait(false);
+                            }
+                        }
+
+                        break;
+
+                    case CommandName.MacroHueSyncEnable:
+                        {
+                            var deviceType = await GetCurrentAVRInput(token).ConfigureAwait(false);
+                            if (deviceType.HasValue)
+                            {
+                                await EnableHueSyncMode(deviceType.Value, token).ConfigureAwait(false);
+                            }
+                        }
+                        break;
+
                     default:
                         await SendCommandToAVRInputDevice(command.Id, token).ConfigureAwait(false);
                         break;
@@ -138,6 +160,33 @@ namespace Hspi.Devices
             await Task.Delay(msWait, timeoutToken).ConfigureAwait(false);
         }
 
+        private static string GetAVRInput(DeviceType deviceType)
+        {
+            switch (deviceType)
+            {
+                case DeviceType.ADBRemoteControl: return "MPLAY";
+                case DeviceType.XboxOne: return "AUX2";
+                case DeviceType.SonyBluRay: return "BD";
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(deviceType));
+            }
+        }
+
+        private static DeviceType? GetDeviceTypeForInput([AllowNull]string input)
+        {
+            switch (input)
+            {
+                case "MPLAY": return DeviceType.ADBRemoteControl;
+                case "AUX2": return DeviceType.XboxOne;
+                case "BD": return DeviceType.SonyBluRay;
+
+                case null:
+                default:
+                    return null;
+            }
+        }
+
         private static bool? GetFeedbackAsBoolean(IDeviceFeedbackProvider deviceFeedbackProvider, string feedbackName)
         {
             object value = deviceFeedbackProvider.GetFeedbackValue(feedbackName);
@@ -163,10 +212,23 @@ namespace Hspi.Devices
             return null;
         }
 
+        private static bool GetGameMode(DeviceType deviceType)
+        {
+            return deviceType == DeviceType.XboxOne;
+        }
+
         private static async Task RunTasks(IList<Task> tasks)
         {
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
             tasks.Clear();
+        }
+
+        private static Task SetHueSyncMode(bool gameMode, IDeviceCommandHandler lightStrip, IDeviceCommandHandler hueSyncBox, CancellationToken timeoutToken)
+        {
+            string syncModeCommand = gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo;
+            var hueSyncTask = lightStrip.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken)
+                               .ContinueWith((x) => hueSyncBox.HandleCommandIgnoreException(syncModeCommand, timeoutToken), TaskScheduler.Default);
+            return hueSyncTask;
         }
 
         private static bool ShouldUpdateStates(DeviceCommand command)
@@ -221,6 +283,16 @@ namespace Hspi.Devices
             await UpdateFeedback(FeedbackName.MacroStatus, string.Empty, token).ConfigureAwait(false);
         }
 
+        private async Task EnableHueSyncMode(DeviceType deviceType, CancellationToken token)
+        {
+            bool gameMode = GetGameMode(deviceType);
+
+            IDeviceCommandHandler lightStrip = GetConnection(DeviceType.Hue);
+            IDeviceCommandHandler hueSyncBox = GetConnection(DeviceType.HueSyncBox);
+
+            await SetHueSyncMode(gameMode, lightStrip, hueSyncBox, token).ConfigureAwait(false);
+        }
+
         private async Task<bool> EnsureAVRState(IDeviceCommandHandler avr, object expectedValue,
                                                 string valueQueryCommand, string valueChangeCommand,
                                                 string feedbackName, int maxRetries, CancellationToken token)
@@ -232,7 +304,7 @@ namespace Hspi.Devices
             {
                 await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
 
-                object currentValue = feedbackProvider.GetFeedbackValue(feedbackName);
+                string currentValue = feedbackProvider.GetFeedbackValue(feedbackName)?.ToString();
                 if (object.Equals(currentValue, expectedValue))
                 {
                     break;
@@ -265,6 +337,35 @@ namespace Hspi.Devices
         {
             IDeviceCommandHandler connection = ConnectionProvider.GetCommandHandler(deviceType);
             return connection;
+        }
+
+        private async Task<DeviceType?> GetCurrentAVRInput(CancellationToken token)
+        {
+            DeviceType? deviceType = null;
+            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
+            IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
+
+            object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+
+            int retry = 3;
+            do
+            {
+                deviceType = GetDeviceTypeForInput(currentValue?.ToString());
+
+                if (deviceType != null)
+                {
+                    break;
+                }
+                else if (retry > 0)
+                {
+                    await avr.HandleCommandIgnoreException(CommandName.InputStatusQuery, token).ConfigureAwait(false);
+                    await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
+                }
+                currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
+                retry--;
+            } while (retry > 0);
+
+            return deviceType;
         }
 
         private bool? GetFeedbackAsBoolean(IDeviceCommandHandler connection, string feedbackName)
@@ -359,62 +460,28 @@ namespace Hspi.Devices
 
         private async Task MacroTurnOnNvidiaShield(CancellationToken timeoutToken)
         {
-            string input = DenonAVRControl.NvidiaShieldInput;
-            string inputSwitchCommand = CommandName.ChangeInputMPLAY;
             IDeviceCommandHandler device = GetConnection(DeviceType.ADBRemoteControl);
             IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.ADBRemoteControl);
-            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
+            await TurnOnDevice(device, shutdownDevices, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnSonyBluRay(CancellationToken timeoutToken)
         {
-            string input = DenonAVRControl.BlueRayPlayerInput;
-            string inputSwitchCommand = CommandName.ChangeInputBD;
             IDeviceCommandHandler device = GetConnection(DeviceType.SonyBluRay);
             IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.SonyBluRay);
-            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, false, timeoutToken).ConfigureAwait(false);
+            await TurnOnDevice(device, shutdownDevices, timeoutToken).ConfigureAwait(false);
         }
 
         private async Task MacroTurnOnXboxOne(CancellationToken timeoutToken)
         {
-            string input = DenonAVRControl.XBoxOneInput;
-            string inputSwitchCommand = CommandName.ChangeInputGAME2;
             IDeviceCommandHandler device = GetConnection(DeviceType.XboxOne);
             IEnumerable<IDeviceCommandHandler> shutdownDevices = GetAllDevices().Where(x => x.DeviceType != DeviceType.XboxOne);
-            await TurnOnDevice(input, inputSwitchCommand, device, shutdownDevices, true, timeoutToken).ConfigureAwait(false);
+            await TurnOnDevice(device, shutdownDevices, timeoutToken).ConfigureAwait(false);
         }
 
-        private async Task SendCommandToAVRInputDevice(string deviceCommand, CancellationToken token)
+        private async Task<DeviceType?> SendCommandToAVRInputDevice(string deviceCommand, CancellationToken token)
         {
-            IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
-            IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
-
-            object currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
-
-            DeviceType? deviceType = null;
-            int retry = 3;
-            do
-            {
-                switch (currentValue)
-                {
-                    case DenonAVRControl.NvidiaShieldInput:
-                        deviceType = DeviceType.ADBRemoteControl; retry = 0; break;
-                    case DenonAVRControl.XBoxOneInput:
-                        deviceType = DeviceType.XboxOne; retry = 0; break;
-                    case DenonAVRControl.BlueRayPlayerInput:
-                        deviceType = DeviceType.SonyBluRay; retry = 0; break;
-                    default:
-                        if (retry > 0)
-                        {
-                            await avr.HandleCommandIgnoreException(CommandName.InputStatusQuery, token).ConfigureAwait(false);
-                            await Task.Delay(avr.DefaultCommandDelay, token).ConfigureAwait(false);
-                        }
-                        currentValue = feedbackProvider.GetFeedbackValue(FeedbackName.Input);
-                        retry--;
-                        break;
-                }
-            } while (retry > 0);
-
+            var deviceType = await GetCurrentAVRInput(token).ConfigureAwait(false);
             if (deviceType.HasValue)
             {
                 var device = GetConnection(deviceType.Value);
@@ -422,8 +489,9 @@ namespace Hspi.Devices
             }
             else
             {
-                Trace.TraceWarning(Invariant($"There is no device for Input:[{currentValue}]"));
+                Trace.TraceWarning(Invariant($"There is no device for AVR Input"));
             }
+            return deviceType;
         }
 
         private async Task SetAVRDefaultState(IDeviceCommandHandler avr, CancellationToken timeoutToken)
@@ -469,12 +537,13 @@ namespace Hspi.Devices
             return turnedOn;
         }
 
-        private async Task TurnOnDevice(string input, string inputSwitchCommand,
-                                        IDeviceCommandHandler device,
+        private async Task TurnOnDevice(IDeviceCommandHandler device,
                                         IEnumerable<IDeviceCommandHandler> shutdownDevices,
-                                        bool gameMode,
                                         CancellationToken timeoutToken)
         {
+            string input = GetAVRInput(device.DeviceType);
+            bool gameMode = GetGameMode(device.DeviceType);
+            string inputSwitchCommand = DenonAVRControl.GetAVRInputChangeCommand(input);
             IDeviceCommandHandler lightStrip = GetConnection(DeviceType.Hue);
             IDeviceCommandHandler hueSyncBox = GetConnection(DeviceType.HueSyncBox);
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
@@ -540,10 +609,7 @@ namespace Hspi.Devices
             bool deviveTurnedOn = turnOnTask.Result;
             tasks.Add(UpdateStatus($"Setting up rest...", timeoutToken));
 
-            string syncModeCommand = gameMode ? CommandName.StartSyncModeGame : CommandName.StartSyncModeVideo;
-            var hueSyncTask = lightStrip.HandleCommandIgnoreException(CommandName.PowerOff, timeoutToken)
-                               .ContinueWith((x) => hueSyncBox.HandleCommandIgnoreException(syncModeCommand, timeoutToken), TaskScheduler.Default);
-
+            Task hueSyncTask = SetHueSyncMode(gameMode, lightStrip, hueSyncBox, timeoutToken);
             tasks.Add(hueSyncTask);
 
             // Turn on/off Game Mode
@@ -569,5 +635,9 @@ namespace Hspi.Devices
         {
             await UpdateFeedback(FeedbackName.MacroStatus, value, token).ConfigureAwait(false);
         }
+
+        public const string BlueRayPlayerInput = "Blu Ray Player";
+        public const string NvidiaShieldInput = "Nvidia Shield";
+        public const string XBoxOneInput = "XBox One";
     }
 }
