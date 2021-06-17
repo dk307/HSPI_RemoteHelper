@@ -516,23 +516,27 @@ namespace Hspi.Devices
                                                    string powerFeedbackName = FeedbackName.Power)
         {
             bool turnedOn = false;
-            do
+            using (var deviceTurnOnSource = new CancellationTokenSource())
             {
-                bool? isOn = GetFeedbackAsBoolean(connection, powerFeedbackName);
-                if (isOn ?? true)
+                deviceTurnOnSource.CancelAfter(10000);
+                do
                 {
-                    break;
-                }
-                else
-                {
-                    turnedOn = true;
-                    await connection.HandleCommandIgnoreException(powerOnCommand, token).ConfigureAwait(false);
-                    await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
-                }
+                    bool? isOn = GetFeedbackAsBoolean(connection, powerFeedbackName);
+                    if (isOn ?? true)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        turnedOn = true;
+                        await connection.HandleCommandIgnoreException(powerOnCommand, token).ConfigureAwait(false);
+                        await Task.Delay(connection.PowerOnDelay, token).ConfigureAwait(false);
+                    }
 
-                await connection.HandleCommandIgnoreException(powerQueryCommand, token).ConfigureAwait(false);
-                await Task.Delay(connection.DefaultCommandDelay, token).ConfigureAwait(false);
-            } while (!token.IsCancellationRequested);
+                    await connection.HandleCommandIgnoreException(powerQueryCommand, token).ConfigureAwait(false);
+                    await Task.Delay(connection.DefaultCommandDelay, token).ConfigureAwait(false);
+                } while (!token.IsCancellationRequested && !deviceTurnOnSource.Token.IsCancellationRequested);
+            }
 
             return turnedOn;
         }

@@ -72,7 +72,7 @@ namespace Hspi
                                              .ToImmutableDictionary(keyPressedTriggersTemp.Comparer);
 
                 Trace.TraceInformation(Invariant($"Loaded file {fileName}"));
-                await Task.Delay(0).ConfigureAwait(false);
+                await Task.CompletedTask.ConfigureAwait(false);
             }
             catch (Exception ex)
             {

@@ -327,7 +327,7 @@ namespace Hspi
             }
         }
 
-        private static readonly TimeSpan commandMaxTime = TimeSpan.FromSeconds(45);
+        private static readonly TimeSpan commandMaxTime = TimeSpan.FromSeconds(60);
         private readonly AsyncLock connectorManagerLock = new AsyncLock();
 
         private readonly ConcurrentDictionary<DeviceType, DeviceControlManagerCore> connectorManagers
