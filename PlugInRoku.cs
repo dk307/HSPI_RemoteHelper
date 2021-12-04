@@ -46,8 +46,7 @@ namespace Hspi
                 var rokuDevices = emulatorRokuPluginConfig.Devices;
                 foreach (var element in query)
                 {
-                    var rokuDevice = rokuDevices.Values.Where(
-                        (x) => { return element.Roku == x.Name; }).FirstOrDefault();
+                    var rokuDevice = rokuDevices.Values.FirstOrDefault((x) => { return element.Roku == x.Name; });
 
                     if (rokuDevice != null)
                     {

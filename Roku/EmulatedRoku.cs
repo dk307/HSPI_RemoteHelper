@@ -36,7 +36,6 @@ namespace Hspi.Roku
             Dispose();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "server")]
         public void Dispose()
         {
             publisher.RemoveDevice(deviceDefinition);
@@ -87,45 +86,39 @@ namespace Hspi.Roku
                 this.keyPressedCallback = keyPressedCallback;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/query/active-app")]
             public async Task<bool> ActiveApp()
             {
                 return await XmlResponse(Resources.ActiveAppTemplate).ConfigureAwait(false);
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/query/apps")]
             public async Task<bool> AllApps()
             {
                 return await XmlResponse(Resources.AppsTemplate).ConfigureAwait(false);
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/query/device-info")]
             public async Task<bool> DeviceInfo()
             {
                 return await XmlResponse(rokuDeviceInfo).ConfigureAwait(false);
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
             [WebApiHandler(HttpVerbs.Post, @"/input")]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3400:Methods should not return constants", Justification = "<Pending>")]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
             public bool Input()
             {
                 return true;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "key")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Post, @"/keydown/{key}")]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
             public bool KeyDown(string key)
             {
                 return true;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Post, @"/keypress/{key}")]
             public async Task<bool> KeyPress(string key)
             {
@@ -133,26 +126,20 @@ namespace Hspi.Roku
                 return true;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "key")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Post, @"/keyup/{key}")]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
             public bool KeyUp(string key)
             {
                 return true;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "id")]
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Post, @"/launch/{id}")]
             public bool LaunchApp(string id)
             {
                 return true;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "id")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/query/icon/{id}")]
             public async Task<bool> QueryIcon(string id)
             {
@@ -170,7 +157,6 @@ namespace Hspi.Roku
                 return true;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Get, @"/")]
             public async Task<bool> Root()
             {
@@ -178,7 +164,6 @@ namespace Hspi.Roku
             }
 
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             [WebApiHandler(HttpVerbs.Post, @"/search")]
             public bool Search()
             {

@@ -70,7 +70,7 @@ namespace Hspi
 
         public override string ConfigDevice(int deviceId, [AllowNull]string user, int userRights, bool newDevice) => string.Empty;
 
-        [SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "apiVersion")]
+        [SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "<Pending>")]
         public void Connect(string serverAddress, int serverPort)
         {
             Trace.WriteLine(Invariant($"Connecting to {serverAddress}"));
@@ -191,7 +191,10 @@ namespace Hspi
 
         public override bool RaisesGenericCallbacks() => false;
 
-        public override SearchReturn[] Search([AllowNull]string searchString, bool regEx) => null;
+        public override SearchReturn[] Search([AllowNull] string searchString, bool regEx)
+        {
+            return Array.Empty<SearchReturn>();
+        }
 
         public override void set_Condition(IPlugInAPI.strTrigActInfo actionInfo, bool value)
         {

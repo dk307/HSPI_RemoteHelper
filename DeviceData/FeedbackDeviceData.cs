@@ -13,7 +13,7 @@ namespace Hspi.DeviceData
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class FeedbackDeviceData : DeviceDataBase
     {
-        public FeedbackDeviceData(int? refId)
+        protected FeedbackDeviceData(int? refId)
         {
             if (refId.HasValue)
             {

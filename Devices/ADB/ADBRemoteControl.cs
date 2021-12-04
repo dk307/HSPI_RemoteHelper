@@ -377,7 +377,7 @@ namespace Hspi.Devices
             AddCommand(new ADBShellDDCommand("F5", DirectInputKeys.KEY_F5, start++));
             AddCommand(new ADBShellDDCommand("F6", DirectInputKeys.KEY_F6, start++));
             AddCommand(new ADBShellDDCommand("F7", DirectInputKeys.KEY_F7, start++));
-            AddCommand(new ADBShellDDCommand("F8", DirectInputKeys.KEY_F8, start++));
+            AddCommand(new ADBShellDDCommand("F8", DirectInputKeys.KEY_F8, start));
         }
 
         private async Task<bool> CheckScreenOn(CancellationToken token)
@@ -752,8 +752,6 @@ namespace Hspi.Devices
         private CancellationTokenSource cursorCancelLoopSource;
         private volatile ImmutableSortedDictionary<int, int> directKeysDevices;
         private DeviceMonitor monitor;
-#pragma warning disable CA2213 // Disposable fields should be disposed
         private CancellationTokenSource queryRunningApplicationTokenSource;
-#pragma warning restore CA2213 // Disposable fields should be disposed
     }
 }

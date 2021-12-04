@@ -16,7 +16,7 @@ namespace Hspi.Connector
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DeviceControlManagerCore : IDisposable, IDeviceFeedbackProvider
     {
-        public DeviceControlManagerCore(IHSApplication HS, string name,
+        protected DeviceControlManagerCore(IHSApplication HS, string name,
                                         DeviceType deviceType, CancellationToken shutdownToken)
         {
             Name = name;
@@ -79,9 +79,7 @@ namespace Hspi.Connector
 
         public async Task HandleCommand(string feedbackName, object value, CancellationToken token)
         {
-#pragma warning disable CA2000 // Dispose objects before losing scope
             CancellationToken finalToken = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken).Token;
-#pragma warning restore CA2000 // Dispose objects before losing scope
 
             using (await deviceActionLock.LockAsync(finalToken).ConfigureAwait(false))
             {
@@ -215,15 +213,11 @@ namespace Hspi.Connector
 
         private readonly AsyncProducerConsumerQueue<DeviceCommand> changedCommands = new AsyncProducerConsumerQueue<DeviceCommand>();
         private readonly AsyncProducerConsumerQueue<FeedbackValue> changedFeedbacks = new AsyncProducerConsumerQueue<FeedbackValue>();
-#pragma warning disable CA2213 // Disposable fields should be disposed
         private readonly CancellationTokenSource combinedCancellationSource;
-#pragma warning restore CA2213 // Disposable fields should be disposed
         private readonly AsyncLock deviceActionLock = new AsyncLock();
         private readonly ConcurrentDictionary<string, object> feedbackValues = new ConcurrentDictionary<string, object>();
         private readonly IHSApplication HS;
-#pragma warning disable CA2213 // Disposable fields should be disposed
         private readonly CancellationTokenSource instanceCancellationSource = new CancellationTokenSource();
-#pragma warning restore CA2213 // Disposable fields should be disposed
         private readonly DeviceRootDeviceManager rootDeviceData;
         private DeviceControl connector;
         private bool disposedValue; // To detect redundant calls

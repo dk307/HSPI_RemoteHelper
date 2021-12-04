@@ -263,7 +263,7 @@ namespace Hspi.Devices
         private readonly IPAddress wolBroadCastAddress;
         private CancellationTokenSource cursorCancelLoopSource;
 
-        private class SonyBluRayCommand : DeviceCommand
+        private sealed class SonyBluRayCommand : DeviceCommand
         {
             public SonyBluRayCommand(string id, string command, int? fixedValue)
                 : base(id, MakeCommand(command), DeviceCommandType.Control, fixedValue)

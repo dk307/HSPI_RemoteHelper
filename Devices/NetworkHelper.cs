@@ -40,7 +40,6 @@ namespace Hspi.Devices
             tcpc.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public static async Task<bool> PingAddress(IPAddress ipAddress, TimeSpan? timeout = null)
         {
             try
@@ -67,9 +66,7 @@ namespace Hspi.Devices
                 {
                     var connectTask = client.ConnectAsync(address, port);
 
-#pragma warning disable CA2000 // Dispose objects before losing scope
                     CancellationTokenSource source = new CancellationTokenSource();
-#pragma warning restore CA2000 // Dispose objects before losing scope
                     source.CancelAfter(timeout);
                     var finishedTask = await Task.WhenAny(connectTask, Task.Delay(-1, source.Token)).ConfigureAwait(false);
 

@@ -11,7 +11,7 @@ namespace Hspi.DeviceData
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal abstract class DoubleFeedbackDeviceDataBase : FeedbackDeviceData
     {
-        public DoubleFeedbackDeviceDataBase(int? refId) : base(refId)
+        protected DoubleFeedbackDeviceDataBase(int? refId) : base(refId)
         {
         }
 

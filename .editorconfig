@@ -5,3 +5,9 @@ dotnet_diagnostic.CA2008.severity = silent
 
 # S1066: Collapsible "if" statements should be merged
 dotnet_diagnostic.S1066.severity = none
+
+# S101: Types should be named in PascalCase
+dotnet_diagnostic.S101.severity = none
+
+# S927: Parameter names should match base declaration and other partial definitions
+dotnet_diagnostic.S927.severity = none

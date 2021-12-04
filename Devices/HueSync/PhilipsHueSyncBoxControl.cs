@@ -163,9 +163,9 @@ namespace Hspi.Devices
             var state = await client.GetStateAsync().ConfigureAwait(false);
 
             await UpdateFeedback(FeedbackName.SyncActiveStatus, state.Execution.SyncActive, token).ConfigureAwait(false);
-            await UpdateFeedback(FeedbackName.Input, state.Execution.HdmiSource?.ToString() ?? null, token).ConfigureAwait(false);
+            await UpdateFeedback(FeedbackName.Input, state.Execution.HdmiSource?.ToString(), token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.HdmiActive, state.Execution.HdmiActive, token).ConfigureAwait(false);
-            await UpdateFeedback(FeedbackName.Mode, state.Execution.Mode?.ToString() ?? null, token).ConfigureAwait(false);
+            await UpdateFeedback(FeedbackName.Mode, state.Execution.Mode?.ToString(), token).ConfigureAwait(false);
             await UpdateFeedback(FeedbackName.Power, state.Execution.Mode != Mode.PowerSave, token).ConfigureAwait(false);
         }
 

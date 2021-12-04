@@ -99,12 +99,10 @@ namespace Hspi.Devices
                 commandResponseWaitQueue[irCounter] = taskCompletionSource;
                 await stream.WriteAsync(bytes, 0, bytes.Length, token).ConfigureAwait(false);
 
-#pragma warning disable CA2000 // Dispose objects before losing scope
                 CancellationTokenSource delay = new CancellationTokenSource(DefaultCommandDelay + DefaultCommandDelay);
                 await taskCompletionSource.Task
                                            .WaitAsync(CancellationTokenSource.CreateLinkedTokenSource(token, delay.Token).Token)
                                           .ConfigureAwait(false);
-#pragma warning restore CA2000 // Dispose objects before losing scope
             }
         }
 
@@ -347,14 +345,12 @@ namespace Hspi.Devices
 
         private TcpClient client;
 
-#pragma warning disable CA2213 // Disposable fields should be disposed
         private CancellationTokenSource stopTokenSource;
-#pragma warning restore CA2213 // Disposable fields should be disposed
 
         private NetworkStream stream;
 
         [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-        private class SendIRCommand : DeviceCommand
+        private sealed class SendIRCommand : DeviceCommand
         {
             public SendIRCommand(string id, string port,
                                 string gc, int fixedValue)

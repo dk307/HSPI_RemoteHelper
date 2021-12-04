@@ -101,9 +101,9 @@ namespace Hspi.Devices
             Trace.WriteLine(Invariant($"Updating {feedbackName} for {Name} to [{value}]"));
             if (feedbacks.TryGetValue(feedbackName, out DeviceFeedback feedback))
             {
-                if ((value != null) && (value.GetType() == typeof(string)))
+                if (value is string stringValue)
                 {
-                    value = (string)value;
+                    value = stringValue;
                 }
 
                 await feedbackQueue.EnqueueAsync(new FeedbackValue(feedback, value), token).ConfigureAwait(false);

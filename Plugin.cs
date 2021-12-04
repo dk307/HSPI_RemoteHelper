@@ -33,8 +33,7 @@ namespace Hspi
         {
             if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connection))
             {
-                IDeviceCommandHandler connectionBase = connection as IDeviceCommandHandler;
-                if (connectionBase != null)
+                if (connection is IDeviceCommandHandler connectionBase)
                 {
                     return connectionBase;
                 }
@@ -46,8 +45,7 @@ namespace Hspi
         {
             if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connection))
             {
-                IDeviceFeedbackProvider connectionBase = connection as IDeviceFeedbackProvider;
-                if (connectionBase != null)
+                if (connection is IDeviceFeedbackProvider connectionBase)
                 {
                     return connectionBase;
                 }
@@ -137,7 +135,7 @@ namespace Hspi
                     if (deviceId == null)
                     {
                         deviceIdentifier = DeviceIdentifier.Identify(deviceClass);
-                        deviceId = deviceIdentifier?.DeviceId;
+                        deviceId = deviceIdentifier.DeviceId;
                     }
 
                     DeviceType deviceType = deviceId.Value;
@@ -166,8 +164,6 @@ namespace Hspi
         /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
         /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "emulatedRokuConfigPage")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "configPage")]
         protected override void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -194,7 +190,7 @@ namespace Hspi
 
                 configPage?.Dispose();
                 emulatedRokuConfigPage?.Dispose();
-                pluginConfig.Dispose();
+                pluginConfig?.Dispose();
                 publisher?.Dispose();
 
                 disposedValue = true;
@@ -217,9 +213,7 @@ namespace Hspi
                 {
                     if (connectorManagers.TryGetValue(deviceType, out DeviceControlManagerCore connector))
                     {
-#pragma warning disable CA2000 // Dispose objects before losing scope
                         CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(ShutdownCancellationToken);
-#pragma warning restore CA2000 // Dispose objects before losing scope
                         combinedCancel.CancelAfter(commandMaxTime);
                         await connector.HandleCommand(commandId, combinedCancel.Token).ConfigureAwait(false);
                     }
@@ -231,7 +225,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                Trace.TraceError(Invariant($"{deviceType.ToString("g")} command {commandId} failed With {ExceptionHelper.GetFullMessage(ex)}"));
+                Trace.TraceError(Invariant($"{deviceType:g} command {commandId} failed With {ExceptionHelper.GetFullMessage(ex)}"));
             }
         }
 
@@ -268,7 +262,6 @@ namespace Hspi
             Callback.RegisterLink(rokuWpd);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         private async Task RestartConnections()
         {
             using (var sync = await connectorManagerLock.LockAsync().ConfigureAwait(false))
@@ -279,8 +272,7 @@ namespace Hspi
                 {
                     if (connectorManagers.TryGetValue(device.Key, out DeviceControlManagerCore oldConnectorBase))
                     {
-                        DeviceControlManager oldConnector = oldConnectorBase as DeviceControlManager;
-                        if (oldConnector == null)
+                        if (!(oldConnectorBase is DeviceControlManager oldConnector))
                         {
                             continue;
                         }

@@ -72,7 +72,15 @@ namespace Hspi.Devices
             {
                 if (client != null)
                 {
-                    return !client.Connected;
+                    try
+                    {
+                        return !client.Connected;
+                    }
+                    catch (Exception)
+                    {
+                        // Connected check throws
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -262,7 +270,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroStartDialogEnhancerUpLoop, fixedValue: commandstart++));
             AddCommand(new DeviceCommand(CommandName.MacroStartDialogEnhancerDownLoop, fixedValue: commandstart++));
             AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerUpLoop, fixedValue: commandstart++));
-            AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerDownLoop, fixedValue: commandstart++));
+            AddCommand(new DeviceCommand(CommandName.MacroStopDialogEnhancerDownLoop, fixedValue: commandstart));
         }
 
         private void AddDynamicVolumeCommands(int startLevel)
@@ -297,7 +305,7 @@ namespace Hspi.Devices
             AddCommand(new DeviceCommand(CommandName.MacroStartSubwooferLevelUpLoop, fixedValue: startLevel++));
             AddCommand(new DeviceCommand(CommandName.MacroStartSubwooferLevelDownLoop, fixedValue: startLevel++));
             AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelUpLoop, fixedValue: startLevel++));
-            AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelDownLoop, fixedValue: startLevel++));
+            AddCommand(new DeviceCommand(CommandName.MacroStopSubwooferLevelDownLoop, fixedValue: startLevel));
         }
 
         private void AddSurrondModeCommands(int fixedValueStart)
@@ -516,7 +524,7 @@ namespace Hspi.Devices
                 byte[] bytesCommand = encoding.GetBytes(Invariant($"{commandData}{Seperator}"));
 
                 // the reason we do not send cancellation token is to not break commands in between
-                await stream.WriteAsync(bytesCommand, 0, bytesCommand.Length, default(CancellationToken)).ConfigureAwait(false);
+                await stream.WriteAsync(bytesCommand, 0, bytesCommand.Length, default).ConfigureAwait(false);
                 token.ThrowIfCancellationRequested();
             }
         }
@@ -535,7 +543,7 @@ namespace Hspi.Devices
             }
             if (double.TryParse(volString, NumberStyles.Any, CultureInfo.InvariantCulture, out double volume))
             {
-                volume = volume / 10;
+                volume /= 10;
                 await UpdateFeedback(feedbackName, volume, token).ConfigureAwait(false);
             }
         }
@@ -556,9 +564,7 @@ namespace Hspi.Devices
         private readonly AsyncLock connectionLock = new AsyncLock();
         private readonly Encoding encoding = Encoding.ASCII;
         private TcpClient client;
-#pragma warning disable CA2213 // Disposable fields should be disposed
         private CancellationTokenSource stopTokenSource;
-#pragma warning restore CA2213 // Disposable fields should be disposed
         private NetworkStream stream;
         private CancellationTokenSource volumeCancelSource;
     }

@@ -81,7 +81,7 @@ namespace Hspi.Devices
         {
             Task.Run(async () =>
             {
-                CancellationToken token = default(CancellationToken);
+                CancellationToken token = default;
                 TimeSpan delay = DefaultCommandDelay.Add(commandDelay);
                 do
                 {

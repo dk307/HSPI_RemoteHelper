@@ -24,7 +24,7 @@ namespace Hspi
     }
 
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class DeviceControlConfig : IEquatable<DeviceControlConfig>
+    internal sealed class DeviceControlConfig : IEquatable<DeviceControlConfig>
     {
         public DeviceControlConfig(DeviceType deviceType, string name, IPAddress deviceIP,
                                     IReadOnlyDictionary<string, string> additionalValues, bool enabled)
@@ -191,16 +191,23 @@ namespace Hspi
             return same;
         }
 
-        public const string UserNameId = "Username";
-        public const string DevicesId = "Devices";
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as DeviceControlConfig);
+        }
+
         public const string ADBPathId = "ADBPath";
         public const string DefaultCommandDelayId = "CommandDelay(ms)";
         public const string DefaultPowerOnDelayId = "PowerOnDelay(ms)";
+        public const string DevicesId = "Devices";
         public const string IP2IRFileNameId = "IP2IRFileName";
         public const string PhysicalAddressId = "PhysicalAddress";
+        public const string UserNameId = "Username";
         public const string WolBroadCastAddressId = "WolBroadCastAddress";
         public IReadOnlyDictionary<string, string> AdditionalValues;
         private readonly Lazy<TimeSpan> defaultCommandDelay;
         private readonly Lazy<TimeSpan> powerOnDelay;
+
+         
     }
 }

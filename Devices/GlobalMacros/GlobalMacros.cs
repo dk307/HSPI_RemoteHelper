@@ -199,7 +199,6 @@ namespace Hspi.Devices
             return null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private static string GetFeedbackAsString(IDeviceFeedbackProvider connection, string feedbackName)
         {
             object value = connection.GetFeedbackValue(feedbackName);

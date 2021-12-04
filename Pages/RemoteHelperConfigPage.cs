@@ -76,7 +76,6 @@ namespace Hspi.Pages
                         stb.Append(BuildAddNewWebPageBody(device)); break;
 
                     default:
-                    case null:
                         stb.Append(BuildMainWebPageBody()); break;
                 }
                 stb.Append(PageBuilderAndMenu.clsPageBuilder.DivEnd());
