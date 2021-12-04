@@ -2,3 +2,6 @@
 
 # CA2008: Do not create tasks without passing a TaskScheduler
 dotnet_diagnostic.CA2008.severity = silent
+
+# S1066: Collapsible "if" statements should be merged
+dotnet_diagnostic.S1066.severity = none

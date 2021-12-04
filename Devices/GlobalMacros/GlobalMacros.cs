@@ -341,7 +341,7 @@ namespace Hspi.Devices
 
         private async Task<DeviceType?> GetCurrentAVRInput(CancellationToken token)
         {
-            DeviceType? deviceType = null;
+            DeviceType? deviceType;
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
             IDeviceFeedbackProvider feedbackProvider = ConnectionProvider.GetFeedbackProvider(avr.DeviceType);
 
@@ -438,9 +438,10 @@ namespace Hspi.Devices
             var tv = GetConnection(DeviceType.SamsungTV);
             var avr = GetConnection(DeviceType.DenonAVR);
 
-            var tasks = new List<Task>();
-
-            tasks.Add(ShutdownDevices(GetAllDevices(), timeoutToken));
+            var tasks = new List<Task>
+            {
+                ShutdownDevices(GetAllDevices(), timeoutToken)
+            };
 
             foreach (var shutdownDevice in GetAllDevices())
             {
@@ -553,13 +554,14 @@ namespace Hspi.Devices
             IDeviceCommandHandler tv = GetConnection(DeviceType.SamsungTV);
             IDeviceCommandHandler avr = GetConnection(DeviceType.DenonAVR);
 
-            var tasks = new List<Task>();
-
-            tasks.Add(UpdateStatus($"Checking Device Power Status", timeoutToken));
-            tasks.Add(lightStrip.HandleCommandIgnoreException(CommandName.AlertWhite, timeoutToken));
-            tasks.Add(hueSyncBox.HandleCommandIgnoreException(CommandName.PassThrough, timeoutToken));
-            tasks.Add(device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
-            tasks.Add(avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken));
+            var tasks = new List<Task>
+            {
+                UpdateStatus($"Checking Device Power Status", timeoutToken),
+                lightStrip.HandleCommandIgnoreException(CommandName.AlertWhite, timeoutToken),
+                hueSyncBox.HandleCommandIgnoreException(CommandName.PassThrough, timeoutToken),
+                device.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken),
+                avr.HandleCommandIgnoreException(CommandName.PowerQuery, timeoutToken)
+            };
 
             await RunTasks(tasks).ConfigureAwait(false);
 

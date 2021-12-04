@@ -41,8 +41,7 @@ namespace Hspi.Devices
             AddCommand(new ADBShellDDCommand(CommandName.CursorLeft, DirectInputKeys.KEY_LEFT, -98));
             AddCommand(new ADBShellDDCommand(CommandName.CursorRight, DirectInputKeys.KEY_RIGHT, -5));
             AddCommand(new ADBShellDDCommand(CommandName.CursorUp, DirectInputKeys.KEY_UP, -96));
-            // AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, -95));
-            AddCommand(new ADBShellKeyEventCommand(CommandName.Enter, AdbShellKeys.KEYCODE_ENTER, -95));
+            AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, -95));
             AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE, -94));
             AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO, -93));
             AddCommand(new ADBShellDDCommand(CommandName.MediaFastForward, DirectInputKeys.KEY_FASTFORWARD, -92));
@@ -217,15 +216,6 @@ namespace Hspi.Devices
             }
         }
 
-        private void UpdateStatusInLoop()
-        {
-            queryRunningApplicationTokenSource?.Cancel();
-            queryRunningApplicationTokenSource = new CancellationTokenSource();
-            queryRunningApplicationTokenSource.CancelAfter(10000);
-            StartCommandLoop(GetCommand(CommandName.CurrentStatusQuery),
-                                 TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
-        }
-
         protected override async Task UpdateConnectedState(bool value, CancellationToken token)
         {
             if (!value)
@@ -234,6 +224,50 @@ namespace Hspi.Devices
             }
 
             await base.UpdateConnectedState(value, token).ConfigureAwait(false);
+        }
+
+        private static MediaStateDeviceFeedback.State DetermineMediaState(string application,
+                                                                          string input)
+        {
+            switch (application)
+            {
+                case launcherApplication:
+                case settingApplication:
+                    return MediaStateDeviceFeedback.State.Stopped;
+            }
+
+            var mediaState = Hspi.Devices.MediaStateDeviceFeedback.State.Unknown;
+            var matches = getMediaStateRegEx.Match(input);
+
+            if (matches.Success)
+            {
+                var stateGroup = matches.Groups["state"];
+                if (stateGroup.Success)
+                {
+                    if (int.TryParse(stateGroup.Value, out int state))
+                    {
+                        switch (application)
+                        {
+                            case netflixApplication:
+                            case kodiApplication:
+                            case youtubeApplication:
+                            case amazonVideoApplication:
+                            case disneyPlusApplication:
+                            case hotstarApplication:
+                                switch (state)
+                                {
+                                    case 2: mediaState = MediaStateDeviceFeedback.State.Paused; break;
+                                    case 3: mediaState = MediaStateDeviceFeedback.State.Playing; break;
+                                    default:
+                                        mediaState = MediaStateDeviceFeedback.State.Stopped; break;
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return mediaState;
         }
 
         private void AddKeyboardCommands(int start)
@@ -457,9 +491,9 @@ namespace Hspi.Devices
                                                @"dumpsys media_session | grep -A 100 'Sessions Stack' | grep -A 100 $CURRENT_APP | grep -m 1 'state=PlaybackState {'",
                                                @"dumpsys media_session | grep -A 100 'Sessions Stack' | grep -A 100 $CURRENT_APP | grep -m 1 'metadata:'" };
 
-            string output = await SendCommandCore(string.Join( @" && ", commands), token).ConfigureAwait(false);
+            string output = await SendCommandCore(string.Join(@" && ", commands), token).ConfigureAwait(false);
 
-            var lines = output.Split( new char[] {'\r'});
+            var lines = output.Split(new char[] { '\r' });
 
             string application = string.Empty;
             string applicationName = null;
@@ -470,7 +504,7 @@ namespace Hspi.Devices
                 {
                     applicationName = application;
                 }
-        
+
             }
 
             await UpdateFeedback(FeedbackName.CurrentApplication, applicationName, token).ConfigureAwait(false);
@@ -496,56 +530,12 @@ namespace Hspi.Devices
             await UpdateFeedback(FeedbackName.MediaTitle, title, token).ConfigureAwait(false);
         }
 
-        private static MediaStateDeviceFeedback.State DetermineMediaState(string application, 
-                                                                          string input)
-        {
-            switch (application)
-            {
-                case launcherApplication:
-                case settingApplication:
-                    return MediaStateDeviceFeedback.State.Stopped;  
-            }
-
-            var mediaState = Hspi.Devices.MediaStateDeviceFeedback.State.Unknown;
-            var matches = getMediaStateRegEx.Match(input);
-
-            if (matches.Success)
-            {
-                var stateGroup = matches.Groups["state"];
-                if (stateGroup.Success)
-                {
-                    if (int.TryParse(stateGroup.Value, out int state))
-                    {
-                        switch (application)
-                        {
-                            case netflixApplication:
-                            case kodiApplication:
-                            case youtubeApplication:
-                            case amazonVideoApplication:
-                            case disneyPlusApplication:
-                            case hotstarApplication:
-                            switch (state)
-                            {
-                                case 2: mediaState = MediaStateDeviceFeedback.State.Paused; break;
-                                case 3: mediaState = MediaStateDeviceFeedback.State.Playing; break;
-                                default:
-                                    mediaState = MediaStateDeviceFeedback.State.Stopped; break;
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return mediaState;
-        }
-
         private async Task SendCommandCore(DeviceCommand command, CancellationToken token)
         {
-            var adbShellDDCommand = command as ADBShellDDCommand;
-            if (adbShellDDCommand != null)
+            if (command is ADBShellDDCommand adbShellDDCommand)
             {
-                Func<CancellationToken, Task<string>> getCommand = async (token2) =>
+                // local function
+                async Task<string> getCommand(CancellationToken token2)
                 {
                     if (directKeysDevices == null)
                     {
@@ -561,7 +551,7 @@ namespace Hspi.Devices
                     {
                         throw new DeviceException(Invariant($"No device found for {command.Id}"));
                     }
-                };
+                }
 
                 await SendCommandCore(getCommand, token).ConfigureAwait(false);
             }
@@ -704,14 +694,22 @@ namespace Hspi.Devices
             directKeysDevices = deviceKeys2.ToImmutableSortedDictionary();
         }
 
-        private const string netflixApplication = "com.netflix.ninja";
-        private const string kodiApplication = "org.xbmc.kodi";
-        private const string launcherApplication = "com.google.android.tvlauncher";
-        private const string settingApplication = "com.android.tv.settings";
-        private const string youtubeApplication = "com.google.android.youtube.tv";
+        private void UpdateStatusInLoop()
+        {
+            queryRunningApplicationTokenSource?.Cancel();
+            queryRunningApplicationTokenSource = new CancellationTokenSource();
+            queryRunningApplicationTokenSource.CancelAfter(10000);
+            StartCommandLoop(GetCommand(CommandName.CurrentStatusQuery),
+                                 TimeSpan.FromSeconds(1), queryRunningApplicationTokenSource.Token);
+        }
         private const string amazonVideoApplication = "com.amazon.amazonvideo.livingroom";
         private const string disneyPlusApplication = "com.disney.disneyplus";
         private const string hotstarApplication = "in.startv.hotstar";
+        private const string kodiApplication = "org.xbmc.kodi";
+        private const string launcherApplication = "com.google.android.tvlauncher";
+        private const string netflixApplication = "com.netflix.ninja";
+        private const string settingApplication = "com.android.tv.settings";
+        private const string youtubeApplication = "com.google.android.youtube.tv";
         private static readonly List<OutofOrderCommandDetector> adbOutofCommandDetectors = new List<OutofOrderCommandDetector>()
         {
             new OutofOrderCommandDetector(CommandName.CursorDownEventDown, CommandName.CursorDownEventUp),
@@ -733,15 +731,7 @@ namespace Hspi.Devices
                                                             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
 
         private readonly string adbPath;
-        private readonly AsyncLock connectionLock = new AsyncLock();
-        private AdbClient adbClient;
-        private CancellationTokenSource cursorCancelLoopSource;
-        private volatile ImmutableSortedDictionary<int, int> directKeysDevices;
-        private DeviceMonitor monitor;
-#pragma warning disable CA2213 // Disposable fields should be disposed
-        private CancellationTokenSource queryRunningApplicationTokenSource;
-#pragma warning restore CA2213 // Disposable fields should be disposed
-        private readonly ImmutableDictionary<string, string> androidApplicationNames = new Dictionary<string, string>() { 
+        private readonly ImmutableDictionary<string, string> androidApplicationNames = new Dictionary<string, string>() {
                 {launcherApplication, "Launcher"},
                 {settingApplication, "Settings"},
                 {"com.google.android.apps.mediashell", "Google Cast"},
@@ -757,5 +747,13 @@ namespace Hspi.Devices
                 {amazonVideoApplication, "Amazon Prime"},
         }.ToImmutableDictionary();
 
+        private readonly AsyncLock connectionLock = new AsyncLock();
+        private AdbClient adbClient;
+        private CancellationTokenSource cursorCancelLoopSource;
+        private volatile ImmutableSortedDictionary<int, int> directKeysDevices;
+        private DeviceMonitor monitor;
+#pragma warning disable CA2213 // Disposable fields should be disposed
+        private CancellationTokenSource queryRunningApplicationTokenSource;
+#pragma warning restore CA2213 // Disposable fields should be disposed
     }
 }
