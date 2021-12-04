@@ -211,6 +211,8 @@
 
         KEY_UNKNOWN = 240,
 
+        KEY_OK = 0x160,
+        KEY_SELECT = 0x161,
         KEY_INFO = 0x166,
         KEY_SUBTITLE = 0x172,
         KEY_NEXT = 0x197,

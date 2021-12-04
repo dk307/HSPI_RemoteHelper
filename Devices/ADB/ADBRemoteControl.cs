@@ -41,7 +41,8 @@ namespace Hspi.Devices
             AddCommand(new ADBShellDDCommand(CommandName.CursorLeft, DirectInputKeys.KEY_LEFT, -98));
             AddCommand(new ADBShellDDCommand(CommandName.CursorRight, DirectInputKeys.KEY_RIGHT, -5));
             AddCommand(new ADBShellDDCommand(CommandName.CursorUp, DirectInputKeys.KEY_UP, -96));
-            AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, -95));
+            // AddCommand(new ADBShellDDCommand(CommandName.Enter, DirectInputKeys.KEY_ENTER, -95));
+            AddCommand(new ADBShellKeyEventCommand(CommandName.Enter, AdbShellKeys.KEYCODE_ENTER, -95));
             AddCommand(new ADBShellDDCommand(CommandName.Home, DirectInputKeys.KEY_HOMEPAGE, -94));
             AddCommand(new ADBShellKeyEventCommand(CommandName.Info, AdbShellKeys.KEYCODE_INFO, -93));
             AddCommand(new ADBShellDDCommand(CommandName.MediaFastForward, DirectInputKeys.KEY_FASTFORWARD, -92));
@@ -361,9 +362,7 @@ namespace Hspi.Devices
 
             adbClient = new AdbClient();
 
-#pragma warning disable CA2000 // Dispose objects before losing scope
             monitor = new DeviceMonitor(new AdbSocket(adbClient.EndPoint));
-#pragma warning restore CA2000 // Dispose objects before losing scope
             monitor.DeviceDisconnected += Monitor_DeviceDisconnected;
             monitor.DeviceChanged += Monitor_DeviceChanged;
             monitor.Start();
@@ -399,8 +398,8 @@ namespace Hspi.Devices
 
         private SharpAdbClient.DeviceData GetDevice()
         {
-            return adbClient?.GetDevices()?.Where((x) =>
-                            x.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal)).SingleOrDefault();
+            return adbClient?.GetDevices()?.SingleOrDefault((x) =>
+                            x.Serial.StartsWith(DeviceIP.ToString(), StringComparison.Ordinal));
         }
 
         private SharpAdbClient.DeviceData GetOnlineDevice()
@@ -677,8 +676,6 @@ namespace Hspi.Devices
             foreach (var device in devices)
             {
                 var deviceValue = deviceKeys[device].ToString();
-
-                var keysSet = new HashSet<int>();
                 var matches = getEventKeysRegEx.Match(deviceValue);
                 if (matches.Success)
                 {

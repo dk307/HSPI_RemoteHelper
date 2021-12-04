@@ -200,7 +200,7 @@ namespace Hspi
         public const string PhysicalAddressId = "PhysicalAddress";
         public const string WolBroadCastAddressId = "WolBroadCastAddress";
         public IReadOnlyDictionary<string, string> AdditionalValues;
-        private Lazy<TimeSpan> defaultCommandDelay;
-        private Lazy<TimeSpan> powerOnDelay;
+        private readonly Lazy<TimeSpan> defaultCommandDelay;
+        private readonly Lazy<TimeSpan> powerOnDelay;
     }
 }
